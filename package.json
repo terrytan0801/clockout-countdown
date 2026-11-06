@@ -1,0 +1,14 @@
+{
+  "name": "clockout-countdown",
+  "version": "7.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Clock-out countdown app for Terry and friends: countdowns, overtime, dancing monsters and zaps.",
+  "scripts": {
+    "test": "node test/api.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "web-push": "^3.6.7"
+  }
+}

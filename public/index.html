@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Clock-out Countdown</title>
+<meta name="description" content="Countdown to clock-out for Terry and friends. Zap a friend, track overtime, watch the monsters dance.">
+<meta name="theme-color" content="#eef3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101613" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Clock-out">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<style>
+/* Layout: punch-clock board. Clock + "you" chip on top, a zap banner when push isn't on yet,
+   then one lane per person. Every lane has a monster: typing at a laptop while working,
+   wilting on overtime, dancing once off. */
+:root{
+  --bg:#eef3ef; --card:#ffffff; --ink:#18231d; --muted:#5f6f66; --line:#d5dfd8; --track:#e3ebe6; --danger:#c43c3c;
+  --me:#ff6b3d; --sukee:#7a5cff; --shunyi:#0fa37f; --done-soft:#fff1c2; --done-ink:#8a6500;
+  --me-soft:#ffe4da; --sukee-soft:#e8e2ff; --shunyi-soft:#d6f3ea;
+  --f1:#e0458b; --f2:#2a8fd6; --f3:#c2701b; --f4:#5f8a1e;
+  --f1-soft:#fde0ec; --f2-soft:#dcedfa; --f3-soft:#f8e6d2; --f4-soft:#e5f0d3;
+  --eye:#ffffff; --pupil:#18231d; --lap:#3a4640; --lap-hi:#9aa8a0; --sweat:#57b7f0; --zap:#ffd23f;
+  --f-display:"Bungee",system-ui,sans-serif;
+  --f-body:"Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --track:#222d27; --danger:#ff7b7b;
+  --me:#ff7f57; --sukee:#9d86ff; --shunyi:#2cc79e; --done-soft:#3a3014; --done-ink:#ffc933;
+  --me-soft:#3a2219; --sukee-soft:#2a2342; --shunyi-soft:#163229;
+  --f1:#ff6fa8; --f2:#5cb3ff; --f3:#f0a050; --f4:#9ccf4f;
+  --f1-soft:#3d1a2a; --f2-soft:#16293b; --f3-soft:#3a2814; --f4-soft:#243317;
+  --eye:#ffffff; --pupil:#101613; --lap:#56645c; --lap-hi:#8b9a92; --sweat:#7cc8ff; --zap:#ffd23f;
+  color-scheme:dark}}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:max(16px,env(safe-area-inset-top,0px));padding-bottom:max(28px,env(safe-area-inset-bottom,0px));
+  -webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;-webkit-user-select:none;user-select:none}
+[hidden]{display:none!important}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+#shot{display:flex;flex-direction:column;gap:14px;background:var(--bg);padding:4px}
+
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.htext{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);line-height:1.05;margin:0;text-wrap:balance}
+.now{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.now b{color:var(--ink);font-weight:700}
+.offline{font-size:12px;color:var(--danger)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.btn{font:700 14px/1 var(--f-mono);color:var(--card);background:var(--ink);border:0;border-radius:10px;padding:12px 14px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;min-height:42px}
+.btn:hover{opacity:.9}
+.btn:focus-visible,.chip:focus-visible,.lbtn:focus-visible,input:focus-visible,.who-btn:focus-visible,.mood:focus-visible{outline:3px solid var(--me);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:wait}
+.btn svg{width:18px;height:18px;flex:none}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.chip{font:700 13px/1 var(--f-mono);border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 12px;cursor:pointer;color:var(--ink)}
+.chip b{color:var(--me)}
+
+.banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--card);border:1px dashed var(--line);
+  border-radius:14px;padding:12px 14px}
+.banner p{margin:0;font-size:14px;min-width:0;flex:1 1 220px}
+.banner .bolt{font-family:var(--f-display);color:var(--done-ink)}
+
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.lane{--c:var(--c0);--cs:var(--cs0);--mc:var(--c0);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+  display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-content:start;min-width:0;container-type:inline-size;position:relative}
+.lane.first,.lane.overtime{border:2px solid var(--c);padding:13px 15px}
+.row1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.who{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.dot{width:12px;height:12px;border-radius:3px;background:var(--c0);flex:none}
+.name{font-weight:900;font-size:18px;overflow-wrap:anywhere}
+.off{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.you{font:700 10px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--ink);border-radius:999px;padding:3px 6px}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;
+  background:var(--cs);color:var(--c);font-weight:700;white-space:nowrap;flex:none}
+.lane.done .tag{background:var(--done-soft);color:var(--done-ink)}
+.big{font-family:var(--f-display);font-size:clamp(20px,10cqi,38px);line-height:1.1;font-variant-numeric:tabular-nums;color:var(--c);white-space:nowrap}
+.big .t{color:var(--ink)}
+.mid{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.sub{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:0;padding-bottom:4px}
+.bar{height:10px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--c);border-radius:inherit;transition:width .8s ease}
+.lane.overtime .bar i{background:repeating-linear-gradient(45deg,var(--c) 0 8px,var(--cs) 8px 16px);background-size:22.63px 22.63px;animation:slide 1s linear infinite}
+@keyframes slide{to{background-position:22.63px 0}}
+.acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px}
+.lbtn{font:700 13px/1 var(--f-mono);height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--c);background:transparent;color:var(--c);cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px}
+.lbtn:hover{background:var(--cs)}
+.lbtn.zap{background:var(--c);color:var(--card);border-color:var(--c)}
+.lbtn.zap[disabled]{background:var(--cs);color:var(--c);cursor:default}
+.lbtn.zap.muted{opacity:.75}
+.lbtn.solid{background:var(--c);color:var(--card)}
+.lbtn.rm{margin-left:auto;border-color:var(--line);color:var(--muted);width:36px;justify-content:center;padding:0}
+.lbtn.rm:hover{color:var(--danger);border-color:var(--danger);background:transparent}
+.lane.zapped{animation:shake .5s ease}
+.lane.zapped::after{content:"";position:absolute;inset:-2px;border-radius:16px;border:3px solid var(--zap);animation:flash .7s ease forwards;pointer-events:none}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-4px) rotate(-.6deg)}40%{transform:translateX(4px) rotate(.6deg)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes flash{from{opacity:1}to{opacity:0}}
+
+/* ---------- monsters ---------- */
+.mon{width:78px;height:78px;flex:none;margin:-16px -6px -4px 0}
+.mon svg{width:100%;height:100%;overflow:visible;display:block}
+.m-body{fill:var(--mc)}
+.m-limb{stroke:var(--mc);stroke-width:7;stroke-linecap:round;fill:none}
+.m-eye{fill:var(--eye)}
+.m-pupil{fill:var(--pupil)}
+.m-line{stroke:var(--pupil);stroke-width:3;stroke-linecap:round;fill:none}
+.m-shadow{fill:var(--track)}
+.m-cheek{fill:var(--eye);opacity:.45}
+.lap-back{fill:var(--lap)} .lap-logo,.lap-base{fill:var(--lap-hi)}
+.sweat{fill:var(--sweat)}
+.zz{font:700 13px var(--f-mono);fill:var(--muted)}
+svg *{transform-box:view-box}
+
+/* which parts show in which mood */
+.lap,.lid,.sweat,.zz,.mouth-t{display:none}
+.work .lap,.tired .lap{display:inline}
+.tired .lid,.tired .sweat,.tired .zz,.tired .mouth-t{display:inline}
+.tired .mouth{display:none}
+.mon:not(.dance) .arm{display:none}
+
+/* working: little typing bob, eyes on the screen */
+.work .b{transform-origin:50px 90px;animation:typing .26s ease-in-out infinite alternate}
+.work .m-pupil{transform:translateY(2.5px)}
+@keyframes typing{from{transform:translateY(0)}to{transform:translateY(-2.2px)}}
+/* overtime: slow slump, sweat, zzz */
+.tired .b{transform-origin:50px 90px;animation:slump 2.6s ease-in-out infinite}
+.tired .m-pupil{transform:translateY(2px)}
+.tired .sweat{animation:drip 1.8s ease-in infinite}
+.tired .zz{animation:zz 2.4s ease-in-out infinite}
+.tired .zz.z2{animation-delay:1.2s}
+@keyframes slump{0%,100%{transform:rotate(-4deg) scaleY(.95)}50%{transform:rotate(4deg) scaleY(.9)}}
+@keyframes drip{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(16px);opacity:0}}
+@keyframes zz{0%{transform:translate(0,0);opacity:0}30%{opacity:1}100%{transform:translate(8px,-16px);opacity:0}}
+
+/* off: dancing */
+.dance .jelly .b{transform-origin:50px 90px;animation:bounce .6s ease-in-out infinite}
+.dance .jelly .aL{transform-origin:24px 60px;animation:waveL .3s ease-in-out infinite alternate}
+.dance .jelly .aR{transform-origin:76px 60px;animation:waveR .3s ease-in-out infinite alternate}
+.dance .sh{transform-origin:50px 93px;animation:shadow .6s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0) scale(1.08,.9)}50%{transform:translateY(-13px) scale(.94,1.07)}}
+@keyframes waveL{from{transform:rotate(-30deg)}to{transform:rotate(25deg)}}
+@keyframes waveR{from{transform:rotate(30deg)}to{transform:rotate(-25deg)}}
+@keyframes shadow{0%,100%{transform:scale(1)}50%{transform:scale(.7)}}
+.dance .cyclo .b{transform-origin:50px 88px;animation:sway .8s ease-in-out infinite alternate}
+.dance .cyclo .lL{animation:step .4s ease-in-out infinite alternate}
+.dance .cyclo .lR{animation:step .4s ease-in-out infinite alternate-reverse}
+.dance .cyclo .pu{animation:look .8s ease-in-out infinite alternate}
+@keyframes sway{from{transform:rotate(-11deg)}to{transform:rotate(11deg)}}
+@keyframes step{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+@keyframes look{from{transform:translateX(-4px)}to{transform:translateX(4px)}}
+.dance .noodle .b{transform-origin:50px 90px;animation:wiggle .45s ease-in-out infinite alternate}
+.dance .noodle .aL{transform-origin:31px 56px;animation:pumpL .45s ease-in-out infinite alternate}
+.dance .noodle .aR{transform-origin:69px 56px;animation:pumpR .45s ease-in-out infinite alternate-reverse}
+@keyframes wiggle{from{transform:skewX(-9deg)}to{transform:skewX(9deg)}}
+@keyframes pumpL{from{transform:rotate(0)}to{transform:rotate(35deg)}}
+@keyframes pumpR{from{transform:rotate(0)}to{transform:rotate(-35deg)}}
+.dance .spike .b{transform-origin:50px 52px;animation:spinjump 1.4s cubic-bezier(.5,0,.5,1) infinite}
+.dance .spike .sh{animation:shadow2 1.4s ease-in-out infinite}
+@keyframes spinjump{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-18px) rotate(0)}65%{transform:translateY(-18px) rotate(360deg)}85%,100%{transform:translateY(0) rotate(360deg)}}
+@keyframes shadow2{0%,85%,100%{transform:scale(1)}25%,65%{transform:scale(.6)}}
+
+.crew{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:16px}
+.crew-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.crew h2{font-family:var(--f-display);font-weight:400;font-size:18px;margin:0}
+.crew p{margin:0;font-size:13px;color:var(--muted)}
+.moods{display:flex;gap:6px;flex-wrap:wrap}
+.mood{font:700 12px/1 var(--f-mono);border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 11px;cursor:pointer;color:var(--muted)}
+.mood[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.crew-row{display:flex;gap:20px;flex-wrap:wrap}
+.crew-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.crew-item .mon{margin:0;width:66px;height:66px}
+.crew-item span{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px;font-family:var(--f-mono)}
+
+/* sheets + toast */
+.sheet{position:fixed;inset:0;background:rgba(10,14,12,.6);display:grid;place-items:end center;z-index:20;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+@media (min-width:600px){.sheet{place-items:center}}
+.sheet-card{background:var(--card);color:var(--ink);border-radius:18px;padding:18px;width:min(720px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.sheet-card.narrow{width:min(420px,100%)}
+.sheet-card img{width:100%;border-radius:10px;border:1px solid var(--line)}
+.sheet-msg{font-family:var(--f-display);font-weight:400;font-size:19px}
+.sheet-hint{font-size:13px;color:var(--muted);margin:0}
+.sheet-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.who-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.who-btn{--mc:var(--c0);display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:10px;cursor:pointer;font-weight:900;text-align:left;min-height:48px}
+.who-btn .dot{background:var(--c0)}
+.who-btn[aria-pressed="true"]{border:2px solid var(--c0);padding:9px}
+.linkish{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer;font:700 13px var(--f-mono)}
+form{display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
+input{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+input[type=time]{font-family:var(--f-mono)}
+.err{color:var(--danger);font-size:13px;min-height:1em}
+.toast{position:fixed;left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));transform:translateX(-50%);z-index:30;
+  background:var(--ink);color:var(--card);font:700 14px/1.4 var(--f-mono);padding:12px 16px;border-radius:12px;max-width:min(92vw,460px);text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.18)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}.mon *,.lane.overtime .bar i,.lane.zapped,.lane.zapped::after{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="shot">
+    <header>
+      <div class="htext">
+        <span class="eyebrow">Punch clock · UTC+8</span>
+        <h1>Clock-out Countdown</h1>
+        <div class="now"><span id="now">Now <b>--:--:--</b></span><span class="offline" id="offline" hidden>Offline · retrying</span></div>
+      </div>
+      <div class="actions" data-html2canvas-ignore>
+        <button class="chip" id="meChip" type="button">Pick your name</button>
+        <button class="btn ghost" id="addBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 19c.8-3.2 3.2-5 6-5s5.2 1.8 6 5"/><path d="M19 8v6M16 11h6"/></svg>
+          Add friend
+        </button>
+        <button class="btn ghost" id="installBtn" type="button" hidden>Install app</button>
+        <button class="btn" id="snap" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          Screenshot
+        </button>
+      </div>
+    </header>
+
+    <div class="banner" id="banner" hidden data-html2canvas-ignore>
+      <p id="bannerText"></p>
+      <button class="btn" id="bannerBtn" type="button" hidden>Turn on zaps</button>
+    </div>
+
+    <section class="lanes" id="lanes" aria-live="polite"></section>
+  </div>
+
+  <section class="crew" aria-labelledby="crewTitle">
+    <div class="crew-head">
+      <h2 id="crewTitle">The crew</h2>
+      <div class="moods" role="group" aria-label="Preview a mood">
+        <button class="mood" type="button" data-mood="work" aria-pressed="false">Working</button>
+        <button class="mood" type="button" data-mood="tired" aria-pressed="false">Overtime</button>
+        <button class="mood" type="button" data-mood="dance" aria-pressed="true">Off</button>
+      </div>
+    </div>
+    <p>Your monster types away while you work, wilts on overtime, and dances once you clock out.</p>
+    <div class="crew-row" id="crewRow"></div>
+  </section>
+
+  <div class="foot">
+    <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
+    <span>Staying late? Tap <b>+ OT</b>, then <b>Clock out</b> when you finally leave.</span>
+    <span>Tap <b>⚡ Zap</b> on a friend to buzz their phone. Once every 10 minutes per friend.</span>
+    <span>v7.0</span>
+  </div>
+</div>
+
+<!-- who are you -->
+<div class="sheet" id="whoSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="whoTitle">
+    <div class="sheet-msg" id="whoTitle">Who are you?</div>
+    <p class="sheet-hint">Pick your name so friends can zap your phone. It's saved on this device.</p>
+    <div class="who-list" id="whoList"></div>
+    <div class="sheet-row" style="justify-content:space-between;align-items:center">
+      <button class="linkish" id="whoAdd" type="button">Not on the list? Add yourself</button>
+      <button class="btn ghost" id="whoClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- add friend -->
+<div class="sheet" id="addSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="sheet-msg" id="addTitle">Add a friend</div>
+    <form id="addForm" novalidate>
+      <label for="fName">Name
+        <input id="fName" name="fName" maxlength="20" placeholder="e.g. Qitai" autocomplete="off" required>
+      </label>
+      <label for="fTime">Clock-out time
+        <input id="fTime" name="fTime" type="time" value="18:00" required>
+      </label>
+      <div class="err" id="addErr" role="alert"></div>
+      <div class="sheet-row">
+        <button class="btn ghost" id="addCancel" type="button">Cancel</button>
+        <button class="btn" id="addSubmit" type="submit">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- screenshot preview -->
+<div class="sheet" id="shotSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="shotMsg">
+    <div class="sheet-msg" id="shotMsg">Screenshot ready</div>
+    <img id="shotImg" alt="Clock-out Countdown screenshot">
+    <p class="sheet-hint" id="shotHint"></p>
+    <div class="sheet-row"><button class="btn ghost" id="shotClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+"use strict";
+/* ================= monsters ================= */
+function starPoints(cx,cy,ro,ri,n){
+  const p=[];for(let i=0;i<n*2;i++){const r=i%2?ri:ro,a=Math.PI*i/n-Math.PI/2;p.push((cx+r*Math.cos(a)).toFixed(1)+","+(cy+r*Math.sin(a)).toFixed(1));}
+  return p.join(" ");
+}
+const lid=(cx,cy,r)=>`<path class="m-body lid" d="M${cx-r} ${cy+1} A${r} ${r} 0 0 1 ${cx+r} ${cy+1}Z"/><path class="m-line lid" style="stroke-width:2" d="M${cx-r+1} ${cy+1} L${cx+r-1} ${cy+1}"/>`;
+const LAPTOP=`<g class="lap"><rect class="lap-back" x="23" y="63" width="54" height="28" rx="3"/><circle class="lap-logo" cx="50" cy="77" r="3.2"/><rect class="lap-base" x="14" y="90" width="72" height="4.5" rx="2"/></g>`;
+const SWEAT=`<path class="sweat" d="M75 27 Q80 34 75 38 Q70 34 75 27Z"/>`;
+const ZZ=`<text class="zz" x="80" y="20">z</text><text class="zz z2" x="86" y="11">z</text>`;
+const MONSTERS=[
+  {name:"Jelly",svg:`<svg viewBox="0 0 100 100" class="jelly" aria-hidden="true">
+    <ellipse class="m-shadow sh" cx="50" cy="93" rx="24" ry="4"/>
+    <g class="b">
+      <path class="m-limb arm aL" d="M24 60 Q10 52 11 38"/><path class="m-limb arm aR" d="M76 60 Q90 52 89 38"/>
+      <path class="m-body" d="M20 84 C18 44 34 24 50 24 C66 24 82 44 80 84 Q65 90 50 86 Q35 90 20 84Z"/>
+      <circle class="m-eye" cx="40" cy="50" r="8"/><circle class="m-eye" cx="60" cy="50" r="8"/>
+      <circle class="m-pupil" cx="41" cy="51" r="4"/><circle class="m-pupil" cx="61" cy="51" r="4"/>
+      ${lid(40,50,9)}${lid(60,50,9)}
+      <path class="m-line mouth" d="M41 65 Q50 74 59 65"/><path class="m-line mouth-t" d="M41 68 Q45.5 64 50 68 Q54.5 72 59 68"/>
+      <circle class="m-cheek" cx="31" cy="62" r="4"/><circle class="m-cheek" cx="69" cy="62" r="4"/>
+      ${SWEAT}
+    </g>${LAPTOP}${ZZ}</svg>`},
+  {name:"Cyclo",svg:`<svg viewBox="0 0 100 100" class="cyclo" aria-hidden="true">
+    <ellipse class="m-shadow" cx="50" cy="94" rx="22" ry="4"/>
+    <rect class="m-body lL" x="34" y="76" width="10" height="16" rx="5"/><rect class="m-body lR" x="56" y="76" width="10" height="16" rx="5"/>
+    <g class="b">
+      <path class="m-body" d="M33 34 L27 13 L45 30Z"/><path class="m-body" d="M67 34 L73 13 L55 30Z"/>
+      <rect class="m-body" x="24" y="28" width="52" height="54" rx="18"/>
+      <path class="m-limb arm" d="M26 58 L14 50"/><path class="m-limb arm" d="M74 58 L86 66"/>
+      <circle class="m-eye" cx="50" cy="50" r="12"/><circle class="m-pupil pu" cx="50" cy="51" r="5.5"/>
+      ${lid(50,50,13)}
+      <path class="m-line mouth" d="M39 68 Q50 75 61 68"/>
+      <path class="m-eye mouth" d="M44 69.5 L46 74 L48 70.5Z"/><path class="m-eye mouth" d="M52 70.5 L54 74 L56 69.5Z"/>
+      <path class="m-line mouth-t" d="M40 70 Q45 66 50 70 Q55 74 60 70"/>
+      ${SWEAT}
+    </g>${LAPTOP}${ZZ}</svg>`},
+  {name:"Noodle",svg:`<svg viewBox="0 0 100 100" class="noodle" aria-hidden="true">
+    <ellipse class="m-shadow" cx="50" cy="94" rx="22" ry="4"/>
+    <g class="b">
+      <path class="m-limb arm aL" d="M31 56 L16 36"/><path class="m-limb arm aR" d="M69 56 L84 36"/>
+      <path class="m-body" d="M30 90 L30 40 Q30 12 50 12 Q70 12 70 40 L70 90 Q65 82 60 90 Q55 82 50 90 Q45 82 40 90 Q35 82 30 90Z"/>
+      <ellipse class="m-pupil" cx="42" cy="38" rx="4" ry="6"/><ellipse class="m-pupil" cx="58" cy="38" rx="4" ry="6"/>
+      <circle class="m-eye" cx="43.5" cy="36" r="1.6"/><circle class="m-eye" cx="58.5" cy="36" r="1.6"/>
+      ${lid(42,38,6.5)}${lid(58,38,6.5)}
+      <ellipse class="m-pupil mouth" cx="50" cy="54" rx="4" ry="5"/><path class="m-line mouth-t" d="M44 55 Q47 52 50 55 Q53 58 56 55"/>
+      <circle class="m-cheek" cx="36" cy="49" r="3.5"/><circle class="m-cheek" cx="64" cy="49" r="3.5"/>
+      ${SWEAT}
+    </g>${LAPTOP}${ZZ}</svg>`},
+  {name:"Spike",svg:`<svg viewBox="0 0 100 100" class="spike" aria-hidden="true">
+    <ellipse class="m-shadow sh" cx="50" cy="93" rx="22" ry="4" style="transform-origin:50px 93px"/>
+    <g class="b">
+      <polygon class="m-body" points="${starPoints(50,52,34,24,10)}"/>
+      <circle class="m-eye" cx="40" cy="50" r="6"/><circle class="m-eye" cx="60" cy="50" r="6"/><circle class="m-eye" cx="50" cy="39" r="5"/>
+      <circle class="m-pupil" cx="40" cy="51" r="3"/><circle class="m-pupil" cx="60" cy="51" r="3"/><circle class="m-pupil" cx="50" cy="40" r="2.5"/>
+      ${lid(40,50,7)}${lid(60,50,7)}${lid(50,39,6)}
+      <path class="m-line mouth" d="M42 62 Q50 68 58 62"/><path class="m-line mouth-t" d="M42 64 Q46 61 50 64 Q54 67 58 64"/>
+      ${SWEAT}
+    </g>${LAPTOP}${ZZ}</svg>`},
+];
+
+/* ================= constants & helpers ================= */
+const COLORS={"base-terry":["--me","--me-soft",0],"base-sukee":["--sukee","--sukee-soft",1],"base-shunyi":["--shunyi","--shunyi-soft",2]};
+const EXTRA=["f1","f2","f3","f4"];
+const START=9*3600;
+const HAPPY_BIG=["Freedom!","Peace out!","Bye, office!","Home time!","Off duty!","We out!"];
+const HAPPY_SUB=["go enjoy your evening","dinner is calling","bubble tea time","couch mode: on","you earned this","see you tomorrow, desk"];
+const OT_BIG=["Finally free!","Escaped!","Made it out!","Survived!"];
+const QUIPS_NEAR=["Packing up","Final sprint","Looking busy","Eyes on the door"];
+const QUIPS_OT=["hang in there","the grind goes on","boss owes you dinner","send snacks"];
+const LS_ME="clockout.me";
+
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const fmt12=(h,m)=>`${(h%12)||12}:${pad(m)} ${h<12?"am":"pm"}`;
+const fmtSec=s=>fmt12(Math.floor(s/3600)%24,Math.floor(s%3600/60));
+const hms=s=>`${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}`;
+const mmss=ms=>{const s=Math.ceil(ms/1000);return `${Math.floor(s/60)}:${pad(s%60)}`;};
+const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}};
+
+let S=null, offset=0, me=lsGet(LS_ME), lanesData=[], lastSig="";
+const clockNow=()=>Date.now()+offset;
+function sgNow(){
+  const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",hour12:false,weekday:"short",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})
+    .formatToParts(new Date(clockNow())).reduce((o,x)=>(o[x.type]=x.value,o),{});
+  return {wd:p.weekday,day:`${p.year}-${p.month}-${p.day}`,h:+p.hour%24,m:+p.minute,s:+p.second};
+}
+let toastTimer;
+function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true},ms);}
+
+async function api(path,body){
+  const r=await fetch("/api/"+path,body?{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{cache:"no-store"});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(d.error||"Something went wrong. Try again.");e.status=r.status;e.data=d;throw e;}
+  return d;
+}
+
+/* ================= people & state ================= */
+function allPeople(){
+  if(!S) return [];
+  const base=S.base.map(p=>{const c=COLORS[p.id]||["--f1","--f1-soft",3];return {...p,c:c[0],cs:c[1],mi:c[2],base:true};});
+  const extras=S.friends.slice().sort((a,b)=>(a.at||0)-(b.at||0)).map((f,i)=>{
+    const k=EXTRA[i%EXTRA.length];return {...f,c:`--${k}`,cs:`--${k}-soft`,mi:(i+3)%MONSTERS.length,base:false};
+  });
+  return base.concat(extras);
+}
+function applyState(d){
+  S=d;offset=d.now-Date.now();
+  $("offline").hidden=true;
+  const sig=JSON.stringify([d.friends,d.base,me]);
+  if(sig!==lastSig){lastSig=sig;buildLanes();}
+  if(me&&!allPeople().some(p=>p.id===me)){setMe(null);return;}
+  renderMeChip();
+  if(!me&&$("whoSheet").hidden) openWho(true);
+  tick();updateBanner();
+}
+async function refresh(){
+  try{applyState(await api("state"));}
+  catch(e){$("offline").hidden=false;}
+}
+function renderMeChip(){
+  const p=allPeople().find(x=>x.id===me), chip=$("meChip");
+  if(p){chip.innerHTML=`You're <b></b> · switch`;chip.querySelector("b").textContent=p.name;}
+  else chip.textContent="Pick your name";
+}
+function setMe(id){
+  me=id;lsSet(LS_ME,id);
+  lastSig="";if(S) applyState(S); else renderMeChip();
+  syncSubscription();
+}
+
+/* ================= lanes ================= */
+const lanes=$("lanes");
+function buildLanes(){
+  lanesData=allPeople().sort((a,b)=>(a.h*60+a.m)-(b.h*60+b.m));
+  lanes.replaceChildren();
+  lanesData.forEach(p=>{
+    const el=document.createElement("article");
+    el.className="lane";
+    el.style.setProperty("--c0",`var(${p.c})`);el.style.setProperty("--cs0",`var(${p.cs})`);
+    el.innerHTML=`<div class="row1"><div class="who"><span class="dot"></span><span class="name"></span><span class="off"></span></div><span class="tag"></span></div>
+      <div class="big"></div>
+      <div class="mid"><div class="sub"></div><div class="mon work">${MONSTERS[p.mi].svg}</div></div>
+      <div class="bar"><i></i></div>
+      <div class="acts" data-html2canvas-ignore></div>`;
+    el.querySelector(".name").textContent=p.name;
+    el.querySelector(".off").textContent=fmt12(p.h,p.m);
+    if(p.id===me){const y=document.createElement("span");y.className="you";y.textContent="You";el.querySelector(".who").appendChild(y);}
+    const acts=el.querySelector(".acts");
+    if(p.id!==me){
+      const z=document.createElement("button");z.type="button";z.className="lbtn zap";
+      z.addEventListener("click",()=>zap(p,el,z));acts.appendChild(z);p.zapBtn=z;
+    }
+    const ot=document.createElement("button");ot.type="button";ot.className="lbtn";
+    ot.addEventListener("click",()=>onOT(p,el));acts.appendChild(ot);p.otBtn=ot;
+    if(!p.base){
+      const x=document.createElement("button");x.type="button";x.className="lbtn rm";x.textContent="×";
+      x.setAttribute("aria-label",`Remove ${p.name}`);x.title=`Remove ${p.name}`;
+      x.addEventListener("click",()=>removeFriend(p,x));acts.appendChild(x);
+    }
+    p.el=el;lanes.appendChild(el);
+  });
+  tick();
+}
+
+function laneState(p,n,nowSec){
+  const offSec=p.h*3600+p.m*60, o=(S&&S.ot[p.id])||{on:false,end:null};
+  if(n.wd==="Sat"||n.wd==="Sun") return {state:"weekend",offSec,o};
+  if(nowSec<offSec) return {state:o.on?"before-ot":"before",offSec,o};
+  if(o.on&&o.end==null) return {state:"ot",offSec,o};
+  if(o.on) return {state:"done-ot",offSec,o};
+  return {state:"done",offSec,o};
+}
+
+function tick(){
+  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
+  $("now").innerHTML=`Now <b>${pad(n.h)}:${pad(n.m)}:${pad(n.s)}</b>`;
+  if(S&&n.day!==S.day) refresh();
+  if(!S) return;
+  const seed=+n.day.slice(8);
+  const rows=lanesData.map(p=>({p,...laneState(p,n,nowSec)}));
+  const firstLeft=rows.filter(r=>r.state.startsWith("before")).sort((a,b)=>a.offSec-b.offSec)[0];
+
+  rows.forEach((r,idx)=>{
+    const {p,state,offSec,o}=r, el=p.el; if(!el) return;
+    const pick=a=>a[(idx+seed)%a.length];
+    const big=el.querySelector(".big"),sub=el.querySelector(".sub"),tag=el.querySelector(".tag"),bar=el.querySelector(".bar i"),mon=el.querySelector(".mon");
+    const left=offSec-nowSec, span=Math.max(1,offSec-START), pct=Math.min(100,Math.max(0,(nowSec-START)/span*100));
+    const isDone=state==="done"||state==="done-ot"||state==="weekend";
+    el.classList.toggle("done",isDone);
+    el.classList.toggle("overtime",state==="ot");
+    el.classList.toggle("first",r===firstLeft);
+    const mood=isDone?"dance":state==="ot"?"tired":"work";
+    if(!mon.classList.contains(mood)){mon.classList.remove("work","tired","dance");mon.classList.add(mood);}
+
+    if(state==="weekend"){
+      big.textContent="Weekend!";sub.textContent=`No work today · ${pick(HAPPY_SUB)}`;tag.textContent="Weekend";bar.style.width="100%";
+    }else if(state.startsWith("before")){
+      big.innerHTML=`<span class="t">Time −</span> ${Math.ceil(left/60)} mins`;
+      sub.textContent=`${hms(left)} · ${left<=1800?pick(QUIPS_NEAR):Math.floor(pct)+"% done"}`;
+      tag.textContent=state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working");
+      bar.style.width=pct.toFixed(1)+"%";
+    }else if(state==="ot"){
+      const over=nowSec-offSec;
+      big.innerHTML=`<span class="t">Time +</span> ${Math.floor(over/60)} mins`;
+      sub.textContent=`${hms(over)} overtime · ${pick(QUIPS_OT)}`;tag.textContent="Overtime";bar.style.width="100%";
+    }else if(state==="done-ot"){
+      const over=Math.max(0,o.end-offSec);
+      big.textContent=pick(OT_BIG);
+      sub.textContent=`Out at ${fmtSec(o.end)} after ${Math.round(over/60)} mins OT · ${pick(HAPPY_SUB)}`;tag.textContent="Off";bar.style.width="100%";
+    }else{
+      big.textContent=pick(HAPPY_BIG);sub.textContent=`Off since ${fmt12(p.h,p.m)} · ${pick(HAPPY_SUB)}`;tag.textContent="Off";bar.style.width="100%";
+    }
+
+    el.dataset.state=state;
+    const labels={before:"+ OT","before-ot":"Cancel OT",ot:"Clock out",done:"+ OT","done-ot":"Resume OT"};
+    p.otBtn.hidden=state==="weekend";
+    if(state!=="weekend"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
+
+    if(p.zapBtn){
+      const z=p.zapBtn, ts=me&&S.zaps[`${me}>${p.id}`], wait=ts?S.cooldownMs-(clockNow()-ts):0;
+      const reachable=S.reachable.includes(p.id);
+      z.hidden=!me;
+      if(wait>0){z.disabled=true;z.textContent=`⚡ ${mmss(wait)}`;z.title=`You can zap ${p.name} again in ${mmss(wait)}`;}
+      else{z.disabled=false;z.textContent=`⚡ Zap`;z.title=reachable?`Buzz ${p.name}'s phone`:`${p.name} hasn't turned on zaps yet`;}
+      z.classList.toggle("muted",!reachable);
+    }
+  });
+}
+
+/* ================= actions ================= */
+function zapMessage(p){
+  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, {state,offSec,o}=laneState(p,n,nowSec);
+  if(state==="weekend") return "It's the weekend. Stop thinking about work!";
+  if(state.startsWith("before")){const m=Math.ceil((offSec-nowSec)/60);return m<=30?`Only ${m} mins left. Start packing up!`:`${m} mins to go. Hang in there!`;}
+  if(state==="ot") return `${Math.floor((nowSec-offSec)/60)} mins of OT already. Go home!`;
+  return "You're off! Go enjoy your evening.";
+}
+async function zap(p,el,btn){
+  if(!me){openWho();return;}
+  btn.disabled=true;
+  try{
+    const d=await api("zap",{from:me,to:p.id,message:zapMessage(p)});
+    S.zaps[`${me}>${p.id}`]=d.at;
+    el.classList.remove("zapped");void el.offsetWidth;el.classList.add("zapped");
+    setTimeout(()=>el.classList.remove("zapped"),800);
+    if(navigator.vibrate) navigator.vibrate(30);
+    toast(d.sent>0?`Zapped ${p.name}! ⚡`:`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
+  }catch(e){
+    if(e.status===429&&e.data.retryInMs){S.zaps[`${me}>${p.id}`]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
+    else toast(e.message);
+  }finally{tick();}
+}
+async function onOT(p,el){
+  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
+  let on,end=null;
+  switch(el.dataset.state){
+    case "before": case "done": case "done-ot": on=true; break;
+    case "before-ot": on=false; break;
+    case "ot": on=true; end=nowSec; break;
+    default: return;
+  }
+  const prev=S.ot[p.id];
+  if(on) S.ot[p.id]={on,end}; else delete S.ot[p.id];
+  tick();
+  try{applyState(await api("ot",{pid:p.id,on,end}));}
+  catch(e){if(prev) S.ot[p.id]=prev; else delete S.ot[p.id];tick();toast(e.message);}
+}
+let rmArmed=null;
+async function removeFriend(p,btn){
+  if(rmArmed!==p.id){rmArmed=p.id;btn.textContent="?";toast(`Tap × again to remove ${p.name}.`);setTimeout(()=>{if(rmArmed===p.id){rmArmed=null;btn.textContent="×";}},3000);return;}
+  rmArmed=null;
+  try{applyState(await api("friends",{action:"remove",id:p.id}));toast(`Removed ${p.name}.`);}
+  catch(e){toast(e.message);btn.textContent="×";}
+}
+
+/* ================= who / add sheets ================= */
+function openWho(forced){
+  const list=$("whoList");list.replaceChildren();
+  allPeople().forEach(p=>{
+    const b=document.createElement("button");b.type="button";b.className="who-btn";
+    b.style.setProperty("--c0",`var(${p.c})`);
+    b.setAttribute("aria-pressed",String(p.id===me));
+    b.innerHTML=`<span class="dot"></span><span></span>`;b.lastChild.textContent=p.name;
+    b.addEventListener("click",()=>{setMe(p.id);$("whoSheet").hidden=true;toast(`Hi ${p.name}!`);});
+    list.appendChild(b);
+  });
+  $("whoClose").hidden=!!forced&&!me;
+  $("whoSheet").hidden=false;
+}
+$("meChip").addEventListener("click",()=>openWho());
+$("whoClose").addEventListener("click",()=>{$("whoSheet").hidden=true;});
+let addingSelf=false;
+$("whoAdd").addEventListener("click",()=>{addingSelf=true;$("whoSheet").hidden=true;openAdd();});
+function openAdd(){$("addErr").textContent="";$("addForm").reset();$("addSheet").hidden=false;$("fName").focus();}
+$("addBtn").addEventListener("click",()=>{addingSelf=false;openAdd();});
+$("addCancel").addEventListener("click",()=>{$("addSheet").hidden=true;if(addingSelf&&!me) openWho(true);addingSelf=false;});
+$("addForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const name=$("fName").value.trim(), t=$("fTime").value;
+  if(!name){$("addErr").textContent="Enter a name first.";return;}
+  if(!/^\d{2}:\d{2}$/.test(t)){$("addErr").textContent="Pick a clock-out time.";return;}
+  const [h,m]=t.split(":").map(Number);
+  const btn=$("addSubmit");btn.disabled=true;$("addErr").textContent="";
+  try{
+    const d=await api("friends",{action:"add",name,h,m});
+    applyState(d);$("addSheet").hidden=true;
+    if(addingSelf){const f=d.friends.find(x=>x.name.toLowerCase()===name.toLowerCase());if(f){setMe(f.id);toast(`Hi ${f.name}!`);}}
+    else toast(`Added ${name}.`);
+    addingSelf=false;
+  }catch(err){$("addErr").textContent=err.message;}
+  finally{btn.disabled=false;}
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  $("addSheet").hidden=true;$("shotSheet").hidden=true;
+  if(me) $("whoSheet").hidden=true;
+});
+["addSheet","shotSheet","whoSheet"].forEach(id=>$(id).addEventListener("click",e=>{
+  if(e.target.id!==id) return;
+  if(id==="whoSheet"&&!me) return;
+  $(id).hidden=true;
+}));
+
+/* ================= push / zaps ================= */
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+let swReg=null;
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("/sw.js").then(r=>{swReg=r;syncSubscription();updateBanner();}).catch(()=>{});
+}
+function b64ToBytes(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0));}
+async function currentSub(){if(!swReg||!pushSupported) return null;try{return await swReg.pushManager.getSubscription();}catch(e){return null;}}
+async function syncSubscription(){
+  // If this phone already allowed notifications, make sure the server files it under the current name.
+  if(!me||!pushSupported||Notification.permission!=="granted") return;
+  const sub=await currentSub(); if(!sub) return;
+  try{await api("subscribe",{pid:me,subscription:sub.toJSON()});}catch(e){}
+}
+async function enableZaps(){
+  if(!me){openWho();return;}
+  const btn=$("bannerBtn");btn.disabled=true;
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){toast("Notifications are off. Allow them in your phone settings for this app.",4500);return;}
+    const reg=swReg||await navigator.serviceWorker.ready;
+    const {publicKey}=await api("vapid");
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(publicKey)});
+    await api("subscribe",{pid:me,subscription:sub.toJSON()});
+    toast("Zaps are on. Friends can buzz you now ⚡");
+    await refresh();
+  }catch(e){toast(e.message||"Couldn't turn on zaps. Try again.");}
+  finally{btn.disabled=false;updateBanner();}
+}
+$("bannerBtn").addEventListener("click",enableZaps);
+async function updateBanner(){
+  const banner=$("banner"),text=$("bannerText"),btn=$("bannerBtn");
+  if(!me||!S){banner.hidden=true;return;}
+  let msg="",showBtn=false;
+  if(isIOS&&!standalone) msg=`<span class="bolt">⚡</span> On iPhone, tap <b>Share</b> then <b>Add to Home Screen</b>. Open Clock-out from your home screen to turn on zaps.`;
+  else if(!pushSupported) msg="This browser can't receive zaps. Try Chrome on Android, or the home-screen app on iPhone.";
+  else if(Notification.permission==="denied") msg="Notifications are blocked for this app. Allow them in your phone settings to receive zaps.";
+  else{
+    const sub=await currentSub();
+    if(Notification.permission==="granted"&&sub&&S.reachable.includes(me)){banner.hidden=true;return;}
+    msg=`<span class="bolt">⚡</span> Turn on zaps so friends can buzz your phone.`;showBtn=true;
+  }
+  text.innerHTML=msg;btn.hidden=!showBtn;banner.hidden=false;
+}
+
+let installEvt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;$("installBtn").hidden=false;});
+$("installBtn").addEventListener("click",async()=>{if(!installEvt) return;installEvt.prompt();await installEvt.userChoice.catch(()=>{});installEvt=null;$("installBtn").hidden=true;});
+window.addEventListener("appinstalled",()=>{$("installBtn").hidden=true;});
+
+/* ================= crew preview ================= */
+const CREW_COLORS=["--me","--sukee","--shunyi","--f1"];
+MONSTERS.forEach((mo,i)=>{
+  const d=document.createElement("div");d.className="crew-item";d.style.setProperty("--mc",`var(${CREW_COLORS[i]})`);
+  d.innerHTML=`<div class="mon dance">${mo.svg}</div><span></span>`;d.querySelector("span").textContent=mo.name;
+  $("crewRow").appendChild(d);
+});
+document.querySelectorAll(".mood").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".mood").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  document.querySelectorAll("#crewRow .mon").forEach(m=>{m.classList.remove("work","tired","dance");m.classList.add(b.dataset.mood);});
+}));
+
+/* ================= screenshot ================= */
+$("snap").addEventListener("click",()=>{
+  if(typeof html2canvas!=="function"){toast("Screenshot tool is still loading. Try again in a second.");return;}
+  const btn=$("snap");btn.disabled=true;
+  const canvasP=html2canvas($("shot"),{backgroundColor:getComputedStyle(document.body).backgroundColor,scale:Math.min(2,window.devicePixelRatio||2),useCORS:true});
+  const blobP=canvasP.then(c=>new Promise(res=>c.toBlob(res,"image/png")));
+  let copyP=Promise.reject();
+  try{if(navigator.clipboard&&window.ClipboardItem) copyP=navigator.clipboard.write([new ClipboardItem({"image/png":blobP})]);}catch(e){}
+  copyP.catch(()=>{});
+  canvasP.then(c=>{
+    const url=c.toDataURL("image/png");
+    copyP.then(()=>showShot(url,"Copied! Paste it in the group chat",true)).catch(()=>showShot(url,"Screenshot ready",false));
+  }).catch(()=>toast("Screenshot failed. Try again.")).finally(()=>{btn.disabled=false;});
+});
+function showShot(url,msg,copied){
+  $("shotMsg").textContent=msg;$("shotImg").src=url;
+  $("shotHint").textContent=copied?"You can also long-press (phone) or right-click (computer) to save it.":"Long-press (phone) or right-click (computer) to save the image.";
+  $("shotSheet").hidden=false;
+}
+$("shotClose").addEventListener("click",()=>{$("shotSheet").hidden=true;});
+
+/* ================= boot ================= */
+setMe(me);
+refresh();
+setInterval(tick,1000);
+setInterval(refresh,15000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){refresh();syncSubscription();}});
+navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.type==="zap") refresh();});
+</script>
+</body>
+</html>
