@@ -1,0 +1,213 @@
+<title>下班倒计时</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* Layout: punch-clock board — live clock + screenshot button on top, lanes fill the width (3 across on wide screens) */
+:root{
+  --bg:#eef3ef; --card:#ffffff; --ink:#18231d; --muted:#5f6f66; --line:#d5dfd8; --track:#e3ebe6;
+  --me:#ff6b3d; --sukee:#7a5cff; --shunyi:#0fa37f; --done:#e9b100;
+  --me-soft:#ffe4da; --sukee-soft:#e8e2ff; --shunyi-soft:#d6f3ea; --done-soft:#fff1c2;
+  --f-display:"Bungee","Noto Sans SC",system-ui,sans-serif;
+  --f-body:"Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --track:#222d27;
+  --me:#ff7f57; --sukee:#9d86ff; --shunyi:#2cc79e; --done:#ffc933;
+  --me-soft:#3a2219; --sukee-soft:#2a2342; --shunyi-soft:#163229; --done-soft:#3a3014; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --track:#222d27;
+  --me:#ff7f57; --sukee:#9d86ff; --shunyi:#2cc79e; --done:#ffc933;
+  --me-soft:#3a2219; --sukee-soft:#2a2342; --shunyi-soft:#163229; --done-soft:#3a3014; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+#shot{display:flex;flex-direction:column;gap:16px;background:var(--bg);padding:4px}
+
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.htext{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,7vw,44px);line-height:1.05;margin:0}
+.now{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted)}
+.now b{color:var(--ink);font-weight:700}
+
+.btn{font:700 14px/1 var(--f-body);color:var(--card);background:var(--ink);border:0;border-radius:10px;padding:12px 16px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px}
+.btn:hover{opacity:.88}
+.btn:focus-visible{outline:3px solid var(--me);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:wait}
+.btn svg{width:18px;height:18px}
+
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.lane{--c:var(--c0);--cs:var(--cs0);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;align-content:start;min-width:0}
+.lane.first{border:2px solid var(--c);padding:15px 17px}
+.row1{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.dot{width:12px;height:12px;border-radius:3px;background:var(--c);flex:none}
+.name{font-weight:900;font-size:18px}
+.off{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;
+  background:var(--cs);color:var(--c);font-weight:700}
+.big{font-family:var(--f-display);font-size:clamp(28px,7vw,40px);line-height:1.1;font-variant-numeric:tabular-nums;color:var(--c);white-space:nowrap}
+.big .t{color:var(--ink)}
+.sub{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:10px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--c);border-radius:inherit;transition:width .8s ease}
+.lane.done{--c:var(--done);--cs:var(--done-soft)}
+.lane.done .dot{background:var(--c0)}
+
+.foot{font-size:13px;color:var(--muted)}
+
+/* screenshot preview */
+.sheet{position:fixed;inset:0;background:rgba(10,14,12,.6);display:grid;place-items:center;z-index:20;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet-card{background:var(--card);color:var(--ink);border-radius:16px;padding:16px;max-width:min(720px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.sheet-card img{width:100%;border-radius:10px;border:1px solid var(--line)}
+.sheet-msg{font-weight:700}
+.sheet-hint{font-size:13px;color:var(--muted)}
+.sheet-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap">
+  <div id="shot">
+    <header>
+      <div class="htext">
+        <span class="eyebrow">Clock-out countdown · 打卡机</span>
+        <h1>下班倒计时</h1>
+        <div class="now" id="now">现在 <b>--:--:--</b></div>
+      </div>
+      <button class="btn" id="snap" type="button" data-html2canvas-ignore>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        截图
+      </button>
+    </header>
+
+    <section class="lanes" id="lanes" aria-live="polite"></section>
+  </div>
+
+  <div class="foot">进度条从早上 9:00 开始算。时间按新加坡 / 马来西亚时间 (UTC+8)，周末自动放假。</div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheetMsg">
+    <div class="sheet-msg" id="sheetMsg">截图好了</div>
+    <img id="shotImg" alt="下班倒计时截图">
+    <div class="sheet-hint" id="sheetHint">手机长按图片保存，电脑右键「另存图片」。</div>
+    <div class="sheet-row"><button class="btn ghost" id="closeSheet" type="button">关闭</button></div>
+  </div>
+</div>
+
+<script>
+const PEOPLE=[
+  {name:"Terry",  off:[17,0],  c:"--me",     cs:"--me-soft"},
+  {name:"Sukee",  off:[17,30], c:"--sukee",  cs:"--sukee-soft"},
+  {name:"Shunyi", off:[18,0],  c:"--shunyi", cs:"--shunyi-soft"},
+];
+const START=[9,0];
+const QUIPS_DONE=["下班啦！冲！","自由了","已逃离公司","今日份打工完成"];
+const QUIPS_NEAR=["收拾包包了","最后冲刺","可以开始假装忙了","眼神已经飘到门口"];
+
+function sgNow(){
+  const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",hour12:false,weekday:"short",hour:"2-digit",minute:"2-digit",second:"2-digit"})
+    .formatToParts(new Date()).reduce((o,x)=>(o[x.type]=x.value,o),{});
+  return {wd:p.weekday,h:+p.hour%24,m:+p.minute,s:+p.second};
+}
+const pad=n=>String(n).padStart(2,"0");
+const lanes=document.getElementById("lanes");
+
+PEOPLE.forEach(p=>{
+  const el=document.createElement("article");
+  el.className="lane";
+  el.style.setProperty("--c0",`var(${p.c})`);
+  el.style.setProperty("--cs0",`var(${p.cs})`);
+  el.innerHTML=`<div class="row1"><div class="who"><span class="dot"></span><span class="name">${p.name}</span>
+    <span class="off">${p.off[0]-12}:${pad(p.off[1])} pm</span></div><span class="tag"></span></div>
+    <div class="big"></div><div class="sub"></div><div class="bar"><i></i></div>`;
+  p.el=el;lanes.appendChild(el);
+});
+
+function tick(){
+  const n=sgNow();
+  const nowSec=n.h*3600+n.m*60+n.s;
+  const weekend=n.wd==="Sat"||n.wd==="Sun";
+  document.querySelector("#now b").textContent=`${pad(n.h)}:${pad(n.m)}:${pad(n.s)}`;
+
+  const rows=PEOPLE.map(p=>{
+    const offSec=p.off[0]*3600+p.off[1]*60, startSec=START[0]*3600+START[1]*60;
+    return {p,left:offSec-nowSec,pct:Math.min(100,Math.max(0,(nowSec-startSec)/(offSec-startSec)*100))};
+  });
+  const firstLeft=rows.filter(r=>r.left>0).sort((a,b)=>a.left-b.left)[0];
+
+  rows.forEach((r,idx)=>{
+    const el=r.p.el, big=el.querySelector(".big"), sub=el.querySelector(".sub"), tag=el.querySelector(".tag");
+    el.classList.toggle("first",!weekend&&r===firstLeft);
+    if(weekend){
+      el.classList.add("done");
+      big.innerHTML=`<span class="t">周末</span>`;
+      sub.textContent="今天不用打工，好好休息";
+      tag.textContent="Weekend";
+      el.querySelector(".bar i").style.width="100%";
+      return;
+    }
+    const done=r.left<=0;
+    el.classList.toggle("done",done);
+    el.querySelector(".bar i").style.width=r.pct.toFixed(1)+"%";
+    if(done){
+      big.innerHTML=`<span class="t">Time −</span> 0 mins`;
+      sub.textContent=`${QUIPS_DONE[idx%QUIPS_DONE.length]} · 已下班 ${Math.floor(-r.left/60)} 分钟`;
+      tag.textContent="Off";
+    }else{
+      const mins=Math.ceil(r.left/60);
+      const h=Math.floor(r.left/3600), m=Math.floor(r.left%3600/60), s=r.left%60;
+      big.innerHTML=`<span class="t">Time −</span> ${mins} mins`;
+      sub.textContent=`${pad(h)}:${pad(m)}:${pad(s)} · ${r.left<=1800?QUIPS_NEAR[idx%QUIPS_NEAR.length]:"已完成 "+Math.floor(r.pct)+"%"}`;
+      tag.textContent=r===firstLeft?"Next out":"Working";
+    }
+  });
+}
+tick();setInterval(tick,1000);
+
+/* screenshot */
+const snapBtn=document.getElementById("snap"), sheet=document.getElementById("sheet");
+function renderShot(){
+  const bg=getComputedStyle(document.body).backgroundColor;
+  return html2canvas(document.getElementById("shot"),{backgroundColor:bg,scale:Math.min(2,window.devicePixelRatio||2),useCORS:true});
+}
+snapBtn.addEventListener("click",()=>{
+  if(typeof html2canvas!=="function"){openSheet(null,"截图工具没加载出来，刷新页面再试一次。");return;}
+  snapBtn.disabled=true;
+  const canvasP=renderShot();
+  const blobP=canvasP.then(c=>new Promise(res=>c.toBlob(res,"image/png")));
+  let copyP=Promise.reject();
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      copyP=navigator.clipboard.write([new ClipboardItem({"image/png":blobP})]);
+    }
+  }catch(e){}
+  canvasP.then(c=>{
+    const url=c.toDataURL("image/png");
+    copyP.then(()=>openSheet(url,"截图已复制，直接贴到 WhatsApp / 群里就行",true))
+         .catch(()=>openSheet(url,"截图好了"));
+  }).catch(()=>openSheet(null,"截图失败了，再按一次试试。"))
+    .finally(()=>{snapBtn.disabled=false});
+});
+function openSheet(url,msg,copied){
+  document.getElementById("sheetMsg").textContent=msg;
+  const img=document.getElementById("shotImg");
+  img.hidden=!url; if(url) img.src=url;
+  document.getElementById("sheetHint").textContent=url
+    ? (copied?"也可以长按（手机）或右键（电脑）保存图片。":"手机长按图片保存，电脑右键「另存图片」。")
+    : "";
+  sheet.hidden=false;
+  document.getElementById("closeSheet").focus();
+}
+document.getElementById("closeSheet").addEventListener("click",()=>{sheet.hidden=true;snapBtn.focus()});
+sheet.addEventListener("click",e=>{if(e.target===sheet) sheet.hidden=true});
+document.addEventListener("keydown",e=>{if(e.key==="Escape") sheet.hidden=true});
+</script>
