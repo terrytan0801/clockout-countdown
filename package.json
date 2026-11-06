@@ -1,6 +1,6 @@
 {
   "name": "clockout-countdown",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "private": true,
   "type": "module",
   "description": "Clock-out countdown app for Terry and friends: countdowns, overtime, dancing monsters and zaps.",

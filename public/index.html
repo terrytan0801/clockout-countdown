@@ -66,7 +66,7 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
 .btn{font:700 14px/1 var(--f-mono);color:var(--card);background:var(--ink);border:0;border-radius:10px;padding:12px 14px;cursor:pointer;
   display:inline-flex;align-items:center;gap:8px;min-height:42px}
 .btn:hover{opacity:.9}
-.btn:focus-visible,.chip:focus-visible,.lbtn:focus-visible,input:focus-visible,.who-btn:focus-visible,.mood:focus-visible{outline:3px solid var(--me);outline-offset:2px}
+.btn:focus-visible,.chip:focus-visible,.lbtn:focus-visible,input:focus-visible,.mood:focus-visible{outline:3px solid var(--me);outline-offset:2px}
 .btn[disabled]{opacity:.5;cursor:wait}
 .btn svg{width:18px;height:18px;flex:none}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
@@ -201,11 +201,13 @@ svg *{transform-box:view-box}
 .sheet-msg{font-family:var(--f-display);font-weight:400;font-size:19px}
 .sheet-hint{font-size:13px;color:var(--muted);margin:0}
 .sheet-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.who-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.who-btn{--mc:var(--c0);display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:10px;cursor:pointer;font-weight:900;text-align:left;min-height:48px}
-.who-btn .dot{background:var(--c0)}
-.who-btn[aria-pressed="true"]{border:2px solid var(--c0);padding:9px}
-.linkish{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer;font:700 13px var(--f-mono)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg);border-radius:12px;padding:4px}
+.tab{font:700 14px/1 var(--f-mono);border:0;border-radius:9px;padding:11px;background:transparent;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tab:focus-visible{outline:3px solid var(--me);outline-offset:2px}
+.inline-form{flex-direction:row;align-items:flex-end;gap:8px}
+.inline-form label{flex:1;min-width:0}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
 form{display:flex;flex-direction:column;gap:12px}
 label{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
 input{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
@@ -227,10 +229,10 @@ input[type=time]{font-family:var(--f-mono)}
         <div class="now"><span id="now">Now <b>--:--:--</b></span><span class="offline" id="offline" hidden>Offline · retrying</span></div>
       </div>
       <div class="actions" data-html2canvas-ignore>
-        <button class="chip" id="meChip" type="button">Pick your name</button>
-        <button class="btn ghost" id="addBtn" type="button">
+        <button class="chip" id="meChip" type="button">Log in</button>
+        <button class="btn ghost" id="inviteBtn" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 19c.8-3.2 3.2-5 6-5s5.2 1.8 6 5"/><path d="M19 8v6M16 11h6"/></svg>
-          Add friend
+          Invite
         </button>
         <button class="btn ghost" id="installBtn" type="button" hidden>Install app</button>
         <button class="btn" id="snap" type="button">
@@ -263,42 +265,62 @@ input[type=time]{font-family:var(--f-mono)}
 
   <div class="foot">
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
-    <span>Staying late? Tap <b>+ OT</b>, then <b>Clock out</b> when you finally leave.</span>
+    <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a friend to buzz their phone. Once every 10 minutes per friend.</span>
-    <span>v7.0</span>
+    <span>Friends join from their own phone: tap <b>Invite</b> and send them the link.</span>
+    <span>v8.0</span>
   </div>
 </div>
 
-<!-- who are you -->
-<div class="sheet" id="whoSheet" hidden>
-  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="whoTitle">
-    <div class="sheet-msg" id="whoTitle">Who are you?</div>
-    <p class="sheet-hint">Pick your name so friends can zap your phone. It's saved on this device.</p>
-    <div class="who-list" id="whoList"></div>
-    <div class="sheet-row" style="justify-content:space-between;align-items:center">
-      <button class="linkish" id="whoAdd" type="button">Not on the list? Add yourself</button>
-      <button class="btn ghost" id="whoClose" type="button">Close</button>
+<!-- log in / join -->
+<div class="sheet" id="authSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="sheet-msg" id="authTitle">Clock-out Countdown</div>
+    <div class="tabs" role="tablist" aria-label="Log in or join">
+      <button class="tab" role="tab" id="tabLogin" type="button" aria-selected="true">Log in</button>
+      <button class="tab" role="tab" id="tabJoin" type="button" aria-selected="false">Join</button>
     </div>
+    <form id="authForm" novalidate>
+      <label for="aName">Your name
+        <input id="aName" name="aName" maxlength="20" autocomplete="username" autocapitalize="words" required>
+      </label>
+      <label for="aTime" id="aTimeWrap" hidden>Your clock-out time
+        <input id="aTime" name="aTime" type="time" value="18:00">
+      </label>
+      <label for="aPin">PIN
+        <input id="aPin" name="aPin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="4 to 6 digits" required>
+      </label>
+      <p class="sheet-hint" id="authHint">Log in with the name and PIN you joined with.</p>
+      <div class="err" id="authErr" role="alert"></div>
+      <button class="btn" id="authSubmit" type="submit" style="justify-content:center">Log in</button>
+    </form>
   </div>
 </div>
 
-<!-- add friend -->
-<div class="sheet" id="addSheet" hidden>
-  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="addTitle">
-    <div class="sheet-msg" id="addTitle">Add a friend</div>
-    <form id="addForm" novalidate>
-      <label for="fName">Name
-        <input id="fName" name="fName" maxlength="20" placeholder="e.g. Qitai" autocomplete="off" required>
+<!-- account -->
+<div class="sheet" id="acctSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="acctTitle">
+    <div class="sheet-msg" id="acctTitle">Hi!</div>
+    <form id="acctTimeForm" class="inline-form" novalidate>
+      <label for="acctTime">Your clock-out time
+        <input id="acctTime" name="acctTime" type="time">
       </label>
-      <label for="fTime">Clock-out time
-        <input id="fTime" name="fTime" type="time" value="18:00" required>
-      </label>
-      <div class="err" id="addErr" role="alert"></div>
-      <div class="sheet-row">
-        <button class="btn ghost" id="addCancel" type="button">Cancel</button>
-        <button class="btn" id="addSubmit" type="submit">Add</button>
-      </div>
+      <button class="btn" id="acctTimeSave" type="submit">Save</button>
     </form>
+    <form id="acctPinForm" class="inline-form" novalidate>
+      <label for="acctPin">New PIN
+        <input id="acctPin" name="acctPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="4 to 6 digits">
+      </label>
+      <button class="btn ghost" id="acctPinSave" type="submit">Change PIN</button>
+    </form>
+    <div class="err" id="acctErr" role="alert"></div>
+    <div class="sheet-row" style="justify-content:space-between">
+      <button class="btn ghost danger" id="leaveBtn" type="button">Leave board</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" id="logoutBtn" type="button">Log out</button>
+        <button class="btn" id="acctClose" type="button">Done</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -377,15 +399,14 @@ const MONSTERS=[
 ];
 
 /* ================= constants & helpers ================= */
-const COLORS={"base-terry":["--me","--me-soft",0],"base-sukee":["--sukee","--sukee-soft",1],"base-shunyi":["--shunyi","--shunyi-soft",2]};
-const EXTRA=["f1","f2","f3","f4"];
+const PALETTE=[["--me","--me-soft"],["--sukee","--sukee-soft"],["--shunyi","--shunyi-soft"],["--f1","--f1-soft"],["--f2","--f2-soft"],["--f3","--f3-soft"],["--f4","--f4-soft"]];
 const START=9*3600;
 const HAPPY_BIG=["Freedom!","Peace out!","Bye, office!","Home time!","Off duty!","We out!"];
 const HAPPY_SUB=["go enjoy your evening","dinner is calling","bubble tea time","couch mode: on","you earned this","see you tomorrow, desk"];
 const OT_BIG=["Finally free!","Escaped!","Made it out!","Survived!"];
 const QUIPS_NEAR=["Packing up","Final sprint","Looking busy","Eyes on the door"];
 const QUIPS_OT=["hang in there","the grind goes on","boss owes you dinner","send snacks"];
-const LS_ME="clockout.me";
+const LS_TOKEN="clockout.token";
 
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,"0");
@@ -396,7 +417,7 @@ const mmss=ms=>{const s=Math.ceil(ms/1000);return `${Math.floor(s/60)}:${pad(s%6
 const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
 const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}};
 
-let S=null, offset=0, me=lsGet(LS_ME), lanesData=[], lastSig="";
+let S=null, offset=0, token=lsGet(LS_TOKEN), lanesData=[], lastSig="";
 const clockNow=()=>Date.now()+offset;
 function sgNow(){
   const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",hour12:false,weekday:"short",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})
@@ -407,8 +428,12 @@ let toastTimer;
 function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true},ms);}
 
 async function api(path,body){
-  const r=await fetch("/api/"+path,body?{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{cache:"no-store"});
+  const headers={};
+  if(token) headers.authorization="Bearer "+token;
+  if(body) headers["content-type"]="application/json";
+  const r=await fetch("/api/"+path,body?{method:"POST",headers,body:JSON.stringify(body)}:{headers,cache:"no-store"});
   const d=await r.json().catch(()=>({}));
+  if(r.status===401&&token&&path!=="login"){signedOut("Please log in again.");}
   if(!r.ok){const e=new Error(d.error||"Something went wrong. Try again.");e.status=r.status;e.data=d;throw e;}
   return d;
 }
@@ -416,35 +441,41 @@ async function api(path,body){
 /* ================= people & state ================= */
 function allPeople(){
   if(!S) return [];
-  const base=S.base.map(p=>{const c=COLORS[p.id]||["--f1","--f1-soft",3];return {...p,c:c[0],cs:c[1],mi:c[2],base:true};});
-  const extras=S.friends.slice().sort((a,b)=>(a.at||0)-(b.at||0)).map((f,i)=>{
-    const k=EXTRA[i%EXTRA.length];return {...f,c:`--${k}`,cs:`--${k}-soft`,mi:(i+3)%MONSTERS.length,base:false};
+  return S.people.slice().sort((a,b)=>(a.at||0)-(b.at||0)).map((p,i)=>{
+    const c=PALETTE[i%PALETTE.length];return {...p,c:c[0],cs:c[1],mi:i%MONSTERS.length};
   });
-  return base.concat(extras);
 }
+const mePerson=()=>allPeople().find(p=>p.id===S?.me);
 function applyState(d){
   S=d;offset=d.now-Date.now();
   $("offline").hidden=true;
-  const sig=JSON.stringify([d.friends,d.base,me]);
+  const sig=JSON.stringify([d.people,d.me]);
   if(sig!==lastSig){lastSig=sig;buildLanes();}
-  if(me&&!allPeople().some(p=>p.id===me)){setMe(null);return;}
-  renderMeChip();
-  if(!me&&$("whoSheet").hidden) openWho(true);
-  tick();updateBanner();
+  renderMeChip();tick();updateBanner();
 }
 async function refresh(){
+  if(!token) return;
   try{applyState(await api("state"));}
-  catch(e){$("offline").hidden=false;}
+  catch(e){if(e.status!==401) $("offline").hidden=false;}
 }
 function renderMeChip(){
-  const p=allPeople().find(x=>x.id===me), chip=$("meChip");
-  if(p){chip.innerHTML=`You're <b></b> · switch`;chip.querySelector("b").textContent=p.name;}
-  else chip.textContent="Pick your name";
+  const p=S&&mePerson(), chip=$("meChip");
+  if(p){chip.innerHTML=`You're <b></b> · account`;chip.querySelector("b").textContent=p.name;}
+  else chip.textContent="Log in";
 }
-function setMe(id){
-  me=id;lsSet(LS_ME,id);
-  lastSig="";if(S) applyState(S); else renderMeChip();
+function signedIn(d){
+  token=d.token;lsSet(LS_TOKEN,token);
+  const {token:_,...st}=d;lastSig="";applyState(st);
+  $("authSheet").hidden=true;
   syncSubscription();
+}
+async function signedOut(msg){
+  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";lanesData=[];lanes.replaceChildren();
+  // this phone should stop getting zaps meant for the old account
+  try{const sub=await currentSub();if(sub){fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}}catch(e){}
+  renderMeChip();$("banner").hidden=true;$("acctSheet").hidden=true;
+  openAuth("login");
+  if(msg) toast(msg);
 }
 
 /* ================= lanes ================= */
@@ -453,6 +484,7 @@ function buildLanes(){
   lanesData=allPeople().sort((a,b)=>(a.h*60+a.m)-(b.h*60+b.m));
   lanes.replaceChildren();
   lanesData.forEach(p=>{
+    const isMe=p.id===S.me;
     const el=document.createElement("article");
     el.className="lane";
     el.style.setProperty("--c0",`var(${p.c})`);el.style.setProperty("--cs0",`var(${p.cs})`);
@@ -463,21 +495,22 @@ function buildLanes(){
       <div class="acts" data-html2canvas-ignore></div>`;
     el.querySelector(".name").textContent=p.name;
     el.querySelector(".off").textContent=fmt12(p.h,p.m);
-    if(p.id===me){const y=document.createElement("span");y.className="you";y.textContent="You";el.querySelector(".who").appendChild(y);}
     const acts=el.querySelector(".acts");
-    if(p.id!==me){
+    if(isMe){
+      const y=document.createElement("span");y.className="you";y.textContent="You";el.querySelector(".who").appendChild(y);
+      const ot=document.createElement("button");ot.type="button";ot.className="lbtn";
+      ot.addEventListener("click",()=>onOT(el));acts.appendChild(ot);p.otBtn=ot;
+    }else{
       const z=document.createElement("button");z.type="button";z.className="lbtn zap";
       z.addEventListener("click",()=>zap(p,el,z));acts.appendChild(z);p.zapBtn=z;
     }
-    const ot=document.createElement("button");ot.type="button";ot.className="lbtn";
-    ot.addEventListener("click",()=>onOT(p,el));acts.appendChild(ot);p.otBtn=ot;
-    if(!p.base){
-      const x=document.createElement("button");x.type="button";x.className="lbtn rm";x.textContent="×";
-      x.setAttribute("aria-label",`Remove ${p.name}`);x.title=`Remove ${p.name}`;
-      x.addEventListener("click",()=>removeFriend(p,x));acts.appendChild(x);
-    }
     p.el=el;lanes.appendChild(el);
   });
+  if(lanesData.length===1){
+    const hint=document.createElement("article");hint.className="lane";hint.style.setProperty("--c0","var(--muted)");hint.style.setProperty("--cs0","var(--track)");
+    hint.innerHTML=`<div class="name">It's just you so far</div><div class="sub">Tap <b>Invite</b> and send the link to Sukee and Shunyi so they can join from their phones.</div>`;
+    lanes.appendChild(hint);
+  }
   tick();
 }
 
@@ -493,8 +526,8 @@ function laneState(p,n,nowSec){
 function tick(){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
   $("now").innerHTML=`Now <b>${pad(n.h)}:${pad(n.m)}:${pad(n.s)}</b>`;
-  if(S&&n.day!==S.day) refresh();
   if(!S) return;
+  if(n.day!==S.day){S.day=n.day;refresh();}
   const seed=+n.day.slice(8);
   const rows=lanesData.map(p=>({p,...laneState(p,n,nowSec)}));
   const firstLeft=rows.filter(r=>r.state.startsWith("before")).sort((a,b)=>a.offSec-b.offSec)[0];
@@ -529,16 +562,16 @@ function tick(){
     }else{
       big.textContent=pick(HAPPY_BIG);sub.textContent=`Off since ${fmt12(p.h,p.m)} · ${pick(HAPPY_SUB)}`;tag.textContent="Off";bar.style.width="100%";
     }
-
     el.dataset.state=state;
-    const labels={before:"+ OT","before-ot":"Cancel OT",ot:"Clock out",done:"+ OT","done-ot":"Resume OT"};
-    p.otBtn.hidden=state==="weekend";
-    if(state!=="weekend"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
 
+    if(p.otBtn){
+      const labels={before:"+ OT","before-ot":"Cancel OT",ot:"Clock out",done:"+ OT","done-ot":"Resume OT"};
+      p.otBtn.hidden=state==="weekend";
+      if(state!=="weekend"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
+    }
     if(p.zapBtn){
-      const z=p.zapBtn, ts=me&&S.zaps[`${me}>${p.id}`], wait=ts?S.cooldownMs-(clockNow()-ts):0;
+      const z=p.zapBtn, ts=S.zaps[p.id], wait=ts?S.cooldownMs-(clockNow()-ts):0;
       const reachable=S.reachable.includes(p.id);
-      z.hidden=!me;
       if(wait>0){z.disabled=true;z.textContent=`⚡ ${mmss(wait)}`;z.title=`You can zap ${p.name} again in ${mmss(wait)}`;}
       else{z.disabled=false;z.textContent=`⚡ Zap`;z.title=reachable?`Buzz ${p.name}'s phone`:`${p.name} hasn't turned on zaps yet`;}
       z.classList.toggle("muted",!reachable);
@@ -548,28 +581,27 @@ function tick(){
 
 /* ================= actions ================= */
 function zapMessage(p){
-  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, {state,offSec,o}=laneState(p,n,nowSec);
+  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, {state,offSec}=laneState(p,n,nowSec);
   if(state==="weekend") return "It's the weekend. Stop thinking about work!";
   if(state.startsWith("before")){const m=Math.ceil((offSec-nowSec)/60);return m<=30?`Only ${m} mins left. Start packing up!`:`${m} mins to go. Hang in there!`;}
   if(state==="ot") return `${Math.floor((nowSec-offSec)/60)} mins of OT already. Go home!`;
   return "You're off! Go enjoy your evening.";
 }
 async function zap(p,el,btn){
-  if(!me){openWho();return;}
   btn.disabled=true;
   try{
-    const d=await api("zap",{from:me,to:p.id,message:zapMessage(p)});
-    S.zaps[`${me}>${p.id}`]=d.at;
+    const d=await api("zap",{to:p.id,message:zapMessage(p)});
+    S.zaps[p.id]=d.at;
     el.classList.remove("zapped");void el.offsetWidth;el.classList.add("zapped");
     setTimeout(()=>el.classList.remove("zapped"),800);
     if(navigator.vibrate) navigator.vibrate(30);
     toast(d.sent>0?`Zapped ${p.name}! ⚡`:`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
   }catch(e){
-    if(e.status===429&&e.data.retryInMs){S.zaps[`${me}>${p.id}`]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
-    else toast(e.message);
+    if(e.status===429&&e.data.retryInMs){S.zaps[p.id]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
+    else if(e.status!==401) toast(e.message);
   }finally{tick();}
 }
-async function onOT(p,el){
+async function onOT(el){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
   let on,end=null;
   switch(el.dataset.state){
@@ -578,67 +610,98 @@ async function onOT(p,el){
     case "ot": on=true; end=nowSec; break;
     default: return;
   }
-  const prev=S.ot[p.id];
-  if(on) S.ot[p.id]={on,end}; else delete S.ot[p.id];
+  const prev=S.ot[S.me];
+  if(on) S.ot[S.me]={on,end}; else delete S.ot[S.me];
   tick();
-  try{applyState(await api("ot",{pid:p.id,on,end}));}
-  catch(e){if(prev) S.ot[p.id]=prev; else delete S.ot[p.id];tick();toast(e.message);}
-}
-let rmArmed=null;
-async function removeFriend(p,btn){
-  if(rmArmed!==p.id){rmArmed=p.id;btn.textContent="?";toast(`Tap × again to remove ${p.name}.`);setTimeout(()=>{if(rmArmed===p.id){rmArmed=null;btn.textContent="×";}},3000);return;}
-  rmArmed=null;
-  try{applyState(await api("friends",{action:"remove",id:p.id}));toast(`Removed ${p.name}.`);}
-  catch(e){toast(e.message);btn.textContent="×";}
+  try{applyState(await api("ot",{on,end}));}
+  catch(e){if(prev) S.ot[S.me]=prev; else delete S.ot[S.me];tick();if(e.status!==401) toast(e.message);}
 }
 
-/* ================= who / add sheets ================= */
-function openWho(forced){
-  const list=$("whoList");list.replaceChildren();
-  allPeople().forEach(p=>{
-    const b=document.createElement("button");b.type="button";b.className="who-btn";
-    b.style.setProperty("--c0",`var(${p.c})`);
-    b.setAttribute("aria-pressed",String(p.id===me));
-    b.innerHTML=`<span class="dot"></span><span></span>`;b.lastChild.textContent=p.name;
-    b.addEventListener("click",()=>{setMe(p.id);$("whoSheet").hidden=true;toast(`Hi ${p.name}!`);});
-    list.appendChild(b);
-  });
-  $("whoClose").hidden=!!forced&&!me;
-  $("whoSheet").hidden=false;
+/* ================= log in / join ================= */
+let authMode="login";
+function openAuth(mode){
+  authMode=mode;
+  $("tabLogin").setAttribute("aria-selected",String(mode==="login"));
+  $("tabJoin").setAttribute("aria-selected",String(mode==="join"));
+  $("aTimeWrap").hidden=mode!=="join";
+  $("aPin").autocomplete=mode==="join"?"new-password":"current-password";
+  $("authSubmit").textContent=mode==="join"?"Join":"Log in";
+  $("authHint").textContent=mode==="join"
+    ?"Pick a PIN you'll remember. You'll use your name and PIN to log in on any phone."
+    :"Log in with the name and PIN you joined with. New here? Tap Join.";
+  $("authErr").textContent="";
+  $("authSheet").hidden=false;
+  setTimeout(()=>$("aName").focus(),50);
 }
-$("meChip").addEventListener("click",()=>openWho());
-$("whoClose").addEventListener("click",()=>{$("whoSheet").hidden=true;});
-let addingSelf=false;
-$("whoAdd").addEventListener("click",()=>{addingSelf=true;$("whoSheet").hidden=true;openAdd();});
-function openAdd(){$("addErr").textContent="";$("addForm").reset();$("addSheet").hidden=false;$("fName").focus();}
-$("addBtn").addEventListener("click",()=>{addingSelf=false;openAdd();});
-$("addCancel").addEventListener("click",()=>{$("addSheet").hidden=true;if(addingSelf&&!me) openWho(true);addingSelf=false;});
-$("addForm").addEventListener("submit",async e=>{
+$("tabLogin").addEventListener("click",()=>openAuth("login"));
+$("tabJoin").addEventListener("click",()=>openAuth("join"));
+$("authForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const name=$("fName").value.trim(), t=$("fTime").value;
-  if(!name){$("addErr").textContent="Enter a name first.";return;}
-  if(!/^\d{2}:\d{2}$/.test(t)){$("addErr").textContent="Pick a clock-out time.";return;}
-  const [h,m]=t.split(":").map(Number);
-  const btn=$("addSubmit");btn.disabled=true;$("addErr").textContent="";
+  const name=$("aName").value.trim(), pin=$("aPin").value.trim(), err=$("authErr");
+  if(!name){err.textContent="Enter your name.";return;}
+  if(!/^\d{4,6}$/.test(pin)){err.textContent="Your PIN needs 4 to 6 digits.";return;}
+  const body={name,pin};
+  if(authMode==="join"){
+    const t=$("aTime").value;
+    if(!/^\d{2}:\d{2}$/.test(t)){err.textContent="Pick your clock-out time.";return;}
+    [body.h,body.m]=t.split(":").map(Number);
+  }
+  const btn=$("authSubmit");btn.disabled=true;err.textContent="";
   try{
-    const d=await api("friends",{action:"add",name,h,m});
-    applyState(d);$("addSheet").hidden=true;
-    if(addingSelf){const f=d.friends.find(x=>x.name.toLowerCase()===name.toLowerCase());if(f){setMe(f.id);toast(`Hi ${f.name}!`);}}
-    else toast(`Added ${name}.`);
-    addingSelf=false;
-  }catch(err){$("addErr").textContent=err.message;}
+    const d=await api(authMode==="join"?"signup":"login",body);
+    $("aPin").value="";signedIn(d);
+    const me=mePerson();toast(authMode==="join"?`Welcome, ${me.name}!`:`Hi ${me.name}!`);
+  }catch(ex){err.textContent=ex.message;}
   finally{btn.disabled=false;}
 });
+
+/* ================= account ================= */
+$("meChip").addEventListener("click",()=>{
+  if(!S){openAuth("login");return;}
+  const me=mePerson();
+  $("acctTitle").textContent=`Hi, ${me.name}`;
+  $("acctTime").value=`${pad(me.h)}:${pad(me.m)}`;$("acctPin").value="";$("acctErr").textContent="";
+  leaveArmed=false;$("leaveBtn").textContent="Leave board";
+  $("acctSheet").hidden=false;
+});
+$("acctClose").addEventListener("click",()=>{$("acctSheet").hidden=true;});
+$("acctTimeForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const t=$("acctTime").value;if(!/^\d{2}:\d{2}$/.test(t)){$("acctErr").textContent="Pick a clock-out time.";return;}
+  const [h,m]=t.split(":").map(Number);
+  try{applyState(await api("me",{action:"time",h,m}));$("acctErr").textContent="";toast(`Clock-out time set to ${fmt12(h,m)}.`);}
+  catch(ex){$("acctErr").textContent=ex.message;}
+});
+$("acctPinForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const pin=$("acctPin").value.trim();if(!/^\d{4,6}$/.test(pin)){$("acctErr").textContent="Your PIN needs 4 to 6 digits.";return;}
+  try{await api("me",{action:"pin",pin});$("acctPin").value="";$("acctErr").textContent="";toast("PIN changed.");}
+  catch(ex){$("acctErr").textContent=ex.message;}
+});
+$("logoutBtn").addEventListener("click",async()=>{
+  try{await api("logout",{});}catch(e){}
+  signedOut("Logged out.");
+});
+let leaveArmed=false;
+$("leaveBtn").addEventListener("click",async()=>{
+  if(!leaveArmed){leaveArmed=true;$("leaveBtn").textContent="Tap again to leave";return;}
+  try{await api("me",{action:"leave"});signedOut("You left the board.");}
+  catch(ex){$("acctErr").textContent=ex.message;}
+});
+
+/* ================= invite ================= */
+$("inviteBtn").addEventListener("click",async()=>{
+  const link=location.origin+"/";
+  try{await navigator.clipboard.writeText(link);toast("Link copied. Send it to your friends so they can join.");}
+  catch(e){toast(`Send your friends this link: ${link}`,6000);}
+});
+
+/* sheet closing: the log-in sheet stays until you're in */
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  $("addSheet").hidden=true;$("shotSheet").hidden=true;
-  if(me) $("whoSheet").hidden=true;
+  $("acctSheet").hidden=true;$("shotSheet").hidden=true;
 });
-["addSheet","shotSheet","whoSheet"].forEach(id=>$(id).addEventListener("click",e=>{
-  if(e.target.id!==id) return;
-  if(id==="whoSheet"&&!me) return;
-  $(id).hidden=true;
-}));
+["acctSheet","shotSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
 
 /* ================= push / zaps ================= */
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -651,13 +714,12 @@ if("serviceWorker" in navigator){
 function b64ToBytes(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0));}
 async function currentSub(){if(!swReg||!pushSupported) return null;try{return await swReg.pushManager.getSubscription();}catch(e){return null;}}
 async function syncSubscription(){
-  // If this phone already allowed notifications, make sure the server files it under the current name.
-  if(!me||!pushSupported||Notification.permission!=="granted") return;
+  // If this phone already allowed notifications, make sure the server files it under whoever is logged in.
+  if(!token||!pushSupported||Notification.permission!=="granted") return;
   const sub=await currentSub(); if(!sub) return;
-  try{await api("subscribe",{pid:me,subscription:sub.toJSON()});}catch(e){}
+  try{await api("subscribe",{subscription:sub.toJSON()});}catch(e){}
 }
 async function enableZaps(){
-  if(!me){openWho();return;}
   const btn=$("bannerBtn");btn.disabled=true;
   try{
     const perm=await Notification.requestPermission();
@@ -666,23 +728,23 @@ async function enableZaps(){
     const {publicKey}=await api("vapid");
     let sub=await reg.pushManager.getSubscription();
     if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(publicKey)});
-    await api("subscribe",{pid:me,subscription:sub.toJSON()});
+    await api("subscribe",{subscription:sub.toJSON()});
     toast("Zaps are on. Friends can buzz you now ⚡");
     await refresh();
-  }catch(e){toast(e.message||"Couldn't turn on zaps. Try again.");}
+  }catch(e){if(e.status!==401) toast(e.message||"Couldn't turn on zaps. Try again.");}
   finally{btn.disabled=false;updateBanner();}
 }
 $("bannerBtn").addEventListener("click",enableZaps);
 async function updateBanner(){
   const banner=$("banner"),text=$("bannerText"),btn=$("bannerBtn");
-  if(!me||!S){banner.hidden=true;return;}
+  if(!S){banner.hidden=true;return;}
   let msg="",showBtn=false;
   if(isIOS&&!standalone) msg=`<span class="bolt">⚡</span> On iPhone, tap <b>Share</b> then <b>Add to Home Screen</b>. Open Clock-out from your home screen to turn on zaps.`;
   else if(!pushSupported) msg="This browser can't receive zaps. Try Chrome on Android, or the home-screen app on iPhone.";
   else if(Notification.permission==="denied") msg="Notifications are blocked for this app. Allow them in your phone settings to receive zaps.";
   else{
     const sub=await currentSub();
-    if(Notification.permission==="granted"&&sub&&S.reachable.includes(me)){banner.hidden=true;return;}
+    if(Notification.permission==="granted"&&sub&&S.reachable.includes(S.me)){banner.hidden=true;return;}
     msg=`<span class="bolt">⚡</span> Turn on zaps so friends can buzz your phone.`;showBtn=true;
   }
   text.innerHTML=msg;btn.hidden=!showBtn;banner.hidden=false;
@@ -727,8 +789,8 @@ function showShot(url,msg,copied){
 $("shotClose").addEventListener("click",()=>{$("shotSheet").hidden=true;});
 
 /* ================= boot ================= */
-setMe(me);
-refresh();
+renderMeChip();
+if(token) refresh(); else openAuth("join");
 setInterval(tick,1000);
 setInterval(refresh,15000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){refresh();syncSubscription();}});

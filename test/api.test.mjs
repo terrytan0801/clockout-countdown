@@ -1,6 +1,6 @@
 // Runs the API handler against an in-memory store and a fake web-push. `npm test`
 import assert from "node:assert/strict";
-import { makeHandler, ZAP_COOLDOWN_MS } from "../netlify/lib/handler.mjs";
+import { makeHandler, ZAP_COOLDOWN_MS, LOCK_MS } from "../netlify/lib/handler.mjs";
 
 function memStore() {
   const m = new Map();
@@ -23,54 +23,70 @@ const webpush = {
 let clock = Date.UTC(2026, 10, 6, 8, 0, 0); // 4pm SG
 const store = memStore();
 const handle = makeHandler({ store, webpush, now: () => clock });
-const call = async (method, path, body) => {
-  const res = await handle(new Request("https://x.test/api/" + path, { method, body: body ? JSON.stringify(body) : undefined }));
+const call = async (method, path, body, token) => {
+  const headers = token ? { authorization: "Bearer " + token } : {};
+  const res = await handle(new Request("https://x.test/api/" + path, { method, headers, body: body ? JSON.stringify(body) : undefined }));
   return { status: res.status, data: await res.json() };
 };
 const sub = (e) => ({ endpoint: "https://push.test/" + e, keys: { p256dh: "k", auth: "a" } });
 
-let r = await call("GET", "state");
-assert.equal(r.status, 200); assert.equal(r.data.day, "2026-11-06"); assert.equal(r.data.base.length, 3);
+// signed-out access is refused
+assert.equal((await call("GET", "state")).status, 401);
+assert.equal((await call("GET", "vapid")).data.publicKey, "PUB");
 
-r = await call("GET", "vapid"); assert.equal(r.data.publicKey, "PUB");
+// join
+let r = await call("POST", "signup", { name: "Terry", h: 17, m: 0, pin: "1234" });
+assert.equal(r.status, 200); assert.ok(r.data.token); const terry = r.data.token; const terryId = r.data.me;
+assert.equal(r.data.people[0].hash, undefined, "PIN hash must not leak");
+r = await call("POST", "signup", { name: "terry", h: 17, m: 0, pin: "9999" }); assert.equal(r.status, 409);
+r = await call("POST", "signup", { name: "Sukee", h: 17, m: 30, pin: "12" }); assert.equal(r.status, 400);
+r = await call("POST", "signup", { name: "Sukee", h: 17, m: 30, pin: "5555" }); const sukee = r.data.token; const sukeeId = r.data.me;
+assert.equal(r.data.people.length, 2);
 
-r = await call("POST", "friends", { action: "add", name: "Qitai", h: 18, m: 30 });
-assert.equal(r.status, 200); assert.equal(r.data.friends.length, 1);
-const qid = r.data.friends[0].id;
-r = await call("POST", "friends", { action: "add", name: "qitai", h: 18, m: 30 }); assert.equal(r.status, 409);
-r = await call("POST", "friends", { action: "add", name: "Bad", h: 25, m: 0 }); assert.equal(r.status, 400);
+// login + lockout
+r = await call("POST", "login", { name: "sukee", pin: "5555" }); assert.equal(r.status, 200); assert.equal(r.data.me, sukeeId);
+r = await call("POST", "login", { name: "Nobody", pin: "1111" }); assert.equal(r.status, 401); assert.match(r.data.error, /Join/);
+for (let i = 0; i < 4; i++) { r = await call("POST", "login", { name: "Sukee", pin: "0000" }); assert.equal(r.status, 401); }
+r = await call("POST", "login", { name: "Sukee", pin: "0000" }); assert.match(r.data.error, /Too many/);
+r = await call("POST", "login", { name: "Sukee", pin: "5555" }); assert.equal(r.status, 429, "locked even with right PIN");
+clock += LOCK_MS + 1000;
+r = await call("POST", "login", { name: "Sukee", pin: "5555" }); assert.equal(r.status, 200);
 
-r = await call("POST", "ot", { pid: "base-sukee", on: true, end: null });
-assert.deepEqual(r.data.ot["base-sukee"], { on: true, end: null });
-r = await call("POST", "ot", { pid: "base-sukee", on: true, end: 66600 });
-assert.equal(r.data.ot["base-sukee"].end, 66600);
-r = await call("POST", "ot", { pid: "base-sukee", on: false }); assert.equal(r.data.ot["base-sukee"], undefined);
-r = await call("POST", "ot", { pid: "nobody", on: true }); assert.equal(r.status, 404);
+// OT only ever applies to the caller
+r = await call("POST", "ot", { pid: terryId, on: true, end: null }, sukee);
+assert.deepEqual(r.data.ot[sukeeId], { on: true, end: null }); assert.equal(r.data.ot[terryId], undefined);
+r = await call("POST", "ot", { on: false }, sukee); assert.equal(r.data.ot[sukeeId], undefined);
 
-r = await call("POST", "subscribe", { pid: "base-sukee", subscription: sub("phone1") }); assert.equal(r.status, 200);
-r = await call("POST", "subscribe", { pid: "base-sukee", subscription: sub("gone1") }); assert.equal(r.status, 200);
-r = await call("GET", "state"); assert.deepEqual(r.data.reachable, ["base-sukee"]);
+// change own time
+r = await call("POST", "me", { action: "time", h: 18, m: 15 }, sukee);
+assert.equal(r.data.people.find((p) => p.id === sukeeId).h, 18);
 
-r = await call("POST", "zap", { from: "base-terry", to: "base-sukee", message: "88 mins to go" });
-assert.equal(r.status, 200); assert.equal(r.data.sent, 1);
-assert.equal(pushed[0].payload.title, "⚡ Zap from Terry!"); assert.equal(pushed[0].payload.body, "88 mins to go");
-// dead subscription got pruned
-assert.equal(JSON.parse(store._m.get("subs/base-sukee")).length, 1);
+// push + zap
+await call("POST", "subscribe", { subscription: sub("phone1") }, sukee);
+await call("POST", "subscribe", { subscription: sub("gone1") }, sukee);
+r = await call("GET", "state", null, terry); assert.deepEqual(r.data.reachable, [sukeeId]);
+r = await call("POST", "zap", { to: sukeeId, message: "88 mins to go" }, terry);
+assert.equal(r.data.sent, 1); assert.equal(pushed[0].payload.title, "⚡ Zap from Terry!");
+assert.equal(JSON.parse(store._m.get(`subs/${sukeeId}`)).length, 1, "dead subscription pruned");
+r = await call("POST", "zap", { to: sukeeId }, terry); assert.equal(r.status, 429);
+r = await call("GET", "state", null, terry); assert.ok(r.data.zaps[sukeeId]);
+r = await call("POST", "zap", { to: terryId }, sukee); assert.equal(r.data.sent, 0);
+r = await call("POST", "zap", { to: terryId }, terry); assert.equal(r.status, 400);
+clock += ZAP_COOLDOWN_MS + 1;
+r = await call("POST", "zap", { to: sukeeId }, terry); assert.equal(r.status, 200);
 
-r = await call("POST", "zap", { from: "base-terry", to: "base-sukee" }); assert.equal(r.status, 429); assert.ok(r.data.retryInMs > 0);
-r = await call("POST", "zap", { from: "base-shunyi", to: "base-sukee" }); assert.equal(r.status, 200); // different pair is fine
-r = await call("GET", "state"); assert.ok(r.data.zaps["base-terry>base-sukee"]);
-clock += ZAP_COOLDOWN_MS + 1000;
-r = await call("POST", "zap", { from: "base-terry", to: "base-sukee" }); assert.equal(r.status, 200);
-r = await call("POST", "zap", { from: "base-terry", to: "base-terry" }); assert.equal(r.status, 400);
-r = await call("POST", "zap", { from: "base-terry", to: qid }); assert.equal(r.data.sent, 0); // not subscribed
+// the same phone switching to Terry leaves Sukee
+await call("POST", "subscribe", { subscription: sub("phone1") }, terry);
+r = await call("GET", "state", null, terry); assert.deepEqual(r.data.reachable, [terryId]);
 
-// moving a phone to another person removes it from the first
-r = await call("POST", "subscribe", { pid: qid, subscription: sub("phone1") });
-r = await call("GET", "state"); assert.deepEqual(r.data.reachable, [`${qid}`].map((x) => x));
+// change PIN, log out, leave
+assert.equal((await call("POST", "me", { action: "pin", pin: "4321" }, terry)).status, 200);
+assert.equal((await call("POST", "login", { name: "Terry", pin: "1234" })).status, 401);
+const terry2 = (await call("POST", "login", { name: "Terry", pin: "4321" })).data.token;
+await call("POST", "logout", null, terry2);
+assert.equal((await call("GET", "state", null, terry2)).status, 401);
+r = await call("POST", "me", { action: "leave" }, sukee); assert.equal(r.status, 200);
+r = await call("GET", "state", null, terry); assert.equal(r.data.people.length, 1);
+assert.equal((await call("GET", "state", null, sukee)).status, 401);
 
-r = await call("POST", "friends", { action: "remove", id: qid }); assert.equal(r.data.friends.length, 0);
-assert.equal(store._m.has(`subs/${qid}`), false);
-
-r = await call("GET", "nope"); assert.equal(r.status, 404);
 console.log("All API checks passed.");
