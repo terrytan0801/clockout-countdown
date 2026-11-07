@@ -154,4 +154,79 @@ assert.equal((await call("POST", "signup", { name: "Winnie", h: 18, m: 0, pin: "
   assert.equal(s._m.has("people"), false);
 }
 
+/* ---------------- usage stats + admin ---------------- */
+{
+  const s = memStore();
+  clock = Date.UTC(2026, 10, 6, 1, 0, 0); // Fri 9:00 am SG
+  const { call: c } = setup(s);
+  const ADMIN = "jxh56-gkkz6-2qgjs-yhak2";
+  const admin = async (days = 30, key = ADMIN) => {
+    const res = await makeHandler({ store: s, webpush, now: () => clock })(new Request("https://x.test/api/admin/stats?days=" + days, { headers: key ? { "x-admin-key": key } : {} }));
+    return { status: res.status, data: await res.json() };
+  };
+  assert.equal((await admin(30, null)).status, 401);
+  assert.equal((await admin(30, "wrong")).status, 401);
+  assert.equal((await admin(30)).status, 200, "default admin key works");
+  {
+    const h = makeHandler({ store: s, webpush, now: () => clock, adminKey: "my-own-key" });
+    const res = await h(new Request("https://x.test/api/admin/stats", { headers: { "x-admin-key": ADMIN } }));
+    assert.equal(res.status, 401, "ADMIN_KEY replaces the default");
+  }
+
+  const T = (await c("POST", "signup", { name: "Terry", h: 17, m: 0, pin: "1234" })).data;
+  const K = (await c("POST", "signup", { name: "Sukee", h: 17, m: 30, pin: "5555" })).data;
+  const code = (await c("POST", "cave", { action: "create", name: "Cave" }, T.token)).data.cave.code;
+  await c("POST", "cave", { action: "join", code }, K.token);
+
+  // Terry: open, 3 one-minute pings, leave for 10 minutes, open again
+  await c("POST", "ping", { open: true }, T.token);
+  for (let i = 0; i < 3; i++) { clock += 60e3; await c("POST", "ping", {}, T.token); }
+  clock += 10 * 60e3;
+  await c("POST", "ping", { open: true }, T.token);
+  clock += 60e3; await c("POST", "ping", {}, T.token);
+  // Sukee opens once
+  await c("POST", "ping", { open: true }, K.token);
+
+  await c("POST", "subscribe", { subscription: sub("k1") }, K.token);
+  await c("POST", "zap", { to: K.data?.me?.id ?? K.me.id }, T.token);
+  await c("POST", "zap", { to: T.me.id }, K.token); // Terry has no phone on file
+  await c("POST", "chat", { text: "secret plans" }, T.token);
+  await c("POST", "chat", { text: "hi" }, T.token);
+  await c("POST", "chat", { text: "yo" }, K.token);
+
+  let r = await admin(7);
+  const t = r.data.people.find((p) => p.name === "Terry"), k = r.data.people.find((p) => p.name === "Sukee");
+  assert.equal(t.opens, 2, "two opens");
+  assert.equal(t.seconds, 240, "4 minutes in the app (the 10-minute gap doesn't count)");
+  assert.equal(t.zapsSent, 1); assert.equal(t.zapsReceived, 1); assert.equal(k.zapsReceived, 1);
+  assert.equal(t.sentTo[k.id], 1); assert.equal(k.receivedFrom[t.id], 1);
+  assert.equal(t.messages, 2); assert.equal(k.messages, 1);
+  assert.ok(t.lastSeen && k.lastSeen >= t.lastSeen, "Sukee opened the app after Terry");
+  assert.equal(r.data.totals.people, 2); assert.equal(r.data.totals.activeToday, 2);
+  assert.equal(r.data.totals.zaps, 2); assert.equal(r.data.totals.messages, 3); assert.equal(r.data.totals.signups, 2);
+  assert.equal(r.data.daily.length, 7); assert.equal(r.data.daily.at(-1).active, 2);
+  const results = r.data.recent.filter((e) => e.kind === "zap").map((e) => e.result).sort();
+  assert.deepEqual(results, ["b", "n"], "Sukee's phone buzzed; Terry had no phone on file");
+  assert.ok(!JSON.stringify(r.data).includes("secret plans"), "message text never reaches stats");
+  assert.equal(r.data.caves[0].members, 2);
+
+  // next day: last opened still known, today's numbers reset
+  clock += 864e5;
+  r = await admin(7);
+  assert.ok(r.data.people.find((p) => p.name === "Terry").lastSeen);
+  assert.equal(r.data.totals.activeToday, 0);
+
+  // old stats are pruned after 90 days
+  clock += 91 * 864e5;
+  r = await admin(90);
+  assert.equal([...s._m.keys()].filter((x) => x.startsWith("ev/") || x.startsWith("use/")).length, 0);
+
+  // deleting an account removes their stats
+  clock += 1000;
+  await c("POST", "ping", { open: true }, K.token);
+  await c("POST", "zap", { to: T.me.id }, K.token);
+  await c("POST", "me", { action: "delete" }, K.token);
+  assert.equal([...s._m.keys()].filter((x) => x.includes(K.me.id) && (x.startsWith("ev/") || x.startsWith("use/"))).length, 0);
+}
+
 console.log("All API checks passed.");

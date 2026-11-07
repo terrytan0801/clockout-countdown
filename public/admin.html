@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Clock-out Admin</title>
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<link rel="stylesheet" href="/monsters.css">
+<style>
+/* Layout: admin console for the app owner. Summary tiles first, then the daily-active chart,
+   then the people table (tap a row for one person's detail), then zap log and caves side by side. */
+:root{
+  --bg:#eef3ef; --card:#ffffff; --ink:#18231d; --muted:#5f6f66; --line:#d5dfd8; --grid:#e6ece8; --track:#e3ebe6; --danger:#c43c3c; --accent:#ff6b3d;
+  --bar:#0fa37f; --bar-hover:#0b7c61; --good:#0f7a5c; --quiet:#8a6500;
+  --eye:#ffffff; --pupil:#18231d; --lap:#3a4640; --lap-hi:#9aa8a0; --sweat:#57b7f0; --stem:#f4ece0; --stem-edge:#ddd0bc;
+  --c-orange:#ff6b3d; --c-orange-soft:#ffe4da;  --c-red:#e5484d;    --c-red-soft:#fde2e3;
+  --c-pink:#e0458b;   --c-pink-soft:#fde0ec;    --c-violet:#7a5cff; --c-violet-soft:#e8e2ff;
+  --c-indigo:#4f5bd5; --c-indigo-soft:#e2e5fb;  --c-blue:#2a8fd6;   --c-blue-soft:#dcedfa;
+  --c-cyan:#0e9fb5;   --c-cyan-soft:#d4f2f6;    --c-teal:#0fa37f;   --c-teal-soft:#d6f3ea;
+  --c-green:#5f8a1e;  --c-green-soft:#e5f0d3;   --c-amber:#c2701b;  --c-amber-soft:#f8e6d2;
+  --c-gold:#b8900a;   --c-gold-soft:#fbf0c4;    --c-brown:#8a5a3c;  --c-brown-soft:#f1e3d8;
+  --f-display:"Bungee",system-ui,sans-serif;
+  --f-body:"Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --grid:#222d27; --track:#222d27; --danger:#ff7b7b; --accent:#ff7f57;
+  --bar:#2cc79e; --bar-hover:#5fdcb8; --good:#2cc79e; --quiet:#ffc933;
+  --eye:#ffffff; --pupil:#101613; --lap:#56645c; --lap-hi:#8b9a92; --sweat:#7cc8ff; --stem:#ece3d4; --stem-edge:#bfb3a0;
+  --c-orange:#ff7f57; --c-orange-soft:#3a2219;  --c-red:#ff6b6f;    --c-red-soft:#3b1a1c;
+  --c-pink:#ff6fa8;   --c-pink-soft:#3d1a2a;    --c-violet:#9d86ff; --c-violet-soft:#2a2342;
+  --c-indigo:#7e89ff; --c-indigo-soft:#1e2240;  --c-blue:#5cb3ff;   --c-blue-soft:#16293b;
+  --c-cyan:#3fcfe3;   --c-cyan-soft:#12303a;    --c-teal:#2cc79e;   --c-teal-soft:#163229;
+  --c-green:#9ccf4f;  --c-green-soft:#243317;   --c-amber:#f0a050;  --c-amber-soft:#3a2814;
+  --c-gold:#ffc933;   --c-gold-soft:#3a3014;    --c-brown:#c99673;  --c-brown-soft:#33241a;
+  color-scheme:dark}}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:max(16px,env(safe-area-inset-top,0px));padding-bottom:max(32px,env(safe-area-inset-bottom,0px))}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.eyebrow{font:500 12px/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6vw,40px);line-height:1.05;margin:2px 0 0}
+h2{font-size:16px;font-weight:900;margin:0}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--track);border-radius:11px;padding:4px}
+.seg button{font:700 13px/1 var(--f-mono);border:0;border-radius:8px;padding:10px 12px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.btn{font:700 13px/1 var(--f-mono);color:var(--card);background:var(--ink);border:0;border-radius:10px;padding:11px 13px;cursor:pointer;min-height:40px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn[disabled]{opacity:.5;cursor:wait}
+.updated{margin:-8px 0 0;font:500 12px var(--f-mono);color:var(--muted)}
+.err{color:var(--danger);font-size:13px;min-height:1em;margin:0}
+
+.gate{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:420px;display:flex;flex-direction:column;gap:12px}
+.gate p{margin:0;color:var(--muted);font-size:14px}
+input{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+#keyInput{font-family:var(--f-mono)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .k{font:700 11px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--f-display);font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.panel-head p{margin:0;font-size:13px;color:var(--muted)}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .axis{font:500 11px var(--f-mono);fill:var(--muted)}
+.chart .bar{fill:var(--bar)}
+.chart .hit{fill:transparent;cursor:crosshair}
+.chart .hit:hover + .bar,.chart g.on .bar{fill:var(--bar-hover)}
+.chart .empty{font:500 13px var(--f-body);fill:var(--muted)}
+details.tableview summary{cursor:pointer;font:700 12px var(--f-mono);color:var(--muted)}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--card);border-radius:10px;padding:8px 10px;font:500 12px/1.5 var(--f-mono);
+  box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:240px}
+.tip b{font-weight:700}
+
+.search{max-width:260px}
+.table-wrap{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:13px}
+th{font:700 11px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+th button{all:unset;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+th button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+th[aria-sort] button::after{content:"";font-size:10px}
+th[aria-sort="descending"] button::after{content:"▼"}
+th[aria-sort="ascending"] button::after{content:"▲"}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--bg)}
+.who{display:flex;align-items:center;gap:10px}
+.who .avatar{width:34px;height:34px;flex:none;border-radius:10px;background:var(--soft);padding:2px}
+.who b{font-weight:900}
+.who small{display:block;color:var(--muted);font-size:12px;line-height:1.2}
+.fresh{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px;vertical-align:middle}
+.dim{color:var(--muted)}
+
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:420px;overflow:auto}
+.log li{display:flex;gap:10px;align-items:baseline;justify-content:space-between;padding:7px 4px;border-bottom:1px solid var(--line);font-size:14px}
+.log li:last-child{border-bottom:0}
+.log .when{font:500 12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.pill{font:700 10px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 7px;border:1px solid currentColor;margin-left:6px;white-space:nowrap}
+.pill.b{color:var(--good)} .pill.q{color:var(--quiet)} .pill.n{color:var(--muted)}
+
+.sheet{position:fixed;inset:0;background:rgba(10,14,12,.6);display:grid;place-items:end center;z-index:20;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+@media (min-width:700px){.sheet{place-items:center}}
+.sheet-card{background:var(--card);border-radius:18px;padding:18px;width:min(640px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.p-head{display:flex;gap:14px;align-items:center}
+.p-head .mon{width:84px;height:84px;flex:none}
+.p-head h3{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0;line-height:1.1}
+.p-head p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.stat{background:var(--bg);border-radius:12px;padding:10px 12px}
+.stat .k{font:700 10px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:700 18px/1.3 var(--f-mono);font-variant-numeric:tabular-nums}
+.section-label{font:700 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:2px 0 -4px}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:grid;grid-template-columns:minmax(0,9em) 1fr 2.5em;gap:8px;align-items:center;font-size:14px}
+.rank .track{height:8px;border-radius:999px;background:var(--track);overflow:hidden}
+.rank .fill{display:block;height:100%;border-radius:999px;background:var(--bar)}
+.rank .n{text-align:right;font:700 13px var(--f-mono)}
+.rank .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.none{color:var(--muted);font-size:13px;margin:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Clock-out Countdown · Admin</div>
+      <h1>Usage</h1>
+    </div>
+    <div class="controls" id="controls" hidden>
+      <div class="seg" role="group" aria-label="Date range">
+        <button type="button" data-days="7" aria-pressed="false">7 days</button>
+        <button type="button" data-days="30" aria-pressed="true">30 days</button>
+        <button type="button" data-days="90" aria-pressed="false">90 days</button>
+      </div>
+      <button class="btn ghost" id="refreshBtn" type="button">Refresh</button>
+      <button class="btn ghost" id="lockBtn" type="button">Lock</button>
+    </div>
+  </header>
+
+  <form class="gate" id="gate" hidden novalidate>
+    <h2>Admin key</h2>
+    <p>Enter the admin key to see how people use Clock-out. This device will remember it until you tap Lock.</p>
+    <input id="keyInput" name="keyInput" type="password" autocomplete="off" spellcheck="false" placeholder="xxxxx-xxxxx-xxxxx-xxxxx" aria-label="Admin key">
+    <p class="err" id="gateErr" role="alert"></p>
+    <button class="btn" id="gateBtn" type="submit">Open dashboard</button>
+  </form>
+
+  <main id="dash" hidden style="display:flex;flex-direction:column;gap:18px">
+    <p class="updated" id="updated"></p>
+    <section class="tiles" id="tiles" aria-label="Summary"></section>
+
+    <section class="panel" aria-labelledby="dailyTitle">
+      <div class="panel-head">
+        <h2 id="dailyTitle">Daily active people</h2>
+        <p>People who opened the app each day. Hover or tap a day for details.</p>
+      </div>
+      <div class="chart" id="dailyChart"></div>
+      <details class="tableview"><summary>Show as table</summary><div class="table-wrap"><table id="dailyTable"></table></div></details>
+    </section>
+
+    <section class="panel" aria-labelledby="peopleTitle">
+      <div class="panel-head">
+        <h2 id="peopleTitle">People</h2>
+        <input class="search" id="search" type="search" placeholder="Search names or caves" aria-label="Search people">
+      </div>
+      <div class="table-wrap"><table id="peopleTable"></table></div>
+      <p class="none" id="peopleNone" hidden>No one matches that search.</p>
+    </section>
+
+    <div class="two">
+      <section class="panel" aria-labelledby="zapTitle">
+        <div class="panel-head"><h2 id="zapTitle">Recent zaps</h2><p>Latest 50</p></div>
+        <ul class="log" id="zapLog"></ul>
+      </section>
+      <section class="panel" aria-labelledby="caveTitle">
+        <div class="panel-head"><h2 id="caveTitle">Caves</h2></div>
+        <ul class="log" id="caveList"></ul>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="sheet" id="personSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="pName">
+    <div class="p-head"><div class="mon dance" id="pMon"></div><div><h3 id="pName"></h3><p id="pMeta"></p></div></div>
+    <div class="stats" id="pStats"></div>
+    <div class="section-label">Time in the app per day</div>
+    <div class="chart" id="pChart"></div>
+    <div class="cols">
+      <div><div class="section-label" style="margin-bottom:10px">Zapped</div><ul class="rank" id="pSentTo"></ul></div>
+      <div><div class="section-label" style="margin-bottom:10px">Zapped by</div><ul class="rank" id="pFrom"></ul></div>
+    </div>
+    <div class="section-label">Recent activity</div>
+    <ul class="log" id="pLog" style="max-height:260px"></ul>
+    <div style="display:flex;justify-content:flex-end"><button class="btn" id="pClose" type="button">Done</button></div>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<script src="/monsters.js"></script>
+<script>
+"use strict";
+const LS_KEY="clockout.adminKey";
+const $=id=>document.getElementById(id);
+const COLOR_KEYS=["orange","red","pink","violet","indigo","blue","cyan","teal","green","amber","gold","brown"];
+const colorVar=k=>`var(--c-${COLOR_KEYS.includes(k)?k:"orange"})`;
+const softVar=k=>`var(--c-${COLOR_KEYS.includes(k)?k:"orange"}-soft)`;
+const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}};
+let key=lsGet(LS_KEY), days=30, D=null, sortKey="lastSeen", sortDir=-1, timer=null;
+
+/* ---------- formatting ---------- */
+const sgFmt=(ms,opts)=>new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",...opts}).format(new Date(ms));
+const dayShort=d=>sgFmt(Date.parse(d+"T12:00:00+08:00"),{day:"numeric",month:"short"});
+const dayLong=d=>sgFmt(Date.parse(d+"T12:00:00+08:00"),{weekday:"short",day:"numeric",month:"short"});
+const timeOf=ms=>sgFmt(ms,{hour:"numeric",minute:"2-digit",hour12:true}).replace(" "," ");
+function when(ms){
+  const today=D.today, d=sgFmt(ms,{year:"numeric",month:"2-digit",day:"2-digit"}).split("/").reverse().join("-");
+  if(d===today) return timeOf(ms);
+  return `${sgFmt(ms,{day:"numeric",month:"short"})}, ${timeOf(ms)}`;
+}
+function ago(ms){
+  if(!ms) return "Never";
+  const s=Math.max(0,(D.now-ms)/1000);
+  if(s<120) return "Just now";
+  if(s<3600) return `${Math.floor(s/60)} min ago`;
+  if(s<86400) return `${Math.floor(s/3600)} h ago`;
+  const d=Math.floor(s/86400); return d===1?"Yesterday":`${d} days ago`;
+}
+function dur(sec){
+  if(!sec) return "0m";
+  if(sec<60) return "<1m";
+  const h=Math.floor(sec/3600), m=Math.round(sec%3600/60);
+  return h?`${h}h ${m}m`:`${m}m`;
+}
+const num=n=>new Intl.NumberFormat("en-GB").format(n);
+
+/* ---------- loading ---------- */
+async function load(){
+  if(!key){showGate();return;}
+  $("refreshBtn").disabled=true;
+  try{
+    const r=await fetch(`/api/admin/stats?days=${days}`,{headers:{"x-admin-key":key},cache:"no-store"});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){lsSet(LS_KEY,null);key=null;showGate("That admin key didn't work.");return;}
+    if(!r.ok) throw new Error(d.error||"The server didn't answer. Try Refresh.");
+    D=d;render();
+  }catch(e){$("updated").textContent=e.message;}
+  finally{$("refreshBtn").disabled=false;}
+}
+function showGate(msg){
+  $("gate").hidden=false;$("dash").hidden=true;$("controls").hidden=true;
+  $("gateErr").textContent=msg||"";setTimeout(()=>$("keyInput").focus(),30);
+}
+$("gate").addEventListener("submit",e=>{
+  e.preventDefault();
+  const v=$("keyInput").value.trim();
+  if(!v){$("gateErr").textContent="Enter the admin key.";return;}
+  key=v;lsSet(LS_KEY,v);$("keyInput").value="";load();
+});
+$("lockBtn").addEventListener("click",()=>{lsSet(LS_KEY,null);key=null;D=null;showGate();});
+$("refreshBtn").addEventListener("click",load);
+document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+  days=Number(b.dataset.days);document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));load();
+}));
+
+/* ---------- render ---------- */
+const byId=()=>Object.fromEntries(D.people.map(p=>[p.id,p]));
+const nameOf=id=>{const p=byId()[id];return p?p.name:"Former member";};
+function monEl(p,mood,cls=""){
+  const d=document.createElement("div");d.className=`mon ${mood} ${cls}`.trim();
+  d.style.setProperty("--mc",colorVar(p.color));d.innerHTML=MONSTERS[(p.monster||0)%MONSTERS.length].svg;return d;
+}
+function render(){
+  $("gate").hidden=true;$("dash").hidden=false;$("controls").hidden=false;
+  $("updated").textContent=`Updated ${timeOf(D.now)} · Singapore time · last ${D.days} days`;
+  renderTiles();renderDaily();renderPeople();renderZaps();renderCaves();
+  if(!$("personSheet").hidden&&openPid) openPerson(openPid);
+}
+function renderTiles(){
+  const t=D.totals, box=$("tiles");box.replaceChildren();
+  const items=[
+    ["People",num(t.people),`${num(t.signups)} joined in ${D.days} days`],
+    ["Active today",num(t.activeToday),t.people?`${Math.round(t.activeToday/t.people*100)}% of everyone`:""],
+    ["Active this week",num(t.active7),"opened the app in the last 7 days"],
+    ["Time in app",dur(t.seconds),`all people, last ${D.days} days`],
+    ["Zaps",num(t.zaps),`sent in ${D.days} days`],
+    ["Messages",num(t.messages),`sent in ${D.days} days · ${num(t.caves)} ${t.caves===1?"cave":"caves"}`],
+  ];
+  items.forEach(([k,v,s])=>{
+    const el=document.createElement("div");el.className="tile";
+    el.innerHTML=`<span class="k"></span><span class="v"></span><span class="s"></span>`;
+    el.querySelector(".k").textContent=k;el.querySelector(".v").textContent=v;el.querySelector(".s").textContent=s;
+    box.appendChild(el);
+  });
+}
+
+/* one bar chart helper: series of {label, value, tip(html)} */
+const tip=$("tip");
+function showTip(html,x,y){tip.innerHTML=html;tip.hidden=false;
+  const r=tip.getBoundingClientRect();let L=x+14,T=y-r.height-10;
+  if(L+r.width>innerWidth-8) L=x-r.width-14; if(T<8) T=y+14; tip.style.left=L+"px";tip.style.top=T+"px";}
+function hideTip(){tip.hidden=true;}
+function niceMax(v){if(v<=6) return Math.max(1,Math.ceil(v));const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;return (n<=1?1:n<=2?2:n<=5?5:10)*p;}
+function barChart(box,data,{height=200,fmt=v=>String(v),empty="No activity yet."}={}){
+  box.replaceChildren();
+  const W=Math.max(300,box.clientWidth||600), H=height, padL=34, padR=6, padT=10, padB=24;
+  const max=niceMax(Math.max(0,...data.map(d=>d.value)));
+  const ns="http://www.w3.org/2000/svg", svg=document.createElementNS(ns,"svg");
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("role","img");
+  const total=data.reduce((a,d)=>a+d.value,0);
+  svg.setAttribute("aria-label",`${data.length} days, total ${fmt(total)}`);
+  const plotW=W-padL-padR, plotH=H-padT-padB, step=plotW/data.length, bw=Math.max(2,Math.min(28,step-2));
+  const y=v=>padT+plotH-(v/max)*plotH;
+  const ticks=max<=6?[...Array(max+1).keys()]:[0,max/2,max];
+  ticks.forEach(t=>{
+    const l=document.createElementNS(ns,"line");l.setAttribute("class","gl");l.setAttribute("x1",padL);l.setAttribute("x2",W-padR);l.setAttribute("y1",y(t));l.setAttribute("y2",y(t));svg.appendChild(l);
+    const tx=document.createElementNS(ns,"text");tx.setAttribute("class","axis");tx.setAttribute("x",padL-6);tx.setAttribute("y",y(t)+4);tx.setAttribute("text-anchor","end");tx.textContent=fmt(t);svg.appendChild(tx);
+  });
+  const every=Math.ceil(data.length/(W<500?5:8));
+  data.forEach((d,i)=>{
+    const g=document.createElementNS(ns,"g");
+    const cx=padL+step*i+step/2;
+    const hit=document.createElementNS(ns,"rect");hit.setAttribute("class","hit");hit.setAttribute("x",padL+step*i);hit.setAttribute("y",padT);hit.setAttribute("width",step);hit.setAttribute("height",plotH);
+    g.appendChild(hit);
+    if(d.value>0){
+      const h=Math.max(2,plotH*(d.value/max)), x=cx-bw/2, top=padT+plotH-h, r=Math.min(4,bw/2,h);
+      const p=document.createElementNS(ns,"path");p.setAttribute("class","bar");
+      p.setAttribute("d",`M${x},${padT+plotH} V${top+r} Q${x},${top} ${x+r},${top} H${x+bw-r} Q${x+bw},${top} ${x+bw},${top+r} V${padT+plotH} Z`);
+      g.appendChild(p);
+    }
+    if(i%every===every-1||i===data.length-1&&data.length<=every){
+      const tx=document.createElementNS(ns,"text");tx.setAttribute("class","axis");tx.setAttribute("x",cx);tx.setAttribute("y",H-6);tx.setAttribute("text-anchor","middle");tx.textContent=d.label;svg.appendChild(tx);
+    }
+    const on=e=>{g.classList.add("on");showTip(d.tip,e.clientX,e.clientY);};
+    hit.addEventListener("pointermove",on);hit.addEventListener("pointerdown",on);
+    hit.addEventListener("pointerleave",()=>{g.classList.remove("on");hideTip();});
+    svg.appendChild(g);
+  });
+  if(!total){const tx=document.createElementNS(ns,"text");tx.setAttribute("class","empty");tx.setAttribute("x",padL+plotW/2);tx.setAttribute("y",padT+plotH/2);tx.setAttribute("text-anchor","middle");tx.textContent=empty;svg.appendChild(tx);}
+  box.appendChild(svg);
+}
+function renderDaily(){
+  const data=D.daily.map(d=>({label:dayShort(d.day),value:d.active,
+    tip:`<b>${dayLong(d.day)}</b><br>${d.active} active ${d.active===1?"person":"people"}<br>${dur(d.seconds)} in the app · ${d.opens} opens<br>${d.zaps} zaps · ${d.messages} messages${d.signups?`<br>${d.signups} joined`:""}`}));
+  barChart($("dailyChart"),data,{height:220});
+  const t=$("dailyTable");t.innerHTML=`<thead><tr><th>Day</th><th class="num">Active</th><th class="num">Time</th><th class="num">Opens</th><th class="num">Zaps</th><th class="num">Messages</th><th class="num">Joined</th></tr></thead>`;
+  const tb=document.createElement("tbody");
+  D.daily.slice().reverse().forEach(d=>{const tr=document.createElement("tr");tr.style.cursor="default";
+    [dayLong(d.day),d.active,dur(d.seconds),d.opens,d.zaps,d.messages,d.signups].forEach((v,i)=>{const td=document.createElement("td");if(i) td.className="num";td.textContent=v;tr.appendChild(td);});tb.appendChild(tr);});
+  t.appendChild(tb);
+}
+const COLS=[
+  {k:"name",label:"Person",num:false},
+  {k:"lastSeen",label:"Last opened",num:false},
+  {k:"opens",label:"Opens",num:true},
+  {k:"seconds",label:"Time in app",num:true},
+  {k:"zapsSent",label:"Zaps sent",num:true},
+  {k:"zapsReceived",label:"Zapped",num:true},
+  {k:"messages",label:"Messages",num:true},
+  {k:"joinedAt",label:"Joined",num:false},
+];
+function renderPeople(){
+  const q=$("search").value.trim().toLowerCase();
+  let rows=D.people.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.caveName||"").toLowerCase().includes(q));
+  rows.sort((a,b)=>{const x=a[sortKey]??-1, y=b[sortKey]??-1;
+    if(typeof x==="string") return x.localeCompare(y)*sortDir; return (x-y)*sortDir;});
+  const t=$("peopleTable");t.replaceChildren();
+  const thead=document.createElement("thead"),hr=document.createElement("tr");
+  COLS.forEach(c=>{const th=document.createElement("th");if(c.num) th.className="num";
+    if(c.k===sortKey) th.setAttribute("aria-sort",sortDir<0?"descending":"ascending");
+    const b=document.createElement("button");b.type="button";b.textContent=c.label;
+    b.addEventListener("click",()=>{if(sortKey===c.k) sortDir*=-1; else {sortKey=c.k;sortDir=c.k==="name"?1:-1;} renderPeople();});
+    th.appendChild(b);hr.appendChild(th);});
+  thead.appendChild(hr);t.appendChild(thead);
+  const tb=document.createElement("tbody");
+  rows.forEach(p=>{
+    const tr=document.createElement("tr");tr.tabIndex=0;tr.setAttribute("aria-label",`${p.name}, open details`);
+    const who=document.createElement("td");const w=document.createElement("div");w.className="who";w.style.setProperty("--soft",softVar(p.color));
+    w.appendChild(monEl(p,"dance","still avatar"));
+    const nm=document.createElement("div");nm.innerHTML="<b></b><small></small>";nm.querySelector("b").textContent=p.name;nm.querySelector("small").textContent=p.caveName||"No cave";
+    w.appendChild(nm);who.appendChild(w);tr.appendChild(who);
+    const last=document.createElement("td");
+    if(p.lastSeen&&D.now-p.lastSeen<5*60e3){const dot=document.createElement("span");dot.className="fresh";dot.title="In the app now";last.appendChild(dot);}
+    last.appendChild(document.createTextNode(ago(p.lastSeen)));if(!p.lastSeen) last.className="dim";tr.appendChild(last);
+    [num(p.opens),dur(p.seconds),num(p.zapsSent),num(p.zapsReceived),num(p.messages)].forEach(v=>{const td=document.createElement("td");td.className="num";td.textContent=v;tr.appendChild(td);});
+    const j=document.createElement("td");j.className="dim";j.textContent=sgFmt(p.joinedAt,{day:"numeric",month:"short",year:"numeric"});tr.appendChild(j);
+    const open=()=>openPerson(p.id);
+    tr.addEventListener("click",open);tr.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  $("peopleNone").hidden=rows.length>0||!q;
+}
+$("search").addEventListener("input",()=>D&&renderPeople());
+const RESULT={b:["Buzzed","b"],q:["Quiet","q"],n:["No phone yet","n"]};
+function zapLi(e){
+  const li=document.createElement("li");
+  const l=document.createElement("span");l.textContent=`${nameOf(e.from)} ⚡ ${nameOf(e.to)}`;
+  const r=RESULT[e.result]||RESULT.n, pill=document.createElement("span");pill.className="pill "+r[1];pill.textContent=r[0];l.appendChild(pill);
+  const w=document.createElement("span");w.className="when";w.textContent=when(e.at);
+  li.append(l,w);return li;
+}
+function renderZaps(){
+  const ul=$("zapLog");ul.replaceChildren();
+  const z=D.recent.filter(e=>e.kind==="zap").slice(0,50);
+  if(!z.length){const li=document.createElement("li");li.className="dim";li.textContent="No zaps yet.";ul.appendChild(li);return;}
+  z.forEach(e=>ul.appendChild(zapLi(e)));
+}
+function renderCaves(){
+  const ul=$("caveList");ul.replaceChildren();
+  if(!D.caves.length){const li=document.createElement("li");li.className="dim";li.textContent="No caves yet.";ul.appendChild(li);return;}
+  D.caves.slice().sort((a,b)=>b.members-a.members).forEach(c=>{
+    const li=document.createElement("li");const l=document.createElement("span");
+    l.innerHTML="<b></b> <span class='dim'></span>";l.querySelector("b").textContent=c.name;
+    l.querySelector(".dim").textContent=`· ${c.members} ${c.members===1?"member":"members"} · owner ${nameOf(c.owner)}`;
+    const w=document.createElement("span");w.className="when";w.textContent=`since ${sgFmt(c.at,{day:"numeric",month:"short"})}`;
+    li.append(l,w);ul.appendChild(li);
+  });
+}
+
+/* ---------- one person ---------- */
+let openPid=null;
+function rankList(ul,counts){
+  ul.replaceChildren();
+  const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length){const li=document.createElement("li");li.className="none";li.style.display="block";li.textContent="No one yet.";ul.appendChild(li);return;}
+  const max=rows[0][1];
+  rows.slice(0,8).forEach(([id,n])=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span class="nm"></span><span class="track"><span class="fill"></span></span><span class="n"></span>`;
+    li.querySelector(".nm").textContent=nameOf(id);li.querySelector(".fill").style.width=(n/max*100)+"%";li.querySelector(".n").textContent=n;
+    ul.appendChild(li);
+  });
+}
+function activityText(e,pid){
+  switch(e.kind){
+    case "login": return "Logged in";
+    case "signup": return "Joined Clock-out";
+    case "msg": return "Sent a message";
+    case "zap": return e.from===pid?`Zapped ${nameOf(e.to)}`:`Zapped by ${nameOf(e.from)}`;
+    case "cave": return {create:"Started a cave",join:"Joined a cave",leave:"Left a cave",kick:"Was removed from a cave"}[e.action]||"Cave change";
+  }
+  return e.kind;
+}
+function openPerson(pid){
+  const p=byId()[pid];if(!p) return;openPid=pid;
+  const m=$("pMon");m.replaceWith(Object.assign(monEl(p,"dance"),{id:"pMon"}));
+  $("pName").textContent=p.name;
+  $("pMeta").textContent=`${p.caveName||"No cave"} · clocks out ${sgFmt(Date.UTC(2026,0,1,p.h-8,p.m),{hour:"numeric",minute:"2-digit",hour12:true})} · buzz ${p.buzz?"on":"off"} · joined ${sgFmt(p.joinedAt,{day:"numeric",month:"short",year:"numeric"})}`;
+  const st=$("pStats");st.replaceChildren();
+  [["Last opened",ago(p.lastSeen)],["Opens",num(p.opens)],["Time in app",dur(p.seconds)],
+   ["Per active day",p.activeDays?dur(Math.round(p.seconds/p.activeDays)):"0m"],["Active days",`${p.activeDays} of ${D.days}`],
+   ["Zaps sent",num(p.zapsSent)],["Zapped",num(p.zapsReceived)],["Messages",num(p.messages)]].forEach(([k,v])=>{
+    const d=document.createElement("div");d.className="stat";d.innerHTML=`<div class="k"></div><div class="v"></div>`;
+    d.querySelector(".k").textContent=k;d.querySelector(".v").textContent=v;st.appendChild(d);});
+  $("personSheet").hidden=false;
+  const data=D.dayList.map(day=>{const u=p.perDay[day]||{seconds:0,opens:0};
+    return {label:dayShort(day),value:Math.round(u.seconds/60),tip:`<b>${dayLong(day)}</b><br>${dur(u.seconds)} in the app<br>${u.opens} ${u.opens===1?"open":"opens"}`};});
+  barChart($("pChart"),data,{height:150,fmt:v=>`${v}m`,empty:"Hasn't opened the app in this range."});
+  rankList($("pSentTo"),p.sentTo);rankList($("pFrom"),p.receivedFrom);
+  const ul=$("pLog");ul.replaceChildren();
+  const evs=D.recent.filter(e=>e.pid===pid||e.from===pid||e.to===pid).slice(0,25);
+  if(!evs.length){const li=document.createElement("li");li.className="dim";li.textContent="Nothing recorded yet.";ul.appendChild(li);}
+  evs.forEach(e=>{
+    if(e.kind==="zap"){const li=zapLi(e);li.firstChild.firstChild.textContent=activityText(e,pid);ul.appendChild(li);return;}
+    const li=document.createElement("li");const l=document.createElement("span");l.textContent=activityText(e,pid);
+    const w=document.createElement("span");w.className="when";w.textContent=when(e.at);li.append(l,w);ul.appendChild(li);
+  });
+}
+$("pClose").addEventListener("click",()=>{$("personSheet").hidden=true;openPid=null;hideTip();});
+$("personSheet").addEventListener("click",e=>{if(e.target.id==="personSheet"){$("personSheet").hidden=true;openPid=null;hideTip();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("personSheet").hidden=true;openPid=null;hideTip();}});
+
+let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(D){renderDaily();if(openPid) openPerson(openPid);}},150);});
+setInterval(()=>{if(key&&document.visibilityState==="visible") load();},60000);
+load();
+</script>
+</body>
+</html>

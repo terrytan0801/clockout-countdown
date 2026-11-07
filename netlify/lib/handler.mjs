@@ -15,6 +15,7 @@
 //   vapid                      {publicKey, privateKey}
 //   meta/v9                    marks the v8 -> v9 migration as done
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
+import { makeStats } from "./stats.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
 export const LOCK_AFTER = 5;
@@ -49,7 +50,8 @@ const newCode = () => Array.from({ length: 6 }, () => CODE_ALPHABET[randomInt(CO
 const publicPerson = ({ id, name, h, m, color, monster }) => ({ id, name, h, m, color, monster });
 const chatKeyTs = (key) => Number(key.split("/").pop().split("-")[0]);
 
-export function makeHandler({ store, webpush, now = () => Date.now() }) {
+export function makeHandler({ store, webpush, now = () => Date.now(), adminKey = null }) {
+  const stats = makeStats({ store, now, adminKey });
   const getJSON = async (key, fallback = null) => (await store.get(key, { type: "json" })) ?? fallback;
   const exists = async (key) => (await store.getMetadata(key)) !== null;
   const keys = async (prefix) => (await store.list({ prefix })).blobs.map((b) => b.key);
@@ -235,6 +237,16 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
     try {
       await migrate();
 
+      /* ---------- admin (admin key, not a log-in) ---------- */
+      if (route.startsWith("admin/")) {
+        if (!stats.isAdmin(req)) return json({ error: "That admin key didn't work." }, 401);
+        if (route === "admin/stats" && method === "GET") {
+          const days = [7, 30, 90].includes(Number(url.searchParams.get("days"))) ? Number(url.searchParams.get("days")) : 30;
+          return json(await stats.report(days));
+        }
+        return json({ error: "Not found." }, 404);
+      }
+
       /* ---------- signed out ---------- */
       if (route === "vapid" && method === "GET") return json({ publicKey: (await vapidKeys()).publicKey });
 
@@ -250,6 +262,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
         const salt = randomBytes(16).toString("hex");
         const person = { id, name, h: body.h, m: body.m, color, monster: randomInt(MONSTER_COUNT), buzz: true, cave: null, at: now(), salt, hash: hashPin(body.pin, salt) };
         await putPerson(person);
+        await stats.log("signup", id);
         const token = await newSession(id);
         return json({ token, ...(await state(person)) });
       }
@@ -271,6 +284,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
             left > 0 ? `Wrong passcode. ${left} ${left === 1 ? "try" : "tries"} left.` : "Too many wrong passcodes. Try again in 10 minutes." }, 401);
         }
         await store.delete(lk);
+        await stats.log("login", p.id);
         const token = await newSession(p.id);
         return json({ token, ...(await state(p)) });
       }
@@ -281,6 +295,8 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
       let { me } = a;
 
       if (route === "state" && method === "GET") return json(await state(me));
+
+      if (route === "ping" && method === "POST") { await stats.ping(me.id, body.open === true); return json({ ok: true }); }
 
       if (route === "logout" && method === "POST") { await store.delete(`sessions/${a.token}`); return json({ ok: true }); }
 
@@ -301,6 +317,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
           }
           case "delete":
             await leaveCave(me);
+            await stats.forget(me.id);
             await Promise.all([`person/${me.id}`, `uname/${nameKey(me.name)}`, `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
             return json({ ok: true });
           default:
@@ -322,6 +339,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
             await store.setJSON(`cave/${cid}`, { id: cid, name, owner: me.id, code, at: now() });
             const err = await joinCave(me, cid);
             if (err) return json({ error: err.error }, err.status);
+            await stats.log("cave", me.id, cid, "create");
             me = { ...me, cave: cid };
             return json(await state(me));
           }
@@ -339,14 +357,16 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
             if (!target) return json({ error: "That invite code doesn't match any cave." }, 404);
             if (me.cave === cid) return json(await state(me));
             if (me.cave && body.switch !== true) return json({ error: "You're already in a cave.", needsSwitch: true, from: cave?.name }, 409);
-            if (me.cave) { await leaveCave(me); me = await getPerson(me.id); }
+            if (me.cave) { await stats.log("cave", me.id, me.cave, "leave"); await leaveCave(me); me = await getPerson(me.id); }
             const err = await joinCave(me, cid);
             if (err) return json({ error: err.error }, err.status);
+            await stats.log("cave", me.id, cid, "join");
             me = { ...me, cave: cid };
             return json(await state(me));
           }
           case "leave":
             if (!me.cave) return json(await state(me));
+            await stats.log("cave", me.id, me.cave, "leave");
             await leaveCave(me);
             me = { ...me, cave: null };
             return json(await state(me));
@@ -370,6 +390,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
             if (pid === me.id) return json({ error: "Use Leave cave to leave." }, 400);
             const target = await getPerson(pid);
             if (!target || target.cave !== cave.id) return json({ error: "They're not in this cave." }, 404);
+            await stats.log("cave", target.id, cave.id, "kick");
             await leaveCave(target);
             return json(await state(me));
           }
@@ -420,6 +441,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
           body: cleanText(body.message, 140) || `${me.name} zapped you.`,
           tag: `zap-${me.id}`, url: "/", buzz, from: me.name,
         });
+        await stats.log("zap", me.id, to.id, sent < 1 ? "n" : buzz ? "b" : "q");
         return json({ ok: true, sent, at: t, buzz });
       }
 
@@ -440,6 +462,7 @@ export function makeHandler({ store, webpush, now = () => Date.now() }) {
           const id = `${String(at).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
           const msg = { id, pid: me.id, name: me.name, color: me.color, monster: me.monster, text, at };
           await store.setJSON(prefix + id, msg);
+          await stats.log("msg", me.id, me.cave);
           const all = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
           if (all.length > CHAT_KEEP) await Promise.all(all.slice(0, all.length - CHAT_KEEP).map((k) => store.delete(k)));
           return json({ message: msg });

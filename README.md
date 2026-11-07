@@ -1,4 +1,4 @@
-# Clock-out Countdown · v10.0
+# Clock-out Countdown · v11.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -10,6 +10,19 @@ A phone app (PWA) where friends live together in a **cave** and count down to cl
 - **Cave chat.** Messages show the sender's monster (in its current mood) and colour. No push for chat; a red dot shows unread messages.
 - **Loading screen.** The app stays on a loading screen until your login is checked. Each visit plays a different monster scene (tag, a meeting, the night shift, a race to the exit). Signed out, the log-in card sits on top of the scene and you only go in after logging in.
 - **Accounts.** Join with a unique name, clock-out time, colour and a passcode (4+ characters). 5 wrong passcodes lock that name for 10 minutes.
+
+## Admin page
+
+Open `/admin` on the site (for example `https://splendid-gnome-120c81.netlify.app/admin`) and enter the admin key. It shows:
+
+- people, active today and this week, total time in the app, zaps and messages
+- a daily active people chart (7, 30 or 90 days)
+- a table of everyone: last opened, opens, time in app, zaps sent and received, messages, joined date. Tap a person for their daily time chart, who they zapped, who zapped them and their recent activity
+- the latest zaps (buzzed, quiet, or no phone yet) and all caves
+
+How it's measured: the app sends a small check-in when it opens and once a minute while it's on screen. Coming back after 5+ minutes away counts as a new open. What messages say is never recorded, only how many were sent. Stats are kept for 90 days, and deleting an account deletes that person's stats. New users see a short notice about this on the Join card.
+
+The admin key isn't stored in the code, only its SHA-256 hash. To change the key, add an environment variable `ADMIN_KEY` in Netlify (Project configuration → Environment variables, scope: Functions) and redeploy.
 
 ## About vibration
 
@@ -39,6 +52,8 @@ public/sw.js                service worker: shows zaps, keeps the app installabl
 public/manifest.webmanifest, public/icons/
 netlify/functions/api.mjs   /api/* endpoint (Netlify Function)
 netlify/lib/handler.mjs     API: accounts, caves, chat, overtime, zaps, v8 migration
+netlify/lib/stats.mjs       usage stats and the admin report
+public/admin.html           admin page (/admin)
 test/api.test.mjs           npm test: API checks against an in-memory store
-test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs
+test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs (SEED=1 adds demo data)
 ```

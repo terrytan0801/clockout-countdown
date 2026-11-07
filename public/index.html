@@ -388,7 +388,7 @@ body.booting{overflow:hidden}
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>v10.0</span>
+    <span>v11.0</span>
   </div>
 </div>
 
@@ -416,6 +416,7 @@ body.booting{overflow:hidden}
         <input id="aPin" name="aPin" type="password" maxlength="32" autocomplete="new-password" placeholder="At least 4 characters" required>
       </label>
       <p class="sheet-hint" id="authHint"></p>
+      <p class="sheet-hint" id="statsNote">Clock-out keeps simple usage stats: when you open the app, how long you stay, zaps and how many messages you send. What your messages say is never part of the stats.</p>
       <div class="err" id="authErr" role="alert"></div>
       <button class="btn" id="authSubmit" type="submit">Join</button>
     </form>
@@ -582,9 +583,17 @@ function applyState(d){
     if(sig!==lastSig){lastSig=sig;buildLanes();}
   }else{lastSig="";lanesData=[];$("lanes").replaceChildren();}
   renderChrome();tick();updateBanner();updateUnread();
+  if(!usageStarted){usageStarted=true;ping(true);}
   if(!$("caveSheet").hidden) renderCaveSheet();
   checkInvite();
 }
+/* usage stats: a small check-in when the app opens and once a minute while it's on screen */
+let usageStarted=false;
+function ping(open){
+  if(!token||!S) return;
+  fetch("/api/ping",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+token},body:JSON.stringify({open:!!open}),keepalive:true}).catch(()=>{});
+}
+setInterval(()=>{if(document.visibilityState==="visible") ping(false);},60000);
 async function refresh(){
   if(!token||!S) return;
   try{applyState(await api("state"));}
@@ -928,7 +937,7 @@ function openAuth(mode){
   authMode=mode;
   $("tabLogin").setAttribute("aria-selected",String(mode==="login"));
   $("tabJoin").setAttribute("aria-selected",String(mode==="join"));
-  $("aTimeWrap").hidden=mode!=="join";$("aColorWrap").hidden=mode!=="join";
+  $("aTimeWrap").hidden=mode!=="join";$("aColorWrap").hidden=mode!=="join";$("statsNote").hidden=mode!=="join";
   $("aPin").autocomplete=mode==="join"?"new-password":"current-password";
   $("authSubmit").textContent=mode==="join"?"Join":"Log in";
   $("authHint").textContent=mode==="join"
@@ -970,7 +979,7 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";lanesData=[];view="board";resetChat();
+  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";usageStarted=false;lanesData=[];view="board";resetChat();
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   $("banner").hidden=true;renderChrome();
@@ -1248,7 +1257,7 @@ if(token) bootLoad();
 else setTimeout(()=>showSplashForAuth("join"),1200);
 setInterval(tick,1000);
 setInterval(refresh,15000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){refresh();syncSubscription();if(view==="chat") loadChat();}});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){ping(true);refresh();syncSubscription();if(view==="chat") loadChat();}});
 </script>
 </body>
 </html>
