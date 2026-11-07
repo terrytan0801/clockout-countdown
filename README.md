@@ -1,37 +1,43 @@
-# Clock-out Countdown · v8.0
+# Clock-out Countdown · v9.0
 
-A phone app (PWA) for Terry, Sukee, Shunyi and friends:
+A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
-- Live **Time − XX mins** countdown to everyone's clock-out (Singapore / Malaysia time).
-- **+ OT** when someone stays late. The card counts **Time + XX mins** until they tap **Clock out**.
-- **⚡ Zap** a friend to buzz their phone with a push notification. One zap per friend every 10 minutes.
-- Each person has a monster in their colour: **typing at a laptop** while working, **exhausted** on overtime, **dancing** once they're off.
-- Everyone **joins from their own phone** with their name, clock-out time and a 4–6 digit PIN, then logs in with name + PIN. You can only set your own overtime and time, and zaps are always sent as you. 5 wrong PINs lock that name for 10 minutes.
-- **Invite** copies the link to send to friends. **Account** lets you change your time or PIN, log out, or leave the board.
-- Take a screenshot of the board.
+- **Caves.** Start a cave, then send its invite link or 6-letter code to friends. You live in one cave at a time. The owner can rename the cave, make a new code (the old link stops working) and remove people. If the owner leaves, the next member takes over. An empty cave is deleted.
+- **Countdown.** Each person sees **Time − XX mins** to their own clock-out (Singapore / Malaysia time). **+ OT** when staying late, then **Clock out** when leaving.
+- **Monsters.** Ten monsters (Jelly, Cyclo, Noodle, Spike, Bun, Tako, Mush, Chomp, Fluff, Dino). You get one when you join and keep it. It types at a laptop while you work, wilts on overtime and dances when you're off.
+- **Colours.** Pick your colour from 12 when you join, and change it any time in your account.
+- **⚡ Zap.** Buzz a cave-mate's phone with a push notification, once every 10 minutes per person. Each person decides with **Let friends buzz my phone** whether zaps vibrate or arrive quietly.
+- **Cave chat.** Messages show the sender's monster (in its current mood) and colour. No push for chat; a red dot shows unread messages.
+- **Accounts.** Join with a unique name, clock-out time, colour and a passcode (4+ characters). 5 wrong passcodes lock that name for 10 minutes.
 
-## Deploy on Netlify (one time)
+## About vibration
 
-1. Go to [app.netlify.com](https://app.netlify.com) → **Add new project** → **Import an existing project** → **GitHub**.
-2. Pick `terrytan0801/clockout-countdown`.
-3. Leave the settings as they are (they come from `netlify.toml`) and click **Deploy**.
-4. Optional: **Project configuration → Change project name** to get a nicer link, e.g. `clockout-terry.netlify.app`.
+Web apps can't force a custom vibration on someone else's phone.
 
-There are no environment variables or keys to set up. The push keys are generated automatically the first time someone turns on zaps, and all data is kept in Netlify Blobs (store `clockout`, Singapore region).
+- **Android:** with the app open, a zap vibrates in a long pattern. With the app closed, the notification vibrates the way the phone's notification settings say (on by default).
+- **iPhone:** web apps can't control vibration. A zap vibrates once like any notification, following the phone's sound and vibration settings.
+- With **Let friends buzz my phone** off, zaps arrive as silent notifications.
 
-Every push to `main` redeploys automatically.
+## Deploy on Netlify
+
+The site is connected to this repo, so every push to `main` redeploys. For a fresh setup: **Add new project → Import an existing project → GitHub →** `terrytan0801/clockout-countdown` **→ Deploy**. No environment variables are needed. All data is kept in Netlify Blobs (store `clockout`, Singapore region), and push keys are generated automatically.
+
+Data from v8 (one shared board) is moved automatically into a cave called **The Original Cave**. Everyone keeps their name, passcode, monster and login.
 
 ## Installing on a phone
 
-- **iPhone (iOS 16.4+):** open the link in Safari → **Share** → **Add to Home Screen**. Open **Clock-out** from the home screen, **Join** (or **Log in**), then tap **Turn on zaps**. Zaps only work from the home-screen app on iPhone.
-- **Android:** open the link in Chrome → **Install app** (or menu → **Add to Home screen**), **Join** (or **Log in**), tap **Turn on zaps**.
+- **iPhone (iOS 16.4+):** open the link in Safari → **Share** → **Add to Home Screen**. Open **Clock-out** from the home screen, join, then tap **Turn on zaps**. Zaps only work from the home-screen app on iPhone.
+- **Android:** open the link in Chrome → **Install app** (or menu → **Add to Home screen**), join, tap **Turn on zaps**.
 
 ## Project layout
 
 ```
-public/                  the app (index.html, service worker, manifest, icons)
-netlify/functions/api.mjs  /api/* endpoint (Netlify Function)
-netlify/lib/handler.mjs    API logic: join/log in, overtime, push subscriptions, zaps
-test/api.test.mjs          npm test: API checks against an in-memory store
-test/dev-server.mjs        local preview with a fake store: node test/dev-server.mjs
+public/index.html           the app
+public/monsters.js|.css     the 10 monsters and their moods
+public/sw.js                service worker: shows zaps, keeps the app installable
+public/manifest.webmanifest, public/icons/
+netlify/functions/api.mjs   /api/* endpoint (Netlify Function)
+netlify/lib/handler.mjs     API: accounts, caves, chat, overtime, zaps, v8 migration
+test/api.test.mjs           npm test: API checks against an in-memory store
+test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs
 ```

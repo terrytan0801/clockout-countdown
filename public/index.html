@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Clock-out Countdown</title>
-<meta name="description" content="Countdown to clock-out for Terry and friends. Zap a friend, track overtime, watch the monsters dance.">
+<meta name="description" content="Count down to clock-out with your cave of friends. Zap each other, chat, and watch the monsters dance.">
 <meta name="theme-color" content="#eef3ef" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101613" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -17,30 +17,37 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<link rel="stylesheet" href="/monsters.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
-/* Layout: punch-clock board. Clock + "you" chip on top, a zap banner when push isn't on yet,
-   then one lane per person. Every lane has a monster: typing at a laptop while working,
-   wilting on overtime, dancing once off. */
+/* Layout: punch-clock board for one cave. Header (cave name, clock, account/cave chips),
+   a Board | Chat switch, then either the lanes (one per cave member, monster in each) or the cave chat.
+   Without a cave you land in the lobby: join with a code or start a cave. */
 :root{
-  --bg:#eef3ef; --card:#ffffff; --ink:#18231d; --muted:#5f6f66; --line:#d5dfd8; --track:#e3ebe6; --danger:#c43c3c;
-  --me:#ff6b3d; --sukee:#7a5cff; --shunyi:#0fa37f; --done-soft:#fff1c2; --done-ink:#8a6500;
-  --me-soft:#ffe4da; --sukee-soft:#e8e2ff; --shunyi-soft:#d6f3ea;
-  --f1:#e0458b; --f2:#2a8fd6; --f3:#c2701b; --f4:#5f8a1e;
-  --f1-soft:#fde0ec; --f2-soft:#dcedfa; --f3-soft:#f8e6d2; --f4-soft:#e5f0d3;
-  --eye:#ffffff; --pupil:#18231d; --lap:#3a4640; --lap-hi:#9aa8a0; --sweat:#57b7f0; --zap:#ffd23f;
+  --bg:#eef3ef; --card:#ffffff; --ink:#18231d; --muted:#5f6f66; --line:#d5dfd8; --track:#e3ebe6; --danger:#c43c3c; --accent:#ff6b3d;
+  --done-soft:#fff1c2; --done-ink:#8a6500;
+  --eye:#ffffff; --pupil:#18231d; --lap:#3a4640; --lap-hi:#9aa8a0; --sweat:#57b7f0; --zap:#ffd23f; --stem:#f4ece0; --stem-edge:#ddd0bc;
+  --c-orange:#ff6b3d; --c-orange-soft:#ffe4da;  --c-red:#e5484d;    --c-red-soft:#fde2e3;
+  --c-pink:#e0458b;   --c-pink-soft:#fde0ec;    --c-violet:#7a5cff; --c-violet-soft:#e8e2ff;
+  --c-indigo:#4f5bd5; --c-indigo-soft:#e2e5fb;  --c-blue:#2a8fd6;   --c-blue-soft:#dcedfa;
+  --c-cyan:#0e9fb5;   --c-cyan-soft:#d4f2f6;    --c-teal:#0fa37f;   --c-teal-soft:#d6f3ea;
+  --c-green:#5f8a1e;  --c-green-soft:#e5f0d3;   --c-amber:#c2701b;  --c-amber-soft:#f8e6d2;
+  --c-gold:#b8900a;   --c-gold-soft:#fbf0c4;    --c-brown:#8a5a3c;  --c-brown-soft:#f1e3d8;
   --f-display:"Bungee",system-ui,sans-serif;
   --f-body:"Noto Sans SC",system-ui,-apple-system,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --track:#222d27; --danger:#ff7b7b;
-  --me:#ff7f57; --sukee:#9d86ff; --shunyi:#2cc79e; --done-soft:#3a3014; --done-ink:#ffc933;
-  --me-soft:#3a2219; --sukee-soft:#2a2342; --shunyi-soft:#163229;
-  --f1:#ff6fa8; --f2:#5cb3ff; --f3:#f0a050; --f4:#9ccf4f;
-  --f1-soft:#3d1a2a; --f2-soft:#16293b; --f3-soft:#3a2814; --f4-soft:#243317;
-  --eye:#ffffff; --pupil:#101613; --lap:#56645c; --lap-hi:#8b9a92; --sweat:#7cc8ff; --zap:#ffd23f;
+  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --track:#222d27; --danger:#ff7b7b; --accent:#ff7f57;
+  --done-soft:#3a3014; --done-ink:#ffc933;
+  --eye:#ffffff; --pupil:#101613; --lap:#56645c; --lap-hi:#8b9a92; --sweat:#7cc8ff; --stem:#ece3d4; --stem-edge:#bfb3a0;
+  --c-orange:#ff7f57; --c-orange-soft:#3a2219;  --c-red:#ff6b6f;    --c-red-soft:#3b1a1c;
+  --c-pink:#ff6fa8;   --c-pink-soft:#3d1a2a;    --c-violet:#9d86ff; --c-violet-soft:#2a2342;
+  --c-indigo:#7e89ff; --c-indigo-soft:#1e2240;  --c-blue:#5cb3ff;   --c-blue-soft:#16293b;
+  --c-cyan:#3fcfe3;   --c-cyan-soft:#12303a;    --c-teal:#2cc79e;   --c-teal-soft:#163229;
+  --c-green:#9ccf4f;  --c-green-soft:#243317;   --c-amber:#f0a050;  --c-amber-soft:#3a2814;
+  --c-gold:#ffc933;   --c-gold-soft:#3a3014;    --c-brown:#c99673;  --c-brown-soft:#33241a;
   color-scheme:dark}}
 
 *{box-sizing:border-box}
@@ -51,33 +58,43 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);fo
   -webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;-webkit-user-select:none;user-select:none}
 [hidden]{display:none!important}
-.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 #shot{display:flex;flex-direction:column;gap:14px;background:var(--bg);padding:4px}
+#shot.zapped{animation:shake .5s ease}
 
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .htext{display:flex;flex-direction:column;gap:2px;min-width:0}
 .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);line-height:1.05;margin:0;text-wrap:balance}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);line-height:1.05;margin:0;text-wrap:balance;overflow-wrap:anywhere}
 .now{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .now b{color:var(--ink);font-weight:700}
 .offline{font-size:12px;color:var(--danger)}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 
 .btn{font:700 14px/1 var(--f-mono);color:var(--card);background:var(--ink);border:0;border-radius:10px;padding:12px 14px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:8px;min-height:42px}
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;text-decoration:none}
 .btn:hover{opacity:.9}
-.btn:focus-visible,.chip:focus-visible,.lbtn:focus-visible,input:focus-visible,.mood:focus-visible{outline:3px solid var(--me);outline-offset:2px}
 .btn[disabled]{opacity:.5;cursor:wait}
 .btn svg{width:18px;height:18px;flex:none}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-.chip{font:700 13px/1 var(--f-mono);border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 12px;cursor:pointer;color:var(--ink)}
-.chip b{color:var(--me)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.chip{font:700 13px/1 var(--f-mono);border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 12px 8px 8px;cursor:pointer;color:var(--ink);
+  display:inline-flex;align-items:center;gap:8px;min-height:42px}
+.chip .mini{width:26px;height:26px}
+.chip b{color:var(--ink)}
+
+/* Board | Chat switch */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--track);border-radius:12px;padding:4px;max-width:360px}
+.seg button{font:700 14px/1 var(--f-mono);border:0;border-radius:9px;padding:11px;background:transparent;color:var(--muted);cursor:pointer;position:relative}
+.seg button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.unread{position:absolute;top:7px;right:calc(50% - 34px);width:9px;height:9px;border-radius:50%;background:var(--danger)}
 
 .banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--card);border:1px dashed var(--line);
   border-radius:14px;padding:12px 14px}
 .banner p{margin:0;font-size:14px;min-width:0;flex:1 1 220px}
-.banner .bolt{font-family:var(--f-display);color:var(--done-ink)}
 
+/* lanes */
 .lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
 .lane{--c:var(--c0);--cs:var(--cs0);--mc:var(--c0);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
   display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-content:start;min-width:0;container-type:inline-size;position:relative}
@@ -95,6 +112,7 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
 .big .t{color:var(--ink)}
 .mid{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .sub{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:0;padding-bottom:4px}
+.lane .mon{width:78px;height:78px;flex:none;margin:-16px -6px -4px 0}
 .bar{height:10px;border-radius:999px;background:var(--track);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--c);border-radius:inherit;transition:width .8s ease}
 .lane.overtime .bar i{background:repeating-linear-gradient(45deg,var(--c) 0 8px,var(--cs) 8px 16px);background-size:22.63px 22.63px;animation:slide 1s linear infinite}
@@ -103,80 +121,48 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
 .lbtn{font:700 13px/1 var(--f-mono);height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--c);background:transparent;color:var(--c);cursor:pointer;white-space:nowrap;
   display:inline-flex;align-items:center;gap:6px}
 .lbtn:hover{background:var(--cs)}
-.lbtn.zap{background:var(--c);color:var(--card);border-color:var(--c)}
+.lbtn.zap{background:var(--c);color:var(--card)}
 .lbtn.zap[disabled]{background:var(--cs);color:var(--c);cursor:default}
 .lbtn.zap.muted{opacity:.75}
 .lbtn.solid{background:var(--c);color:var(--card)}
-.lbtn.rm{margin-left:auto;border-color:var(--line);color:var(--muted);width:36px;justify-content:center;padding:0}
-.lbtn.rm:hover{color:var(--danger);border-color:var(--danger);background:transparent}
 .lane.zapped{animation:shake .5s ease}
 .lane.zapped::after{content:"";position:absolute;inset:-2px;border-radius:16px;border:3px solid var(--zap);animation:flash .7s ease forwards;pointer-events:none}
+.lane.hint{--c0:var(--muted);--cs0:var(--track);border-style:dashed}
+.lane.hint p{margin:0;font-size:14px;color:var(--muted)}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-4px) rotate(-.6deg)}40%{transform:translateX(4px) rotate(.6deg)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
 @keyframes flash{from{opacity:1}to{opacity:0}}
 
-/* ---------- monsters ---------- */
-.mon{width:78px;height:78px;flex:none;margin:-16px -6px -4px 0}
-.mon svg{width:100%;height:100%;overflow:visible;display:block}
-.m-body{fill:var(--mc)}
-.m-limb{stroke:var(--mc);stroke-width:7;stroke-linecap:round;fill:none}
-.m-eye{fill:var(--eye)}
-.m-pupil{fill:var(--pupil)}
-.m-line{stroke:var(--pupil);stroke-width:3;stroke-linecap:round;fill:none}
-.m-shadow{fill:var(--track)}
-.m-cheek{fill:var(--eye);opacity:.45}
-.lap-back{fill:var(--lap)} .lap-logo,.lap-base{fill:var(--lap-hi)}
-.sweat{fill:var(--sweat)}
-.zz{font:700 13px var(--f-mono);fill:var(--muted)}
-svg *{transform-box:view-box}
+/* lobby */
+.lobby{display:flex;flex-direction:column;gap:14px}
+.lobby-hero{display:flex;gap:14px;align-items:center}
+.lobby-hero .mon{width:96px;height:96px;flex:none}
+.lobby-hero h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0}
+.lobby-hero p{margin:4px 0 0;color:var(--muted);max-width:52ch}
+.lobby-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.lcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.lcard h3{margin:0;font-size:17px;font-weight:900}
+.lcard p{margin:0;font-size:14px;color:var(--muted)}
+#joinCode{font-family:var(--f-mono);font-size:22px;letter-spacing:.3em;text-transform:uppercase}
 
-/* which parts show in which mood */
-.lap,.lid,.sweat,.zz,.mouth-t{display:none}
-.work .lap,.tired .lap{display:inline}
-.tired .lid,.tired .sweat,.tired .zz,.tired .mouth-t{display:inline}
-.tired .mouth{display:none}
-.mon:not(.dance) .arm{display:none}
+/* chat */
+.chat{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.chat-list{height:min(62vh,620px);min-height:280px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
+.chat-empty{margin:auto;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:6px}
+.chat-empty .mon{width:84px;height:84px}
+.day{align-self:center;font:700 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--track);padding:5px 9px;border-radius:999px}
+.mg{--mc:var(--mc0);display:flex;gap:8px;align-items:flex-start;max-width:min(560px,92%)}
+.mg.mine{flex-direction:row-reverse;align-self:flex-end}
+.mg .avatar{width:40px;height:40px;flex:none;border-radius:12px;background:var(--cs0);padding:3px;margin-top:2px}
+.mg-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mg.mine .mg-body{align-items:flex-end}
+.mg-meta{font:700 12px/1.3 var(--f-mono);color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.mg-meta b{color:var(--ink);font-family:var(--f-body);font-size:13px}
+.bubble{background:var(--cs0);color:var(--ink);padding:8px 12px;border-radius:14px;border-top-left-radius:5px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}
+.mg.mine .bubble{border-top-left-radius:14px;border-top-right-radius:5px}
+.composer{display:flex;flex-direction:row;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--card)}
+.composer input{flex:1;min-width:0}
 
-/* working: little typing bob, eyes on the screen */
-.work .b{transform-origin:50px 90px;animation:typing .26s ease-in-out infinite alternate}
-.work .m-pupil{transform:translateY(2.5px)}
-@keyframes typing{from{transform:translateY(0)}to{transform:translateY(-2.2px)}}
-/* overtime: slow slump, sweat, zzz */
-.tired .b{transform-origin:50px 90px;animation:slump 2.6s ease-in-out infinite}
-.tired .m-pupil{transform:translateY(2px)}
-.tired .sweat{animation:drip 1.8s ease-in infinite}
-.tired .zz{animation:zz 2.4s ease-in-out infinite}
-.tired .zz.z2{animation-delay:1.2s}
-@keyframes slump{0%,100%{transform:rotate(-4deg) scaleY(.95)}50%{transform:rotate(4deg) scaleY(.9)}}
-@keyframes drip{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(16px);opacity:0}}
-@keyframes zz{0%{transform:translate(0,0);opacity:0}30%{opacity:1}100%{transform:translate(8px,-16px);opacity:0}}
-
-/* off: dancing */
-.dance .jelly .b{transform-origin:50px 90px;animation:bounce .6s ease-in-out infinite}
-.dance .jelly .aL{transform-origin:24px 60px;animation:waveL .3s ease-in-out infinite alternate}
-.dance .jelly .aR{transform-origin:76px 60px;animation:waveR .3s ease-in-out infinite alternate}
-.dance .sh{transform-origin:50px 93px;animation:shadow .6s ease-in-out infinite}
-@keyframes bounce{0%,100%{transform:translateY(0) scale(1.08,.9)}50%{transform:translateY(-13px) scale(.94,1.07)}}
-@keyframes waveL{from{transform:rotate(-30deg)}to{transform:rotate(25deg)}}
-@keyframes waveR{from{transform:rotate(30deg)}to{transform:rotate(-25deg)}}
-@keyframes shadow{0%,100%{transform:scale(1)}50%{transform:scale(.7)}}
-.dance .cyclo .b{transform-origin:50px 88px;animation:sway .8s ease-in-out infinite alternate}
-.dance .cyclo .lL{animation:step .4s ease-in-out infinite alternate}
-.dance .cyclo .lR{animation:step .4s ease-in-out infinite alternate-reverse}
-.dance .cyclo .pu{animation:look .8s ease-in-out infinite alternate}
-@keyframes sway{from{transform:rotate(-11deg)}to{transform:rotate(11deg)}}
-@keyframes step{from{transform:translateY(0)}to{transform:translateY(-7px)}}
-@keyframes look{from{transform:translateX(-4px)}to{transform:translateX(4px)}}
-.dance .noodle .b{transform-origin:50px 90px;animation:wiggle .45s ease-in-out infinite alternate}
-.dance .noodle .aL{transform-origin:31px 56px;animation:pumpL .45s ease-in-out infinite alternate}
-.dance .noodle .aR{transform-origin:69px 56px;animation:pumpR .45s ease-in-out infinite alternate-reverse}
-@keyframes wiggle{from{transform:skewX(-9deg)}to{transform:skewX(9deg)}}
-@keyframes pumpL{from{transform:rotate(0)}to{transform:rotate(35deg)}}
-@keyframes pumpR{from{transform:rotate(0)}to{transform:rotate(-35deg)}}
-.dance .spike .b{transform-origin:50px 52px;animation:spinjump 1.4s cubic-bezier(.5,0,.5,1) infinite}
-.dance .spike .sh{animation:shadow2 1.4s ease-in-out infinite}
-@keyframes spinjump{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-18px) rotate(0)}65%{transform:translateY(-18px) rotate(360deg)}85%,100%{transform:translateY(0) rotate(360deg)}}
-@keyframes shadow2{0%,85%,100%{transform:scale(1)}25%,65%{transform:scale(.6)}}
-
+/* crew */
 .crew{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:16px}
 .crew-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .crew h2{font-family:var(--f-display);font-weight:400;font-size:18px;margin:0}
@@ -184,39 +170,62 @@ svg *{transform-box:view-box}
 .moods{display:flex;gap:6px;flex-wrap:wrap}
 .mood{font:700 12px/1 var(--f-mono);border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 11px;cursor:pointer;color:var(--muted)}
 .mood[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
-.crew-row{display:flex;gap:20px;flex-wrap:wrap}
+.crew-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:10px 8px}
 .crew-item{display:flex;flex-direction:column;align-items:center;gap:2px}
-.crew-item .mon{margin:0;width:66px;height:66px}
+.crew-item .mon{width:62px;height:62px}
 .crew-item span{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
-
 .foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px;font-family:var(--f-mono)}
 
-/* sheets + toast */
+/* sheets */
 .sheet{position:fixed;inset:0;background:rgba(10,14,12,.6);display:grid;place-items:end center;z-index:20;
   padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 @media (min-width:600px){.sheet{place-items:center}}
 .sheet-card{background:var(--card);color:var(--ink);border-radius:18px;padding:18px;width:min(720px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
-.sheet-card.narrow{width:min(420px,100%)}
+.sheet-card.narrow{width:min(440px,100%)}
 .sheet-card img{width:100%;border-radius:10px;border:1px solid var(--line)}
-.sheet-msg{font-family:var(--f-display);font-weight:400;font-size:19px}
+.sheet-msg{font-family:var(--f-display);font-weight:400;font-size:19px;overflow-wrap:anywhere}
 .sheet-hint{font-size:13px;color:var(--muted);margin:0}
-.sheet-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.sheet-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+.sheet-row.split{justify-content:space-between}
+.section-label{font:700 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:4px 0 -4px}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--bg);border-radius:12px;padding:4px}
 .tab{font:700 14px/1 var(--f-mono);border:0;border-radius:9px;padding:11px;background:transparent;color:var(--muted);cursor:pointer}
 .tab[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.tab:focus-visible{outline:3px solid var(--me);outline-offset:2px}
-.inline-form{flex-direction:row;align-items:flex-end;gap:8px}
-.inline-form label{flex:1;min-width:0}
-.btn.danger{color:var(--danger);border-color:var(--danger)}
 form{display:flex;flex-direction:column;gap:12px}
 label{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
 input{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
 input[type=time]{font-family:var(--f-mono)}
+.inline-form{flex-direction:row;align-items:flex-end;gap:8px}
+.inline-form label{flex:1;min-width:0}
 .err{color:var(--danger);font-size:13px;min-height:1em}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.sw{aspect-ratio:1;max-width:100%;border-radius:12px;border:2px solid transparent;background:var(--sw);cursor:pointer;position:relative}
+.sw[aria-checked="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--card)}
+.me-mon{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:10px}
+.me-mon .mon{width:72px;height:72px;flex:none}
+.me-mon p{margin:0;font-size:14px}
+.me-mon b{font-family:var(--f-display);font-weight:400;font-size:17px}
+.switch{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border-radius:12px;padding:12px}
+.switch span{display:flex;flex-direction:column;gap:2px}
+.switch small{font-weight:400;color:var(--muted);font-size:13px}
+.switch input{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:999px;background:var(--line);position:relative;padding:0;border:0;flex:none;cursor:pointer;transition:background .2s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--card);transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked{background:var(--c-teal)}
+.switch input:checked::after{transform:translateX(20px)}
+.code{font:700 30px/1 var(--f-mono);letter-spacing:.32em;text-align:center;background:var(--bg);border-radius:12px;padding:16px 8px 16px calc(8px + .32em);user-select:all;-webkit-user-select:all}
+.link{font:500 12px/1.4 var(--f-mono);color:var(--muted);text-align:center;overflow-wrap:anywhere;user-select:all;-webkit-user-select:all;margin:0}
+.members{display:flex;flex-direction:column;gap:6px;list-style:none;margin:0;padding:0}
+.members li{--mc:var(--mc0);display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:12px;background:var(--bg)}
+.members .avatar{width:38px;height:38px;flex:none}
+.members .mname{font-weight:900;flex:1;min-width:0;overflow-wrap:anywhere}
+.members .mtime{font:500 12px var(--f-mono);color:var(--muted)}
+.owner-tag{font:700 10px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--muted);color:var(--muted);border-radius:999px;padding:3px 6px}
+.kick{font:700 12px/1 var(--f-mono);border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;height:30px;padding:0 10px;cursor:pointer}
+.kick:hover,.kick.armed{color:var(--danger);border-color:var(--danger)}
 .toast{position:fixed;left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));transform:translateX(-50%);z-index:30;
   background:var(--ink);color:var(--card);font:700 14px/1.4 var(--f-mono);padding:12px 16px;border-radius:12px;max-width:min(92vw,460px);text-align:center;
   box-shadow:0 8px 24px rgba(0,0,0,.18)}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none}.mon *,.lane.overtime .bar i,.lane.zapped,.lane.zapped::after{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}.lane.overtime .bar i,.lane.zapped,.lane.zapped::after,#shot.zapped{animation:none!important}}
 </style>
 </head>
 <body>
@@ -224,51 +233,89 @@ input[type=time]{font-family:var(--f-mono)}
   <div id="shot">
     <header>
       <div class="htext">
-        <span class="eyebrow">Punch clock · UTC+8</span>
-        <h1>Clock-out Countdown</h1>
+        <span class="eyebrow" id="eyebrow">Punch clock · UTC+8</span>
+        <h1 id="title">Clock-out Countdown</h1>
         <div class="now"><span id="now">Now <b>--:--:--</b></span><span class="offline" id="offline" hidden>Offline · retrying</span></div>
       </div>
       <div class="actions" data-html2canvas-ignore>
         <button class="chip" id="meChip" type="button">Log in</button>
-        <button class="btn ghost" id="inviteBtn" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 19c.8-3.2 3.2-5 6-5s5.2 1.8 6 5"/><path d="M19 8v6M16 11h6"/></svg>
-          Invite
+        <button class="btn ghost" id="caveBtn" type="button" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20c0-8 4-14 9-14s9 6 9 14"/><path d="M9 20c0-3 1.3-5 3-5s3 2 3 5"/></svg>
+          <span id="caveBtnText">Cave</span>
         </button>
         <button class="btn ghost" id="installBtn" type="button" hidden>Install app</button>
-        <button class="btn" id="snap" type="button">
+        <button class="btn" id="snap" type="button" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
           Screenshot
         </button>
       </div>
     </header>
 
+    <div class="seg" id="seg" role="tablist" aria-label="View" hidden data-html2canvas-ignore>
+      <button id="tabBoard" role="tab" type="button" aria-selected="true">Board</button>
+      <button id="tabChat" role="tab" type="button" aria-selected="false">Chat<span class="unread" id="unread" hidden></span></button>
+    </div>
+
     <div class="banner" id="banner" hidden data-html2canvas-ignore>
       <p id="bannerText"></p>
       <button class="btn" id="bannerBtn" type="button" hidden>Turn on zaps</button>
     </div>
 
-    <section class="lanes" id="lanes" aria-live="polite"></section>
+    <section class="lanes" id="lanes" aria-live="polite" hidden></section>
   </div>
 
-  <section class="crew" aria-labelledby="crewTitle">
+  <section class="lobby" id="lobby" hidden>
+    <div class="lobby-hero">
+      <div class="mon dance" id="lobbyMon"></div>
+      <div>
+        <h2>Find your cave</h2>
+        <p>A cave is a small group of friends who count down to clock-out together, zap each other and chat. You can live in one cave at a time.</p>
+      </div>
+    </div>
+    <div class="lobby-grid">
+      <form class="lcard" id="joinForm" novalidate>
+        <h3>Join with a code</h3>
+        <p>Got an invite? Type the 6-letter code from your friend.</p>
+        <input id="joinCode" name="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC234" aria-label="Invite code">
+        <div class="err" id="joinErr" role="alert"></div>
+        <button class="btn" type="submit" id="joinSubmit">Join cave</button>
+      </form>
+      <form class="lcard" id="createForm" novalidate>
+        <h3>Start a new cave</h3>
+        <p>You'll get an invite link to send to your friends.</p>
+        <input id="caveName" name="caveName" maxlength="20" placeholder="e.g. Monster Cave" aria-label="Cave name">
+        <div class="err" id="createErr" role="alert"></div>
+        <button class="btn" type="submit" id="createSubmit">Create cave</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="chat" id="chatView" hidden aria-label="Cave chat">
+    <div class="chat-list" id="chatList" aria-live="polite"></div>
+    <form class="composer" id="composer" novalidate>
+      <input id="chatInput" name="chatInput" maxlength="500" autocomplete="off" placeholder="Say something to the cave" aria-label="Message">
+      <button class="btn" type="submit" id="chatSend">Send</button>
+    </form>
+  </section>
+
+  <section class="crew" id="crew" aria-labelledby="crewTitle">
     <div class="crew-head">
-      <h2 id="crewTitle">The crew</h2>
+      <h2 id="crewTitle">The monster crew</h2>
       <div class="moods" role="group" aria-label="Preview a mood">
         <button class="mood" type="button" data-mood="work" aria-pressed="false">Working</button>
         <button class="mood" type="button" data-mood="tired" aria-pressed="false">Overtime</button>
         <button class="mood" type="button" data-mood="dance" aria-pressed="true">Off</button>
       </div>
     </div>
-    <p>Your monster types away while you work, wilts on overtime, and dances once you clock out.</p>
+    <p>You get one of these when you join. It types away while you work, wilts on overtime, and dances once you clock out.</p>
     <div class="crew-row" id="crewRow"></div>
   </section>
 
   <div class="foot">
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
-    <span>Tap <b>⚡ Zap</b> on a friend to buzz their phone. Once every 10 minutes per friend.</span>
-    <span>Friends join from their own phone: tap <b>Invite</b> and send them the link.</span>
-    <span>v8.0</span>
+    <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
+    <span>v9.0</span>
   </div>
 </div>
 
@@ -276,23 +323,28 @@ input[type=time]{font-family:var(--f-mono)}
 <div class="sheet" id="authSheet" hidden>
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="sheet-msg" id="authTitle">Clock-out Countdown</div>
+    <p class="sheet-hint" id="inviteNote" hidden>You've been invited to a cave. Join or log in and you'll go straight in.</p>
     <div class="tabs" role="tablist" aria-label="Log in or join">
-      <button class="tab" role="tab" id="tabLogin" type="button" aria-selected="true">Log in</button>
-      <button class="tab" role="tab" id="tabJoin" type="button" aria-selected="false">Join</button>
+      <button class="tab" role="tab" id="tabJoin" type="button" aria-selected="true">Join</button>
+      <button class="tab" role="tab" id="tabLogin" type="button" aria-selected="false">Log in</button>
     </div>
     <form id="authForm" novalidate>
       <label for="aName">Your name
         <input id="aName" name="aName" maxlength="20" autocomplete="username" autocapitalize="words" required>
       </label>
-      <label for="aTime" id="aTimeWrap" hidden>Your clock-out time
+      <label for="aTime" id="aTimeWrap">Your clock-out time
         <input id="aTime" name="aTime" type="time" value="18:00">
       </label>
-      <label for="aPin">PIN
-        <input id="aPin" name="aPin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="4 to 6 digits" required>
+      <div id="aColorWrap">
+        <div class="section-label" id="aColorLabel">Your colour</div>
+        <div class="swatches" id="aColors" role="radiogroup" aria-labelledby="aColorLabel" style="margin-top:12px"></div>
+      </div>
+      <label for="aPin">Passcode
+        <input id="aPin" name="aPin" type="password" maxlength="32" autocomplete="new-password" placeholder="At least 4 characters" required>
       </label>
-      <p class="sheet-hint" id="authHint">Log in with the name and PIN you joined with.</p>
+      <p class="sheet-hint" id="authHint"></p>
       <div class="err" id="authErr" role="alert"></div>
-      <button class="btn" id="authSubmit" type="submit" style="justify-content:center">Log in</button>
+      <button class="btn" id="authSubmit" type="submit">Join</button>
     </form>
   </div>
 </div>
@@ -301,25 +353,73 @@ input[type=time]{font-family:var(--f-mono)}
 <div class="sheet" id="acctSheet" hidden>
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="acctTitle">
     <div class="sheet-msg" id="acctTitle">Hi!</div>
+    <div class="me-mon"><div class="mon dance" id="acctMon"></div><p>Your monster is <b id="acctMonName"></b>.<br>Monsters are handed out when you join and stay with you.</p></div>
+    <div class="section-label" id="acctColorLabel">Your colour</div>
+    <div class="swatches" id="acctColors" role="radiogroup" aria-labelledby="acctColorLabel"></div>
     <form id="acctTimeForm" class="inline-form" novalidate>
-      <label for="acctTime">Your clock-out time
+      <label for="acctTime">Clock-out time
         <input id="acctTime" name="acctTime" type="time">
       </label>
       <button class="btn" id="acctTimeSave" type="submit">Save</button>
     </form>
+    <label class="switch" for="buzzToggle">
+      <span>Let friends buzz my phone<small>When someone zaps you, your phone vibrates. Turn off to get quiet zaps.</small></span>
+      <input id="buzzToggle" name="buzzToggle" type="checkbox" role="switch">
+    </label>
     <form id="acctPinForm" class="inline-form" novalidate>
-      <label for="acctPin">New PIN
-        <input id="acctPin" name="acctPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="4 to 6 digits">
+      <label for="acctPin">New passcode
+        <input id="acctPin" name="acctPin" type="password" maxlength="32" autocomplete="new-password" placeholder="At least 4 characters">
       </label>
-      <button class="btn ghost" id="acctPinSave" type="submit">Change PIN</button>
+      <button class="btn ghost" id="acctPinSave" type="submit">Change</button>
     </form>
     <div class="err" id="acctErr" role="alert"></div>
-    <div class="sheet-row" style="justify-content:space-between">
-      <button class="btn ghost danger" id="leaveBtn" type="button">Leave board</button>
-      <div style="display:flex;gap:8px">
+    <div class="sheet-row split">
+      <button class="btn danger" id="deleteBtn" type="button">Delete account</button>
+      <div class="sheet-row">
         <button class="btn ghost" id="logoutBtn" type="button">Log out</button>
         <button class="btn" id="acctClose" type="button">Done</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- cave -->
+<div class="sheet" id="caveSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="caveTitle">
+    <div class="sheet-msg" id="caveTitle">Cave</div>
+    <form id="renameForm" class="inline-form" novalidate hidden>
+      <label for="renameInput">Cave name
+        <input id="renameInput" name="renameInput" maxlength="20">
+      </label>
+      <button class="btn ghost" type="submit" id="renameSave">Rename</button>
+    </form>
+    <div class="section-label">Invite friends</div>
+    <div class="code" id="caveCode" aria-label="Invite code"></div>
+    <p class="link" id="caveLink"></p>
+    <div class="sheet-row" style="justify-content:stretch">
+      <button class="btn" id="shareInvite" type="button" style="flex:1" hidden>Share invite</button>
+      <button class="btn ghost" id="copyInvite" type="button" style="flex:1">Copy link</button>
+      <button class="btn ghost" id="newCode" type="button" hidden>New code</button>
+    </div>
+    <div class="section-label" id="memberLabel">Members</div>
+    <ul class="members" id="memberList" aria-labelledby="memberLabel"></ul>
+    <div class="err" id="caveErr" role="alert"></div>
+    <div class="sheet-row split">
+      <button class="btn danger" id="leaveBtn" type="button">Leave cave</button>
+      <button class="btn" id="caveClose" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- invite confirm -->
+<div class="sheet" id="inviteSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
+    <div class="sheet-msg" id="inviteTitle">Join this cave?</div>
+    <p class="sheet-hint" id="inviteText"></p>
+    <div class="err" id="inviteErr" role="alert"></div>
+    <div class="sheet-row">
+      <button class="btn ghost" id="inviteNo" type="button">Not now</button>
+      <button class="btn" id="inviteYes" type="button">Join cave</button>
     </div>
   </div>
 </div>
@@ -336,77 +436,18 @@ input[type=time]{font-family:var(--f-mono)}
 
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="/monsters.js"></script>
 <script>
 "use strict";
-/* ================= monsters ================= */
-function starPoints(cx,cy,ro,ri,n){
-  const p=[];for(let i=0;i<n*2;i++){const r=i%2?ri:ro,a=Math.PI*i/n-Math.PI/2;p.push((cx+r*Math.cos(a)).toFixed(1)+","+(cy+r*Math.sin(a)).toFixed(1));}
-  return p.join(" ");
-}
-const lid=(cx,cy,r)=>`<path class="m-body lid" d="M${cx-r} ${cy+1} A${r} ${r} 0 0 1 ${cx+r} ${cy+1}Z"/><path class="m-line lid" style="stroke-width:2" d="M${cx-r+1} ${cy+1} L${cx+r-1} ${cy+1}"/>`;
-const LAPTOP=`<g class="lap"><rect class="lap-back" x="23" y="63" width="54" height="28" rx="3"/><circle class="lap-logo" cx="50" cy="77" r="3.2"/><rect class="lap-base" x="14" y="90" width="72" height="4.5" rx="2"/></g>`;
-const SWEAT=`<path class="sweat" d="M75 27 Q80 34 75 38 Q70 34 75 27Z"/>`;
-const ZZ=`<text class="zz" x="80" y="20">z</text><text class="zz z2" x="86" y="11">z</text>`;
-const MONSTERS=[
-  {name:"Jelly",svg:`<svg viewBox="0 0 100 100" class="jelly" aria-hidden="true">
-    <ellipse class="m-shadow sh" cx="50" cy="93" rx="24" ry="4"/>
-    <g class="b">
-      <path class="m-limb arm aL" d="M24 60 Q10 52 11 38"/><path class="m-limb arm aR" d="M76 60 Q90 52 89 38"/>
-      <path class="m-body" d="M20 84 C18 44 34 24 50 24 C66 24 82 44 80 84 Q65 90 50 86 Q35 90 20 84Z"/>
-      <circle class="m-eye" cx="40" cy="50" r="8"/><circle class="m-eye" cx="60" cy="50" r="8"/>
-      <circle class="m-pupil" cx="41" cy="51" r="4"/><circle class="m-pupil" cx="61" cy="51" r="4"/>
-      ${lid(40,50,9)}${lid(60,50,9)}
-      <path class="m-line mouth" d="M41 65 Q50 74 59 65"/><path class="m-line mouth-t" d="M41 68 Q45.5 64 50 68 Q54.5 72 59 68"/>
-      <circle class="m-cheek" cx="31" cy="62" r="4"/><circle class="m-cheek" cx="69" cy="62" r="4"/>
-      ${SWEAT}
-    </g>${LAPTOP}${ZZ}</svg>`},
-  {name:"Cyclo",svg:`<svg viewBox="0 0 100 100" class="cyclo" aria-hidden="true">
-    <ellipse class="m-shadow" cx="50" cy="94" rx="22" ry="4"/>
-    <rect class="m-body lL" x="34" y="76" width="10" height="16" rx="5"/><rect class="m-body lR" x="56" y="76" width="10" height="16" rx="5"/>
-    <g class="b">
-      <path class="m-body" d="M33 34 L27 13 L45 30Z"/><path class="m-body" d="M67 34 L73 13 L55 30Z"/>
-      <rect class="m-body" x="24" y="28" width="52" height="54" rx="18"/>
-      <path class="m-limb arm" d="M26 58 L14 50"/><path class="m-limb arm" d="M74 58 L86 66"/>
-      <circle class="m-eye" cx="50" cy="50" r="12"/><circle class="m-pupil pu" cx="50" cy="51" r="5.5"/>
-      ${lid(50,50,13)}
-      <path class="m-line mouth" d="M39 68 Q50 75 61 68"/>
-      <path class="m-eye mouth" d="M44 69.5 L46 74 L48 70.5Z"/><path class="m-eye mouth" d="M52 70.5 L54 74 L56 69.5Z"/>
-      <path class="m-line mouth-t" d="M40 70 Q45 66 50 70 Q55 74 60 70"/>
-      ${SWEAT}
-    </g>${LAPTOP}${ZZ}</svg>`},
-  {name:"Noodle",svg:`<svg viewBox="0 0 100 100" class="noodle" aria-hidden="true">
-    <ellipse class="m-shadow" cx="50" cy="94" rx="22" ry="4"/>
-    <g class="b">
-      <path class="m-limb arm aL" d="M31 56 L16 36"/><path class="m-limb arm aR" d="M69 56 L84 36"/>
-      <path class="m-body" d="M30 90 L30 40 Q30 12 50 12 Q70 12 70 40 L70 90 Q65 82 60 90 Q55 82 50 90 Q45 82 40 90 Q35 82 30 90Z"/>
-      <ellipse class="m-pupil" cx="42" cy="38" rx="4" ry="6"/><ellipse class="m-pupil" cx="58" cy="38" rx="4" ry="6"/>
-      <circle class="m-eye" cx="43.5" cy="36" r="1.6"/><circle class="m-eye" cx="58.5" cy="36" r="1.6"/>
-      ${lid(42,38,6.5)}${lid(58,38,6.5)}
-      <ellipse class="m-pupil mouth" cx="50" cy="54" rx="4" ry="5"/><path class="m-line mouth-t" d="M44 55 Q47 52 50 55 Q53 58 56 55"/>
-      <circle class="m-cheek" cx="36" cy="49" r="3.5"/><circle class="m-cheek" cx="64" cy="49" r="3.5"/>
-      ${SWEAT}
-    </g>${LAPTOP}${ZZ}</svg>`},
-  {name:"Spike",svg:`<svg viewBox="0 0 100 100" class="spike" aria-hidden="true">
-    <ellipse class="m-shadow sh" cx="50" cy="93" rx="22" ry="4" style="transform-origin:50px 93px"/>
-    <g class="b">
-      <polygon class="m-body" points="${starPoints(50,52,34,24,10)}"/>
-      <circle class="m-eye" cx="40" cy="50" r="6"/><circle class="m-eye" cx="60" cy="50" r="6"/><circle class="m-eye" cx="50" cy="39" r="5"/>
-      <circle class="m-pupil" cx="40" cy="51" r="3"/><circle class="m-pupil" cx="60" cy="51" r="3"/><circle class="m-pupil" cx="50" cy="40" r="2.5"/>
-      ${lid(40,50,7)}${lid(60,50,7)}${lid(50,39,6)}
-      <path class="m-line mouth" d="M42 62 Q50 68 58 62"/><path class="m-line mouth-t" d="M42 64 Q46 61 50 64 Q54 67 58 64"/>
-      ${SWEAT}
-    </g>${LAPTOP}${ZZ}</svg>`},
-];
-
 /* ================= constants & helpers ================= */
-const PALETTE=[["--me","--me-soft"],["--sukee","--sukee-soft"],["--shunyi","--shunyi-soft"],["--f1","--f1-soft"],["--f2","--f2-soft"],["--f3","--f3-soft"],["--f4","--f4-soft"]];
+const COLOR_KEYS=["orange","red","pink","violet","indigo","blue","cyan","teal","green","amber","gold","brown"];
 const START=9*3600;
 const HAPPY_BIG=["Freedom!","Peace out!","Bye, office!","Home time!","Off duty!","We out!"];
 const HAPPY_SUB=["go enjoy your evening","dinner is calling","bubble tea time","couch mode: on","you earned this","see you tomorrow, desk"];
 const OT_BIG=["Finally free!","Escaped!","Made it out!","Survived!"];
 const QUIPS_NEAR=["Packing up","Final sprint","Looking busy","Eyes on the door"];
 const QUIPS_OT=["hang in there","the grind goes on","boss owes you dinner","send snacks"];
-const LS_TOKEN="clockout.token";
+const LS_TOKEN="clockout.token", SS_JOIN="clockout.join";
 
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,"0");
@@ -416,83 +457,121 @@ const hms=s=>`${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%6
 const mmss=ms=>{const s=Math.ceil(ms/1000);return `${Math.floor(s/60)}:${pad(s%60)}`;};
 const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
 const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}};
-
-let S=null, offset=0, token=lsGet(LS_TOKEN), lanesData=[], lastSig="";
-const clockNow=()=>Date.now()+offset;
-function sgNow(){
-  const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",hour12:false,weekday:"short",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})
-    .formatToParts(new Date(clockNow())).reduce((o,x)=>(o[x.type]=x.value,o),{});
-  return {wd:p.weekday,day:`${p.year}-${p.month}-${p.day}`,h:+p.hour%24,m:+p.minute,s:+p.second};
+const ssGet=k=>{try{return sessionStorage.getItem(k);}catch(e){return null;}};
+const ssSet=(k,v)=>{try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v);}catch(e){}};
+const colorVar=k=>`var(--c-${COLOR_KEYS.includes(k)?k:"orange"})`;
+const softVar=k=>`var(--c-${COLOR_KEYS.includes(k)?k:"orange"}-soft)`;
+const monSvg=i=>MONSTERS[((i%MONSTERS.length)+MONSTERS.length)%MONSTERS.length].svg;
+function monEl(i,color,mood,extra=""){
+  const d=document.createElement("div");d.className=`mon ${mood} ${extra}`.trim();
+  d.style.setProperty("--mc",colorVar(color));d.innerHTML=monSvg(i);return d;
 }
+function sgParts(ms){
+  return new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",hour12:false,weekday:"short",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})
+    .formatToParts(new Date(ms)).reduce((o,x)=>(o[x.type]=x.value,o),{});
+}
+let S=null, offset=0, token=lsGet(LS_TOKEN), lanesData=[], lastSig="", view="board";
+const clockNow=()=>Date.now()+offset;
+function sgNow(){const p=sgParts(clockNow());return {wd:p.weekday,day:`${p.year}-${p.month}-${p.day}`,h:+p.hour%24,m:+p.minute,s:+p.second};}
 let toastTimer;
 function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true},ms);}
 
-async function api(path,body){
+// An invite link (/?join=CODE) is remembered for this visit until it's used.
+(function(){
+  const q=new URLSearchParams(location.search), c=q.get("join");
+  if(c){ssSet(SS_JOIN,c.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6));history.replaceState(null,"","/");}
+})();
+
+async function api(path,body,method){
   const headers={};
   if(token) headers.authorization="Bearer "+token;
   if(body) headers["content-type"]="application/json";
-  const r=await fetch("/api/"+path,body?{method:"POST",headers,body:JSON.stringify(body)}:{headers,cache:"no-store"});
+  const r=await fetch("/api/"+path,body?{method:method||"POST",headers,body:JSON.stringify(body)}:{headers,cache:"no-store"});
   const d=await r.json().catch(()=>({}));
-  if(r.status===401&&token&&path!=="login"){signedOut("Please log in again.");}
+  if(r.status===401&&token&&path!=="login") signedOut("Please log in again.");
   if(!r.ok){const e=new Error(d.error||"Something went wrong. Try again.");e.status=r.status;e.data=d;throw e;}
   return d;
 }
 
-/* ================= people & state ================= */
-function allPeople(){
-  if(!S) return [];
-  return S.people.slice().sort((a,b)=>(a.at||0)-(b.at||0)).map((p,i)=>{
-    const c=PALETTE[i%PALETTE.length];return {...p,c:c[0],cs:c[1],mi:i%MONSTERS.length};
-  });
+/* ================= state & chrome ================= */
+function members(){
+  if(!S||!S.cave) return [];
+  return S.cave.members.map(p=>({...p,c:colorVar(p.color),cs:softVar(p.color)}));
 }
-const mePerson=()=>allPeople().find(p=>p.id===S?.me);
 function applyState(d){
+  const prevCave=S&&S.cave&&S.cave.id;
   S=d;offset=d.now-Date.now();
   $("offline").hidden=true;
-  const sig=JSON.stringify([d.people,d.me]);
-  if(sig!==lastSig){lastSig=sig;buildLanes();}
-  renderMeChip();tick();updateBanner();
+  if(!S.cave&&view==="chat") view="board";
+  if((S.cave&&S.cave.id)!==prevCave) resetChat();
+  if(S.cave){
+    const sig=JSON.stringify([S.cave.id,S.cave.members,S.me.id]);
+    if(sig!==lastSig){lastSig=sig;buildLanes();}
+  }else{lastSig="";lanesData=[];$("lanes").replaceChildren();}
+  renderChrome();tick();updateBanner();updateUnread();
+  if(!$("caveSheet").hidden) renderCaveSheet();
+  checkInvite();
 }
 async function refresh(){
   if(!token) return;
   try{applyState(await api("state"));}
   catch(e){if(e.status!==401) $("offline").hidden=false;}
 }
-function renderMeChip(){
-  const p=S&&mePerson(), chip=$("meChip");
-  if(p){chip.innerHTML=`You're <b></b> · account`;chip.querySelector("b").textContent=p.name;}
-  else chip.textContent="Log in";
-}
-function signedIn(d){
-  token=d.token;lsSet(LS_TOKEN,token);
-  const {token:_,...st}=d;lastSig="";applyState(st);
-  $("authSheet").hidden=true;
-  syncSubscription();
-}
-async function signedOut(msg){
-  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";lanesData=[];lanes.replaceChildren();
-  // this phone should stop getting zaps meant for the old account
-  try{const sub=await currentSub();if(sub){fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}}catch(e){}
-  renderMeChip();$("banner").hidden=true;$("acctSheet").hidden=true;
-  openAuth("login");
-  if(msg) toast(msg);
+function renderChrome(){
+  const inCave=!!(S&&S.cave);
+  $("title").textContent=inCave?S.cave.name:"Clock-out Countdown";
+  $("eyebrow").textContent=inCave?"Clock-out Countdown · UTC+8":"Punch clock · UTC+8";
+  document.title=inCave?`${S.cave.name} · Clock-out`:"Clock-out Countdown";
+  const chip=$("meChip");chip.replaceChildren();
+  if(S){
+    chip.appendChild(monEl(S.me.monster,S.me.color,"dance still","mini"));
+    const t=document.createElement("span");t.innerHTML="<b></b> · account";t.querySelector("b").textContent=S.me.name;chip.appendChild(t);
+  }else chip.textContent="Log in";
+  $("caveBtn").hidden=!inCave;
+  if(inCave) $("caveBtnText").textContent=`Cave · ${S.cave.members.length}`;
+  $("seg").hidden=!inCave;
+  $("tabBoard").setAttribute("aria-selected",String(view==="board"));
+  $("tabChat").setAttribute("aria-selected",String(view==="chat"));
+  $("lanes").hidden=!inCave||view!=="board";
+  $("chatView").hidden=!inCave||view!=="chat";
+  $("snap").hidden=!inCave||view!=="board";
+  $("crew").hidden=inCave&&view==="chat";
+  const lobby=$("lobby");lobby.hidden=!S||inCave;
+  if(S&&!inCave){
+    const lm=$("lobbyMon");lm.style.setProperty("--mc",colorVar(S.me.color));
+    if(lm.dataset.mi!==String(S.me.monster)){lm.innerHTML=monSvg(S.me.monster);lm.dataset.mi=S.me.monster;}
+    if(!$("caveName").value) $("caveName").placeholder=`${S.me.name}'s Cave`;
+  }
 }
 
 /* ================= lanes ================= */
-const lanes=$("lanes");
+function laneState(p,n,nowSec){
+  const offSec=p.h*3600+p.m*60, o=(S&&S.cave&&S.cave.ot[p.id])||{on:false,end:null};
+  if(n.wd==="Sat"||n.wd==="Sun") return {state:"weekend",offSec,o};
+  if(nowSec<offSec) return {state:o.on?"before-ot":"before",offSec,o};
+  if(o.on&&o.end==null) return {state:"ot",offSec,o};
+  if(o.on) return {state:"done-ot",offSec,o};
+  return {state:"done",offSec,o};
+}
+function moodOf(p){
+  const n=sgNow(),{state}=laneState(p,n,n.h*3600+n.m*60+n.s);
+  return state==="ot"?"tired":(state.startsWith("before")?"work":"dance");
+}
 function buildLanes(){
-  lanesData=allPeople().sort((a,b)=>(a.h*60+a.m)-(b.h*60+b.m));
+  const lanes=$("lanes");
+  lanesData=members().sort((a,b)=>(a.h*60+a.m)-(b.h*60+b.m));
   lanes.replaceChildren();
   lanesData.forEach(p=>{
-    const isMe=p.id===S.me;
+    const isMe=p.id===S.me.id;
     const el=document.createElement("article");
     el.className="lane";
-    el.style.setProperty("--c0",`var(${p.c})`);el.style.setProperty("--cs0",`var(${p.cs})`);
+    el.style.setProperty("--c0",p.c);el.style.setProperty("--cs0",p.cs);
     el.innerHTML=`<div class="row1"><div class="who"><span class="dot"></span><span class="name"></span><span class="off"></span></div><span class="tag"></span></div>
       <div class="big"></div>
-      <div class="mid"><div class="sub"></div><div class="mon work">${MONSTERS[p.mi].svg}</div></div>
+      <div class="mid"><div class="sub"></div></div>
       <div class="bar"><i></i></div>
       <div class="acts" data-html2canvas-ignore></div>`;
+    el.querySelector(".mid").appendChild(monEl(p.monster,p.color,"work"));
     el.querySelector(".name").textContent=p.name;
     el.querySelector(".off").textContent=fmt12(p.h,p.m);
     const acts=el.querySelector(".acts");
@@ -507,26 +586,17 @@ function buildLanes(){
     p.el=el;lanes.appendChild(el);
   });
   if(lanesData.length===1){
-    const hint=document.createElement("article");hint.className="lane";hint.style.setProperty("--c0","var(--muted)");hint.style.setProperty("--cs0","var(--track)");
-    hint.innerHTML=`<div class="name">It's just you so far</div><div class="sub">Tap <b>Invite</b> and send the link to Sukee and Shunyi so they can join from their phones.</div>`;
+    const hint=document.createElement("article");hint.className="lane hint";
+    hint.innerHTML=`<div class="name">It's just you in here</div><p>Tap <b>Cave</b> at the top to share the invite link, so friends can move in.</p>`;
     lanes.appendChild(hint);
   }
   tick();
 }
 
-function laneState(p,n,nowSec){
-  const offSec=p.h*3600+p.m*60, o=(S&&S.ot[p.id])||{on:false,end:null};
-  if(n.wd==="Sat"||n.wd==="Sun") return {state:"weekend",offSec,o};
-  if(nowSec<offSec) return {state:o.on?"before-ot":"before",offSec,o};
-  if(o.on&&o.end==null) return {state:"ot",offSec,o};
-  if(o.on) return {state:"done-ot",offSec,o};
-  return {state:"done",offSec,o};
-}
-
 function tick(){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
   $("now").innerHTML=`Now <b>${pad(n.h)}:${pad(n.m)}:${pad(n.s)}</b>`;
-  if(!S) return;
+  if(!S||!S.cave) return;
   if(n.day!==S.day){S.day=n.day;refresh();}
   const seed=+n.day.slice(8);
   const rows=lanesData.map(p=>({p,...laneState(p,n,nowSec)}));
@@ -570,8 +640,8 @@ function tick(){
       if(state!=="weekend"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
     }
     if(p.zapBtn){
-      const z=p.zapBtn, ts=S.zaps[p.id], wait=ts?S.cooldownMs-(clockNow()-ts):0;
-      const reachable=S.reachable.includes(p.id);
+      const z=p.zapBtn, ts=S.cave.zaps[p.id], wait=ts?S.cooldownMs-(clockNow()-ts):0;
+      const reachable=S.cave.reachable.includes(p.id);
       if(wait>0){z.disabled=true;z.textContent=`⚡ ${mmss(wait)}`;z.title=`You can zap ${p.name} again in ${mmss(wait)}`;}
       else{z.disabled=false;z.textContent=`⚡ Zap`;z.title=reachable?`Buzz ${p.name}'s phone`:`${p.name} hasn't turned on zaps yet`;}
       z.classList.toggle("muted",!reachable);
@@ -579,7 +649,7 @@ function tick(){
   });
 }
 
-/* ================= actions ================= */
+/* ================= zap & OT ================= */
 function zapMessage(p){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, {state,offSec}=laneState(p,n,nowSec);
   if(state==="weekend") return "It's the weekend. Stop thinking about work!";
@@ -591,18 +661,19 @@ async function zap(p,el,btn){
   btn.disabled=true;
   try{
     const d=await api("zap",{to:p.id,message:zapMessage(p)});
-    S.zaps[p.id]=d.at;
+    S.cave.zaps[p.id]=d.at;
     el.classList.remove("zapped");void el.offsetWidth;el.classList.add("zapped");
     setTimeout(()=>el.classList.remove("zapped"),800);
     if(navigator.vibrate) navigator.vibrate(30);
-    toast(d.sent>0?`Zapped ${p.name}! ⚡`:`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
+    toast(d.sent<1?`${p.name} hasn't turned on zaps yet, so nothing buzzed.`
+      :d.buzz?`Zapped ${p.name}! Their phone is buzzing ⚡`:`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);
   }catch(e){
-    if(e.status===429&&e.data.retryInMs){S.zaps[p.id]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
+    if(e.status===429&&e.data.retryInMs){S.cave.zaps[p.id]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
     else if(e.status!==401) toast(e.message);
   }finally{tick();}
 }
 async function onOT(el){
-  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
+  const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, me=S.me.id;
   let on,end=null;
   switch(el.dataset.state){
     case "before": case "done": case "done-ot": on=true; break;
@@ -610,59 +681,253 @@ async function onOT(el){
     case "ot": on=true; end=nowSec; break;
     default: return;
   }
-  const prev=S.ot[S.me];
-  if(on) S.ot[S.me]={on,end}; else delete S.ot[S.me];
+  const prev=S.cave.ot[me];
+  if(on) S.cave.ot[me]={on,end}; else delete S.cave.ot[me];
   tick();
   try{applyState(await api("ot",{on,end}));}
-  catch(e){if(prev) S.ot[S.me]=prev; else delete S.ot[S.me];tick();if(e.status!==401) toast(e.message);}
+  catch(e){if(prev) S.cave.ot[me]=prev; else delete S.cave.ot[me];tick();if(e.status!==401) toast(e.message);}
+}
+// Someone zapped this phone while the app is open.
+function gotZap(d){
+  const shot=$("shot");shot.classList.remove("zapped");void shot.offsetWidth;shot.classList.add("zapped");
+  setTimeout(()=>shot.classList.remove("zapped"),600);
+  if(d.buzz!==false&&navigator.vibrate) navigator.vibrate([300,100,300,100,600]);
+  toast(`${d.title||"⚡ Zap!"} ${d.body||""}`.trim(),5000);
+  refresh();
 }
 
+/* ================= views & chat ================= */
+let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false;
+function resetChat(){chatMsgs=[];chatAfter=0;$("chatList").replaceChildren();}
+function setView(v){
+  view=v;renderChrome();updateUnread();
+  clearInterval(chatTimer);chatTimer=null;
+  if(v==="chat"){loadChat(true);chatTimer=setInterval(()=>{if(document.visibilityState==="visible") loadChat();},3000);setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);}
+}
+$("tabBoard").addEventListener("click",()=>setView("board"));
+$("tabChat").addEventListener("click",()=>setView("chat"));
+const readKey=()=>`clockout.read.${S.cave.id}`;
+function markRead(){
+  if(!S||!S.cave) return;
+  const last=Math.max(chatMsgs.length?chatMsgs[chatMsgs.length-1].at:0,(S.cave.chatLatest&&S.cave.chatLatest.at)||0);
+  if(last) lsSet(readKey(),String(last));
+  updateUnread();
+}
+function updateUnread(){
+  if(!S||!S.cave){$("unread").hidden=true;return;}
+  const l=S.cave.chatLatest, read=Number(lsGet(readKey())||0);
+  const has=!!l&&l.pid!==S.me.id&&l.at>read&&view!=="chat";
+  $("unread").hidden=!has;
+  $("tabChat").setAttribute("aria-label",has?"Chat, new messages":"Chat");
+}
+async function loadChat(first){
+  if(!S||!S.cave||chatBusy) return;
+  chatBusy=true;
+  try{
+    const d=await api("chat"+(chatAfter?`?after=${chatAfter-1}`:""));
+    const fresh=d.messages.filter(m=>!chatMsgs.some(x=>x.id===m.id));
+    if(fresh.length||first){
+      chatMsgs=chatMsgs.concat(fresh).sort((a,b)=>a.at-b.at).slice(-200);
+      if(chatMsgs.length) chatAfter=chatMsgs[chatMsgs.length-1].at;
+      renderChat(first);
+    }
+    if(view==="chat") markRead();
+  }catch(e){}
+  finally{chatBusy=false;}
+}
+function dayLabel(ms){
+  const p=sgParts(ms), key=`${p.year}-${p.month}-${p.day}`, today=sgNow().day;
+  const y=sgParts(clockNow()-864e5), yKey=`${y.year}-${y.month}-${y.day}`;
+  if(key===today) return "Today"; if(key===yKey) return "Yesterday";
+  return new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",weekday:"short",day:"numeric",month:"short"}).format(new Date(ms));
+}
+function renderChat(forceBottom){
+  const list=$("chatList");
+  const nearBottom=list.scrollHeight-list.scrollTop-list.clientHeight<80;
+  list.replaceChildren();
+  if(!chatMsgs.length){
+    const e=document.createElement("div");e.className="chat-empty";
+    e.appendChild(monEl(S.me.monster,S.me.color,"dance"));
+    const t=document.createElement("div");t.textContent="No messages yet. Say hi to your cave!";e.appendChild(t);
+    list.appendChild(e);return;
+  }
+  const byId={};members().forEach(p=>byId[p.id]=p);
+  let lastDay="", group=null, lastPid=null, lastAt=0;
+  chatMsgs.forEach(m=>{
+    const d=dayLabel(m.at);
+    if(d!==lastDay){const s=document.createElement("div");s.className="day";s.textContent=d;list.appendChild(s);lastDay=d;group=null;}
+    if(!group||m.pid!==lastPid||m.at-lastAt>5*60e3){
+      const live=byId[m.pid], color=live?live.color:m.color, mon=live?live.monster:m.monster;
+      group=document.createElement("div");group.className="mg"+(m.pid===S.me.id?" mine":"");
+      group.style.setProperty("--mc0",colorVar(color));group.style.setProperty("--cs0",softVar(color));
+      group.appendChild(monEl(mon,color,live?moodOf(live):"dance","still avatar"));
+      const body=document.createElement("div");body.className="mg-body";
+      const meta=document.createElement("div");meta.className="mg-meta";
+      const b=document.createElement("b");b.textContent=live?live.name:m.name;
+      const t=document.createElement("time");const p=sgParts(m.at);t.textContent=fmt12(+p.hour%24,+p.minute);
+      meta.append(b,t);body.appendChild(meta);group.appendChild(body);list.appendChild(group);
+    }
+    const bub=document.createElement("div");bub.className="bubble";bub.textContent=m.text;
+    group.querySelector(".mg-body").appendChild(bub);
+    lastPid=m.pid;lastAt=m.at;
+  });
+  if(forceBottom||nearBottom) list.scrollTop=list.scrollHeight;
+}
+$("composer").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const input=$("chatInput"), text=input.value.trim();
+  if(!text) return;
+  const btn=$("chatSend");btn.disabled=true;
+  try{
+    const d=await api("chat",{text});
+    input.value="";
+    if(!chatMsgs.some(x=>x.id===d.message.id)) chatMsgs.push(d.message);
+    chatAfter=Math.max(chatAfter,d.message.at);
+    S.cave.chatLatest={at:d.message.at,pid:S.me.id};
+    renderChat(true);markRead();
+  }catch(ex){if(ex.status!==401) toast(ex.message);}
+  finally{btn.disabled=false;input.focus();}
+});
+
+/* ================= lobby ================= */
+$("joinForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const code=$("joinCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(code.length!==6){$("joinErr").textContent="Invite codes have 6 letters and numbers.";return;}
+  const btn=$("joinSubmit");btn.disabled=true;$("joinErr").textContent="";
+  try{const d=await api("cave",{action:"join",code});$("joinCode").value="";applyState(d);toast(`Welcome to ${d.cave.name}!`);}
+  catch(ex){$("joinErr").textContent=ex.message;}
+  finally{btn.disabled=false;}
+});
+$("createForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const btn=$("createSubmit");btn.disabled=true;$("createErr").textContent="";
+  try{
+    const d=await api("cave",{action:"create",name:$("caveName").value.trim()});
+    $("caveName").value="";applyState(d);openCaveSheet();toast("Your cave is ready. Send the invite to your friends.");
+  }catch(ex){$("createErr").textContent=ex.message;}
+  finally{btn.disabled=false;}
+});
+
+/* ================= invite links ================= */
+let inviteBusy=false, invitePeek=null;
+async function checkInvite(){
+  const code=ssGet(SS_JOIN);
+  if(!code||!S||inviteBusy||!$("inviteSheet").hidden) return;
+  inviteBusy=true;
+  try{
+    const d=await api("cave",{action:"peek",code});
+    if(d.same){ssSet(SS_JOIN,null);return;}
+    invitePeek={...d,code};
+    $("inviteTitle").textContent=`Join ${d.name}?`;
+    $("inviteText").textContent=`${d.members} ${d.members===1?"monster lives":"monsters live"} here.`+
+      (S.cave?` You can only be in one cave, so you'll leave ${S.cave.name}.`:"");
+    $("inviteErr").textContent="";$("inviteSheet").hidden=false;
+  }catch(e){
+    ssSet(SS_JOIN,null);
+    if(e.status===404) toast("That invite link has expired. Ask your friend for a new one.",4500);
+  }finally{inviteBusy=false;}
+}
+$("inviteNo").addEventListener("click",()=>{ssSet(SS_JOIN,null);$("inviteSheet").hidden=true;});
+$("inviteYes").addEventListener("click",async()=>{
+  if(!invitePeek) return;
+  const btn=$("inviteYes");btn.disabled=true;
+  try{
+    const d=await api("cave",{action:"join",code:invitePeek.code,switch:true});
+    ssSet(SS_JOIN,null);$("inviteSheet").hidden=true;view="board";applyState(d);toast(`Welcome to ${d.cave.name}!`);
+  }catch(e){$("inviteErr").textContent=e.message;}
+  finally{btn.disabled=false;}
+});
+
 /* ================= log in / join ================= */
-let authMode="login";
+let authMode="join", joinColor=COLOR_KEYS[Math.floor(Math.random()*COLOR_KEYS.length)];
+function renderSwatches(box,selected,onPick){
+  box.replaceChildren();
+  COLOR_KEYS.forEach(k=>{
+    const b=document.createElement("button");b.type="button";b.className="sw";b.setAttribute("role","radio");
+    b.setAttribute("aria-checked",String(k===selected));b.setAttribute("aria-label",k[0].toUpperCase()+k.slice(1));
+    b.style.setProperty("--sw",colorVar(k));
+    b.addEventListener("click",()=>onPick(k));
+    box.appendChild(b);
+  });
+}
 function openAuth(mode){
   authMode=mode;
   $("tabLogin").setAttribute("aria-selected",String(mode==="login"));
   $("tabJoin").setAttribute("aria-selected",String(mode==="join"));
-  $("aTimeWrap").hidden=mode!=="join";
+  $("aTimeWrap").hidden=mode!=="join";$("aColorWrap").hidden=mode!=="join";
   $("aPin").autocomplete=mode==="join"?"new-password":"current-password";
   $("authSubmit").textContent=mode==="join"?"Join":"Log in";
   $("authHint").textContent=mode==="join"
-    ?"Pick a PIN you'll remember. You'll use your name and PIN to log in on any phone."
-    :"Log in with the name and PIN you joined with. New here? Tap Join.";
+    ?"Your name is how you log in, so it has to be yours alone. Pick a passcode you'll remember."
+    :"Log in with the name and passcode you joined with.";
+  $("inviteNote").hidden=!ssGet(SS_JOIN);
+  renderSwatches($("aColors"),joinColor,pickJoinColor);
   $("authErr").textContent="";
   $("authSheet").hidden=false;
   setTimeout(()=>$("aName").focus(),50);
 }
+function pickJoinColor(k){joinColor=k;renderSwatches($("aColors"),joinColor,pickJoinColor);}
 $("tabLogin").addEventListener("click",()=>openAuth("login"));
 $("tabJoin").addEventListener("click",()=>openAuth("join"));
 $("authForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const name=$("aName").value.trim(), pin=$("aPin").value.trim(), err=$("authErr");
+  const name=$("aName").value.trim(), pin=$("aPin").value, err=$("authErr");
   if(!name){err.textContent="Enter your name.";return;}
-  if(!/^\d{4,6}$/.test(pin)){err.textContent="Your PIN needs 4 to 6 digits.";return;}
+  if(pin.length<4){err.textContent="Your passcode needs at least 4 characters.";return;}
   const body={name,pin};
   if(authMode==="join"){
     const t=$("aTime").value;
     if(!/^\d{2}:\d{2}$/.test(t)){err.textContent="Pick your clock-out time.";return;}
-    [body.h,body.m]=t.split(":").map(Number);
+    [body.h,body.m]=t.split(":").map(Number);body.color=joinColor;
   }
   const btn=$("authSubmit");btn.disabled=true;err.textContent="";
   try{
     const d=await api(authMode==="join"?"signup":"login",body);
-    $("aPin").value="";signedIn(d);
-    const me=mePerson();toast(authMode==="join"?`Welcome, ${me.name}!`:`Hi ${me.name}!`);
+    $("aPin").value="";
+    token=d.token;lsSet(LS_TOKEN,token);
+    const {token:_,...st}=d;lastSig="";view="board";
+    $("authSheet").hidden=true;
+    applyState(st);syncSubscription();
+    toast(authMode==="join"?`Welcome, ${st.me.name}! Meet your monster, ${MONSTERS[st.me.monster].name}.`:`Hi ${st.me.name}!`,4000);
   }catch(ex){err.textContent=ex.message;}
   finally{btn.disabled=false;}
 });
+async function signedOut(msg){
+  try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
+  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";lanesData=[];view="board";resetChat();
+  clearInterval(chatTimer);chatTimer=null;
+  ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
+  $("banner").hidden=true;renderChrome();
+  openAuth("login");
+  if(msg) toast(msg);
+}
 
 /* ================= account ================= */
+function renderAcct(){
+  const me=S.me;
+  $("acctTitle").textContent=`Hi, ${me.name}`;
+  const m=$("acctMon");m.style.setProperty("--mc",colorVar(me.color));m.innerHTML=monSvg(me.monster);
+  $("acctMonName").textContent=MONSTERS[me.monster].name;
+  renderSwatches($("acctColors"),me.color,saveColor);
+  $("buzzToggle").checked=me.buzz!==false;
+}
 $("meChip").addEventListener("click",()=>{
   if(!S){openAuth("login");return;}
-  const me=mePerson();
-  $("acctTitle").textContent=`Hi, ${me.name}`;
-  $("acctTime").value=`${pad(me.h)}:${pad(me.m)}`;$("acctPin").value="";$("acctErr").textContent="";
-  leaveArmed=false;$("leaveBtn").textContent="Leave board";
+  renderAcct();
+  $("acctTime").value=`${pad(S.me.h)}:${pad(S.me.m)}`;$("acctPin").value="";$("acctErr").textContent="";
+  deleteArmed=false;$("deleteBtn").textContent="Delete account";
   $("acctSheet").hidden=false;
+});
+async function saveColor(k){
+  const prev=S.me.color;S.me.color=k;renderAcct();
+  try{lastSig="";applyState(await api("me",{action:"color",color:k}));renderAcct();}
+  catch(e){S.me.color=prev;renderAcct();$("acctErr").textContent=e.message;}
+}
+$("buzzToggle").addEventListener("change",async e=>{
+  const on=e.target.checked;
+  try{applyState(await api("me",{action:"buzz",buzz:on}));toast(on?"Friends' zaps will buzz your phone.":"Zaps will arrive quietly now.");}
+  catch(ex){e.target.checked=!on;$("acctErr").textContent=ex.message;}
 });
 $("acctClose").addEventListener("click",()=>{$("acctSheet").hidden=true;});
 $("acctTimeForm").addEventListener("submit",async e=>{
@@ -674,34 +939,85 @@ $("acctTimeForm").addEventListener("submit",async e=>{
 });
 $("acctPinForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const pin=$("acctPin").value.trim();if(!/^\d{4,6}$/.test(pin)){$("acctErr").textContent="Your PIN needs 4 to 6 digits.";return;}
-  try{await api("me",{action:"pin",pin});$("acctPin").value="";$("acctErr").textContent="";toast("PIN changed.");}
+  const pin=$("acctPin").value;if(pin.length<4){$("acctErr").textContent="Your passcode needs at least 4 characters.";return;}
+  try{await api("me",{action:"pin",pin});$("acctPin").value="";$("acctErr").textContent="";toast("Passcode changed.");}
   catch(ex){$("acctErr").textContent=ex.message;}
 });
-$("logoutBtn").addEventListener("click",async()=>{
-  try{await api("logout",{});}catch(e){}
-  signedOut("Logged out.");
+$("logoutBtn").addEventListener("click",async()=>{try{await api("logout",{});}catch(e){} signedOut("Logged out.");});
+let deleteArmed=false;
+$("deleteBtn").addEventListener("click",async()=>{
+  if(!deleteArmed){deleteArmed=true;$("deleteBtn").textContent="Tap again to delete";return;}
+  try{await api("me",{action:"delete"});signedOut("Your account is deleted.");}
+  catch(ex){$("acctErr").textContent=ex.message;}
 });
-let leaveArmed=false;
+
+/* ================= cave sheet ================= */
+const inviteLink=()=>`${location.origin}/?join=${S.cave.code}`;
+function openCaveSheet(){leaveArmed=false;kickArmed=null;$("caveErr").textContent="";renderCaveSheet();$("caveSheet").hidden=false;}
+let leaveArmed=false, kickArmed=null;
+function renderCaveSheet(){
+  if(!S||!S.cave){$("caveSheet").hidden=true;return;}
+  const c=S.cave, owner=c.owner===S.me.id;
+  $("caveTitle").textContent=c.name;
+  $("renameForm").hidden=!owner;
+  if(owner&&document.activeElement!==$("renameInput")) $("renameInput").value=c.name;
+  $("caveCode").textContent=c.code;
+  $("caveLink").textContent=inviteLink();
+  $("newCode").hidden=!owner;
+  $("shareInvite").hidden=!navigator.share;
+  $("leaveBtn").textContent=leaveArmed?"Tap again to leave":"Leave cave";
+  const list=$("memberList");list.replaceChildren();
+  members().forEach(p=>{
+    const li=document.createElement("li");li.style.setProperty("--mc0",p.c);
+    li.appendChild(monEl(p.monster,p.color,moodOf(p),"still avatar"));
+    const n=document.createElement("span");n.className="mname";n.textContent=p.name+(p.id===S.me.id?" (you)":"");li.appendChild(n);
+    if(p.id===c.owner){const o=document.createElement("span");o.className="owner-tag";o.textContent="Owner";li.appendChild(o);}
+    const t=document.createElement("span");t.className="mtime";t.textContent=fmt12(p.h,p.m);li.appendChild(t);
+    if(owner&&p.id!==S.me.id){
+      const k=document.createElement("button");k.type="button";k.className="kick"+(kickArmed===p.id?" armed":"");
+      k.textContent=kickArmed===p.id?"Sure?":"Remove";k.setAttribute("aria-label",`Remove ${p.name} from the cave`);
+      k.addEventListener("click",()=>kick(p));li.appendChild(k);
+    }
+    list.appendChild(li);
+  });
+}
+$("caveBtn").addEventListener("click",openCaveSheet);
+$("caveClose").addEventListener("click",()=>{$("caveSheet").hidden=true;});
+$("copyInvite").addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(inviteLink());toast("Invite link copied.");}
+  catch(e){toast("Copy didn't work. Press and hold the link above to copy it.",4500);}
+});
+$("shareInvite").addEventListener("click",async()=>{
+  try{await navigator.share({title:"Join my cave",text:`Join ${S.cave.name} on Clock-out Countdown. Code: ${S.cave.code}`,url:inviteLink()});}catch(e){}
+});
+$("newCode").addEventListener("click",async()=>{
+  try{applyState(await api("cave",{action:"newcode"}));toast("New code made. The old link no longer works.");}
+  catch(e){$("caveErr").textContent=e.message;}
+});
+$("renameForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try{applyState(await api("cave",{action:"rename",name:$("renameInput").value.trim()}));$("renameInput").blur();toast("Cave renamed.");}
+  catch(ex){$("caveErr").textContent=ex.message;}
+});
+async function kick(p){
+  if(kickArmed!==p.id){kickArmed=p.id;renderCaveSheet();return;}
+  kickArmed=null;
+  try{applyState(await api("cave",{action:"kick",pid:p.id}));toast(`${p.name} has left the cave.`);}
+  catch(e){$("caveErr").textContent=e.message;}
+}
 $("leaveBtn").addEventListener("click",async()=>{
-  if(!leaveArmed){leaveArmed=true;$("leaveBtn").textContent="Tap again to leave";return;}
-  try{await api("me",{action:"leave"});signedOut("You left the board.");}
-  catch(ex){$("acctErr").textContent=ex.message;}
+  if(!leaveArmed){leaveArmed=true;renderCaveSheet();return;}
+  const name=S.cave.name;
+  try{const d=await api("cave",{action:"leave"});$("caveSheet").hidden=true;view="board";applyState(d);toast(`You left ${name}.`);}
+  catch(e){$("caveErr").textContent=e.message;}
 });
 
-/* ================= invite ================= */
-$("inviteBtn").addEventListener("click",async()=>{
-  const link=location.origin+"/";
-  try{await navigator.clipboard.writeText(link);toast("Link copied. Send it to your friends so they can join.");}
-  catch(e){toast(`Send your friends this link: ${link}`,6000);}
-});
-
-/* sheet closing: the log-in sheet stays until you're in */
+/* sheets close on Escape / backdrop, except the log-in sheet while signed out */
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  $("acctSheet").hidden=true;$("shotSheet").hidden=true;
+  ["acctSheet","caveSheet","shotSheet"].forEach(id=>$(id).hidden=true);
 });
-["acctSheet","shotSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
+["acctSheet","caveSheet","shotSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
 
 /* ================= push / zaps ================= */
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -710,11 +1026,11 @@ const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Noti
 let swReg=null;
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("/sw.js").then(r=>{swReg=r;syncSubscription();updateBanner();}).catch(()=>{});
+  navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.type==="zap") gotZap(e.data);});
 }
 function b64ToBytes(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0));}
 async function currentSub(){if(!swReg||!pushSupported) return null;try{return await swReg.pushManager.getSubscription();}catch(e){return null;}}
 async function syncSubscription(){
-  // If this phone already allowed notifications, make sure the server files it under whoever is logged in.
   if(!token||!pushSupported||Notification.permission!=="granted") return;
   const sub=await currentSub(); if(!sub) return;
   try{await api("subscribe",{subscription:sub.toJSON()});}catch(e){}
@@ -729,7 +1045,7 @@ async function enableZaps(){
     let sub=await reg.pushManager.getSubscription();
     if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(publicKey)});
     await api("subscribe",{subscription:sub.toJSON()});
-    toast("Zaps are on. Friends can buzz you now ⚡");
+    toast("Zaps are on. Your cave can buzz you now ⚡");
     await refresh();
   }catch(e){if(e.status!==401) toast(e.message||"Couldn't turn on zaps. Try again.");}
   finally{btn.disabled=false;updateBanner();}
@@ -737,15 +1053,15 @@ async function enableZaps(){
 $("bannerBtn").addEventListener("click",enableZaps);
 async function updateBanner(){
   const banner=$("banner"),text=$("bannerText"),btn=$("bannerBtn");
-  if(!S){banner.hidden=true;return;}
+  if(!S||!S.cave||view!=="board"){banner.hidden=true;return;}
   let msg="",showBtn=false;
-  if(isIOS&&!standalone) msg=`<span class="bolt">⚡</span> On iPhone, tap <b>Share</b> then <b>Add to Home Screen</b>. Open Clock-out from your home screen to turn on zaps.`;
+  if(isIOS&&!standalone) msg=`⚡ On iPhone, tap <b>Share</b> then <b>Add to Home Screen</b>. Open Clock-out from your home screen to turn on zaps.`;
   else if(!pushSupported) msg="This browser can't receive zaps. Try Chrome on Android, or the home-screen app on iPhone.";
   else if(Notification.permission==="denied") msg="Notifications are blocked for this app. Allow them in your phone settings to receive zaps.";
   else{
     const sub=await currentSub();
-    if(Notification.permission==="granted"&&sub&&S.reachable.includes(S.me)){banner.hidden=true;return;}
-    msg=`<span class="bolt">⚡</span> Turn on zaps so friends can buzz your phone.`;showBtn=true;
+    if(Notification.permission==="granted"&&sub&&S.cave.reachable.includes(S.me.id)){banner.hidden=true;return;}
+    msg=`⚡ Turn on zaps so your cave can buzz your phone.`;showBtn=true;
   }
   text.innerHTML=msg;btn.hidden=!showBtn;banner.hidden=false;
 }
@@ -756,10 +1072,10 @@ $("installBtn").addEventListener("click",async()=>{if(!installEvt) return;instal
 window.addEventListener("appinstalled",()=>{$("installBtn").hidden=true;});
 
 /* ================= crew preview ================= */
-const CREW_COLORS=["--me","--sukee","--shunyi","--f1"];
 MONSTERS.forEach((mo,i)=>{
-  const d=document.createElement("div");d.className="crew-item";d.style.setProperty("--mc",`var(${CREW_COLORS[i]})`);
-  d.innerHTML=`<div class="mon dance">${mo.svg}</div><span></span>`;d.querySelector("span").textContent=mo.name;
+  const d=document.createElement("div");d.className="crew-item";
+  d.appendChild(monEl(i,COLOR_KEYS[(i*5)%COLOR_KEYS.length],"dance"));
+  const s=document.createElement("span");s.textContent=mo.name;d.appendChild(s);
   $("crewRow").appendChild(d);
 });
 document.querySelectorAll(".mood").forEach(b=>b.addEventListener("click",()=>{
@@ -789,12 +1105,11 @@ function showShot(url,msg,copied){
 $("shotClose").addEventListener("click",()=>{$("shotSheet").hidden=true;});
 
 /* ================= boot ================= */
-renderMeChip();
+renderChrome();
 if(token) refresh(); else openAuth("join");
 setInterval(tick,1000);
 setInterval(refresh,15000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){refresh();syncSubscription();}});
-navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.type==="zap") refresh();});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){refresh();syncSubscription();if(view==="chat") loadChat();}});
 </script>
 </body>
 </html>

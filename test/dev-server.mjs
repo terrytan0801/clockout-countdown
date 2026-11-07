@@ -1,23 +1,17 @@
 // Local preview: serves public/ and runs the API against an in-memory store (no real push).
-// node test/dev-server.mjs [port]
+// node test/dev-server.mjs [port]      SHIFT_MS=<ms> shifts the server clock for testing
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { makeHandler } from "../netlify/lib/handler.mjs";
+import { memStore } from "./mem-store.mjs";
 
-const m = new Map();
-const store = {
-  async get(k, o) { if (!m.has(k)) return null; return o?.type === "json" ? JSON.parse(m.get(k)) : m.get(k); },
-  async setJSON(k, v, o) { if (o?.onlyIfNew && m.has(k)) return { modified: false }; m.set(k, JSON.stringify(v)); return { modified: true }; },
-  async delete(k) { m.delete(k); },
-  async list({ prefix = "" } = {}) { return { blobs: [...m.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })) }; },
-};
 const webpush = {
   generateVAPIDKeys: () => ({ publicKey: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U", privateKey: "x" }),
   async sendNotification(sub, payload) { console.log("[push]", sub.endpoint, payload); },
 };
-const handle = makeHandler({ store, webpush, now: () => Date.now() + Number(process.env.SHIFT_MS || 0) });
-const types = { ".html": "text/html", ".js": "text/javascript", ".png": "image/png", ".webmanifest": "application/manifest+json" };
+const handle = makeHandler({ store: memStore(), webpush, now: () => Date.now() + Number(process.env.SHIFT_MS || 0) });
+const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 const root = new URL("../public/", import.meta.url).pathname;
 
 http.createServer(async (req, res) => {
