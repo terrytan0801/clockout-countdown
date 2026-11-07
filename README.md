@@ -1,4 +1,4 @@
-# Clock-out Countdown · v9.0
+# Clock-out Countdown · v10.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -8,6 +8,7 @@ A phone app (PWA) where friends live together in a **cave** and count down to cl
 - **Colours.** Pick your colour from 12 when you join, and change it any time in your account.
 - **⚡ Zap.** Buzz a cave-mate's phone with a push notification, once every 10 minutes per person. Each person decides with **Let friends buzz my phone** whether zaps vibrate or arrive quietly.
 - **Cave chat.** Messages show the sender's monster (in its current mood) and colour. No push for chat; a red dot shows unread messages.
+- **Loading screen.** The app stays on a loading screen until your login is checked. Each visit plays a different monster scene (tag, a meeting, the night shift, a race to the exit). Signed out, the log-in card sits on top of the scene and you only go in after logging in.
 - **Accounts.** Join with a unique name, clock-out time, colour and a passcode (4+ characters). 5 wrong passcodes lock that name for 10 minutes.
 
 ## About vibration

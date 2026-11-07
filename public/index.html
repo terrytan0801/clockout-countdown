@@ -223,12 +223,85 @@ input[type=time]{font-family:var(--f-mono)}
 .kick{font:700 12px/1 var(--f-mono);border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;height:30px;padding:0 10px;cursor:pointer}
 .kick:hover,.kick.armed{color:var(--danger);border-color:var(--danger)}
 .toast{position:fixed;left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));transform:translateX(-50%);z-index:30;
-  background:var(--ink);color:var(--card);font:700 14px/1.4 var(--f-mono);padding:12px 16px;border-radius:12px;max-width:min(92vw,460px);text-align:center;
+  background:var(--ink);color:var(--card);font:700 14px/1.4 var(--f-mono);padding:12px 16px;border-radius:12px;max-width:min(92vw,460px);text-align:center;z-index:40;
   box-shadow:0 8px 24px rgba(0,0,0,.18)}
+/* splash: loading screen with a different little monster scene each visit */
+body.booting{overflow:hidden}
+.splash{position:fixed;inset:0;z-index:25;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  transition:opacity .35s ease}
+.splash.out{opacity:0;pointer-events:none}
+.splash.with-auth{justify-content:flex-start}
+.splash-inner{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:420px;text-align:center}
+.brand{font-family:var(--f-display);font-size:clamp(24px,7vw,34px);line-height:1.05}
+.brand-sub{font:500 12px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.scene{position:relative;width:min(340px,86vw);height:180px;margin-top:8px;overflow:hidden}
+.scene .mon{width:100%;height:100%}
+.scene-cap{margin:0;font-size:14px;color:var(--muted)}
+.loading{margin:0;font:700 14px/1 var(--f-mono);display:inline-flex;align-items:center;gap:2px;min-height:20px}
+.dots{display:inline-flex;gap:4px;margin-left:4px}
+.dots i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:dot 1s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-6px);opacity:1}}
+.ground{position:absolute;left:0;right:0;bottom:14px;height:3px;border-radius:3px;background:var(--line)}
+/* chase */
+.runner{position:absolute;bottom:14px;left:-25%;width:66px;height:66px;animation:chase 3.6s linear infinite}
+.runner.lead::before{content:"!";position:absolute;top:-14px;left:50%;transform:translateX(-50%);font:700 18px var(--f-display);color:var(--danger)}
+@keyframes chase{from{left:-25%}to{left:105%}}
+/* meeting */
+.wb{position:absolute;left:2%;top:14px;width:38%;height:76px;background:var(--card);border:2px solid var(--line);border-radius:8px;display:flex;align-items:flex-end;gap:7%;padding:8px 12%}
+.wb i{flex:1;background:var(--c-teal);border-radius:3px 3px 0 0;animation:bars 2.4s ease-in-out infinite}
+.wb i:nth-child(2){background:var(--c-orange);animation-delay:.3s}.wb i:nth-child(3){background:var(--c-violet);animation-delay:.6s}
+@keyframes bars{0%,100%{height:30%}50%{height:90%}}
+.presenter{position:absolute;left:24%;bottom:14px;width:66px;height:66px}
+.say{position:absolute;left:34%;top:54px;background:var(--card);border:2px solid var(--line);border-radius:12px 12px 12px 3px;padding:6px 9px;display:flex;gap:4px;color:var(--muted)}
+.say i{width:5px;height:5px;border-radius:50%;background:currentColor;animation:dot 1s ease-in-out infinite}
+.say i:nth-child(2){animation-delay:.15s}.say i:nth-child(3){animation-delay:.3s}
+.seat{position:absolute;bottom:38px;width:56px;height:56px}
+.table{position:absolute;left:46%;right:1%;bottom:14px;height:30px;background:var(--track);border:2px solid var(--line);border-radius:10px 10px 4px 4px;z-index:2}
+/* night shift */
+.clock{position:absolute;left:8%;top:16px;width:46px;height:46px;border-radius:50%;border:3px solid var(--ink);background:var(--card)}
+.clock i{position:absolute;left:50%;bottom:50%;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--ink);transform-origin:50% 100%}
+.clock .hh{height:12px;animation:spin 12s linear infinite}.clock .mm{height:17px;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.win{position:absolute;right:6%;top:12px;width:76px;height:54px;border-radius:8px;background:#1d2a44;border:3px solid var(--line);overflow:hidden}
+.win::before{content:"";position:absolute;right:14px;top:9px;width:18px;height:18px;border-radius:50%;background:#ffd23f;box-shadow:-6px -3px 0 0 #1d2a44 inset}
+.win i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;animation:twinkle 1.6s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
+.sleeper{position:absolute;left:50%;bottom:24px;width:90px;height:90px;margin-left:-45px}
+.desk{position:absolute;left:18%;right:18%;bottom:14px;height:14px;border-radius:4px;background:var(--lap-hi);z-index:2}
+/* exit rush */
+.exit{position:absolute;right:4%;bottom:14px;width:52px;height:96px;border:3px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;background:var(--track)}
+.exit::after{content:"";position:absolute;right:8px;top:48%;width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.exit-sign{position:absolute;right:4%;bottom:118px;width:52px;text-align:center;font:700 11px/1 var(--f-mono);letter-spacing:.08em;color:#fff;background:var(--c-teal);border-radius:4px;padding:4px 0}
+.rusher{position:absolute;bottom:14px;left:-25%;width:60px;height:60px;animation:rush 3s ease-in infinite}
+@keyframes rush{0%{left:-25%;opacity:1}80%{left:76%;opacity:1}90%,100%{left:80%;opacity:0}}
+#splash.with-auth:not([hidden]) ~ #authSheet{background:transparent;place-items:end center}
+#splash.with-auth:not([hidden]) ~ #authSheet .sheet-card{max-height:calc(100% - 196px);box-shadow:0 -6px 30px rgba(0,0,0,.12)}
+.splash.with-auth .brand-sub,.splash.with-auth .scene-cap{display:none}
+.splash.with-auth .brand{font-size:24px}
+.splash.with-auth .scene{height:130px;margin-top:0}
+.splash.with-auth .wb{top:4px;height:66px}
+.splash.with-auth .say{top:40px}
+.splash.with-auth .exit-sign{bottom:114px}
+#aColors .sw{aspect-ratio:auto;height:34px;border-radius:9px}
+#authSheet{z-index:30}
+
+@media (prefers-reduced-motion:reduce){.scene *{animation:none!important}.runner,.rusher{left:20%}.runner:nth-child(3),.rusher:nth-child(3){left:45%}.runner:nth-child(4),.rusher:nth-child(4){left:70%}}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}.lane.overtime .bar i,.lane.zapped,.lane.zapped::after,#shot.zapped{animation:none!important}}
 </style>
 </head>
-<body>
+<body class="booting">
+<div class="splash" id="splash" role="status" aria-live="polite">
+  <div class="splash-inner">
+    <div class="brand-sub">Punch clock · UTC+8</div>
+    <div class="brand">Clock-out Countdown</div>
+    <div class="scene" id="scene" aria-hidden="true"></div>
+    <p class="scene-cap" id="sceneCap"></p>
+    <p class="loading" id="loadingLine"><span id="loadingText">Loading</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></p>
+    <button class="btn ghost" id="retryBtn" type="button" hidden>Try again</button>
+  </div>
+</div>
 <div class="wrap">
   <div id="shot">
     <header>
@@ -315,14 +388,14 @@ input[type=time]{font-family:var(--f-mono)}
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>v9.0</span>
+    <span>v10.0</span>
   </div>
 </div>
 
 <!-- log in / join -->
 <div class="sheet" id="authSheet" hidden>
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <div class="sheet-msg" id="authTitle">Clock-out Countdown</div>
+    <div class="sheet-msg" id="authTitle">Welcome to the cave</div>
     <p class="sheet-hint" id="inviteNote" hidden>You've been invited to a cave. Join or log in and you'll go straight in.</p>
     <div class="tabs" role="tablist" aria-label="Log in or join">
       <button class="tab" role="tab" id="tabJoin" type="button" aria-selected="true">Join</button>
@@ -513,7 +586,7 @@ function applyState(d){
   checkInvite();
 }
 async function refresh(){
-  if(!token) return;
+  if(!token||!S) return;
   try{applyState(await api("state"));}
   catch(e){if(e.status!==401) $("offline").hidden=false;}
 }
@@ -888,7 +961,9 @@ $("authForm").addEventListener("submit",async e=>{
     token=d.token;lsSet(LS_TOKEN,token);
     const {token:_,...st}=d;lastSig="";view="board";
     $("authSheet").hidden=true;
+    showSplash(authMode==="join"?"Setting up your monster":"Opening your cave");
     applyState(st);syncSubscription();
+    hideSplash(1000);
     toast(authMode==="join"?`Welcome, ${st.me.name}! Meet your monster, ${MONSTERS[st.me.monster].name}.`:`Hi ${st.me.name}!`,4000);
   }catch(ex){err.textContent=ex.message;}
   finally{btn.disabled=false;}
@@ -899,7 +974,7 @@ async function signedOut(msg){
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   $("banner").hidden=true;renderChrome();
-  openAuth("login");
+  showSplashForAuth("login");
   if(msg) toast(msg);
 }
 
@@ -1105,8 +1180,72 @@ function showShot(url,msg,copied){
 $("shotClose").addEventListener("click",()=>{$("shotSheet").hidden=true;});
 
 /* ================= boot ================= */
+/* ================= splash ================= */
+const splash=$("splash");
+let splashShownAt=Date.now(), hideTimer=null, bootRetry=null;
+// A different little scene each time the app opens.
+const SCENES=[
+  {cap:"Monsters playing tag",build(st,pick){
+    st.innerHTML=`<div class="ground"></div>`;
+    [-1.4,-0.85,-0.3].forEach((d,i)=>{const r=document.createElement("div");r.className="runner"+(i===0?" lead":"");r.style.animationDelay=d+"s";
+      r.appendChild(monEl(pick[i].m,pick[i].c,"dance"));st.appendChild(r);});
+  }},
+  {cap:"Monsters in a meeting",build(st,pick){
+    st.innerHTML=`<div class="wb"><i></i><i></i><i></i></div><div class="say"><i></i><i></i><i></i></div><div class="table"></div>`;
+    const pr=document.createElement("div");pr.className="presenter";pr.appendChild(monEl(pick[0].m,pick[0].c,"dance"));st.appendChild(pr);
+    ["50%","66%","82%"].forEach((left,i)=>{const s=document.createElement("div");s.className="seat";s.style.left=left;
+      s.appendChild(monEl(pick[i+1].m,pick[i+1].c,"work"));st.appendChild(s);});
+  }},
+  {cap:"The night shift is dozing off",build(st,pick){
+    st.innerHTML=`<div class="clock"><i class="hh"></i><i class="mm"></i></div><div class="win"><i style="left:12px;top:12px"></i><i style="left:30px;top:30px;animation-delay:.5s"></i><i style="left:20px;top:40px;animation-delay:1s"></i></div><div class="desk"></div>`;
+    const s=document.createElement("div");s.className="sleeper";s.appendChild(monEl(pick[0].m,pick[0].c,"tired"));st.appendChild(s);
+  }},
+  {cap:"Everyone racing to the exit",build(st,pick){
+    st.innerHTML=`<div class="ground"></div><div class="exit-sign">EXIT</div><div class="exit"></div>`;
+    [-2,-1,0].forEach((d,i)=>{const r=document.createElement("div");r.className="rusher";r.style.animationDelay=d+"s";
+      r.appendChild(monEl(pick[i].m,pick[i].c,"dance"));st.appendChild(r);});
+  }},
+];
+(function buildScene(){
+  let n=Number(lsGet("clockout.scene")||0);if(!Number.isFinite(n)) n=0;
+  lsSet("clockout.scene",String((n+1)%SCENES.length));
+  const shuffle=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+  const mons=shuffle(MONSTERS.map((_,i)=>i)), cols=shuffle(COLOR_KEYS.slice());
+  const pick=[0,1,2,3].map(i=>({m:mons[i],c:cols[i]}));
+  const sc=SCENES[n%SCENES.length];
+  sc.build($("scene"),pick);$("sceneCap").textContent=sc.cap;
+})();
+function showSplash(text){
+  clearTimeout(hideTimer);clearTimeout(bootRetry);
+  splash.hidden=false;splash.classList.remove("out","with-auth");document.body.classList.add("booting");
+  $("loadingLine").hidden=false;$("retryBtn").hidden=true;$("loadingText").textContent=text||"Loading";
+  splashShownAt=Date.now();
+}
+function hideSplash(minMs=1500){
+  clearTimeout(hideTimer);
+  hideTimer=setTimeout(()=>{
+    splash.classList.add("out");document.body.classList.remove("booting");
+    setTimeout(()=>{if(splash.classList.contains("out")) splash.hidden=true;},400);
+  },Math.max(0,minMs-(Date.now()-splashShownAt)));
+}
+// Signed out: keep the scene playing and put the log-in card on top of it.
+function showSplashForAuth(mode){
+  showSplash();splash.classList.add("with-auth");$("loadingLine").hidden=true;openAuth(mode);
+}
+async function bootLoad(){
+  $("loadingText").textContent="Loading your cave";$("retryBtn").hidden=true;
+  try{applyState(await api("state"));hideSplash();}
+  catch(e){
+    if(e.status===401) return; // signedOut() already put the log-in card up
+    $("loadingText").textContent="Can't reach the server. Retrying";$("retryBtn").hidden=false;
+    bootRetry=setTimeout(bootLoad,4000);
+  }
+}
+$("retryBtn").addEventListener("click",()=>{clearTimeout(bootRetry);bootLoad();});
+
 renderChrome();
-if(token) refresh(); else openAuth("join");
+if(token) bootLoad();
+else setTimeout(()=>showSplashForAuth("join"),1200);
 setInterval(tick,1000);
 setInterval(refresh,15000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){refresh();syncSubscription();if(view==="chat") loadChat();}});
