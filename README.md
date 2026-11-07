@@ -1,4 +1,4 @@
-# Clock-out Countdown · v11.0
+# Clock-out Countdown · v12.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -12,6 +12,8 @@ A phone app (PWA) where friends live together in a **cave** and count down to cl
 - **Accounts.** Join with a unique name, clock-out time, colour and a passcode (4+ characters). 5 wrong passcodes lock that name for 10 minutes.
 
 ## Admin page
+
+The admin page has its own logo (the Staff Badge: an ADMIN ID badge with Jelly as the photo) and its own favicon, so its tab is easy to tell apart from the app.
 
 Open `/admin` on the site (for example `https://splendid-gnome-120c81.netlify.app/admin`) and enter the admin key. It shows:
 
