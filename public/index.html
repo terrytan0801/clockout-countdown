@@ -480,10 +480,28 @@ body.noscroll{overflow:hidden}
 .panel-cap b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;margin-bottom:2px}
 .news-top{flex-wrap:nowrap}
 .news-top .sheet-msg{flex:1;min-width:0}
-.nback{font:700 13px var(--f-mono);text-decoration:none;flex:none}
-.newslist{display:flex;flex-direction:column;gap:10px}
-.nitem{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
-.nitem.latest{border:2px solid var(--accent)}
+.pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.pages::-webkit-scrollbar{display:none}
+.npage{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column;gap:8px;padding:2px 2px 4px;box-sizing:border-box}
+.strip{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.strip.n1 .frame,.strip.n3 .frame:last-child{grid-column:1/-1}
+.frame{margin:0;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+.frame:nth-child(odd){transform:rotate(-.6deg)}.frame:nth-child(even){transform:rotate(.5deg)}
+.frame .panel-art{height:118px;border:0;border-radius:0;gap:2px}
+.strip.n1 .frame .panel-art{height:170px}
+.frame .panel-art .mon{width:64px;height:64px}
+.strip.n1 .frame .panel-art .mon{width:92px;height:92px}
+.frame .panel-art .prop{width:36px;height:36px}
+.frame .panel-art .burst{font-size:16px}
+.frame .panel-art .tiles{width:auto;max-width:86%;gap:3px}
+.frame .panel-art .tiles .mon{width:34px;height:34px}
+.frame .panel-art .tiles.three{width:86%}
+.frame .panel-art .cbub .mon{width:34px!important;height:34px!important}
+.frame .panel-art .cbub span{font-size:11px;padding:5px 7px}
+.frame .panel-art .streakrow span{width:18px;height:18px;font-size:9px}
+.frame figcaption{font:700 12px/1.2 var(--f-mono);padding:6px 8px;border-top:2.5px solid var(--ink);background:var(--card)}
+.news-nav{justify-content:space-between}
+.npos{font:700 13px var(--f-mono);color:var(--muted)}
 .nhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .nver{font:700 12px/1 var(--f-mono);background:var(--ink);color:var(--card);border-radius:999px;padding:4px 8px}
 .ndate{font:500 12px var(--f-mono);color:var(--muted)}
@@ -632,7 +650,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v22.0</span>
+    <span>v23.0</span>
   </div>
 </div>
 
@@ -810,18 +828,14 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 <div class="sheet" id="newsSheet" hidden>
   <div class="sheet-card narrow news" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
     <div class="sheet-row split news-top">
-      <button class="linkbtn nback" id="newsBack" type="button" hidden>‹ All updates</button>
       <div class="sheet-msg" id="newsTitle">News</div>
       <button class="x" id="newsClose" type="button" aria-label="Close">×</button>
     </div>
-    <div class="newslist" id="newsList"></div>
-    <div class="ncomicview" id="newsComicView" hidden>
-      <p class="sheet-hint" id="newsMeta"></p>
-      <div class="comic" id="comic"></div>
-      <div class="sheet-row split">
-        <div class="cdots" id="cdots" aria-hidden="true"></div>
-        <button class="btn" id="newsNext" type="button">Next</button>
-      </div>
+    <div class="pages" id="newsPages" aria-live="polite"></div>
+    <div class="sheet-row split news-nav">
+      <button class="icon-btn" id="newsPrev" type="button" aria-label="Newer update">‹</button>
+      <span class="npos" id="newsPos"></span>
+      <button class="icon-btn" id="newsNext" type="button" aria-label="Older update">›</button>
     </div>
   </div>
 </div>
@@ -2563,7 +2577,7 @@ const NEWS=[
     "Every monster has a power: Jelly parties, Cyclo's eye, Tako notes, Mush cheers, Fluff weather, Dino roars.",
     "Open the app on workdays to level up: Lv1 at 3 days, Lv2 at 7, Lv3 at 14. Missing a day drops one level.",
     "Reroll your monster once a month and keep your level."],panels:[
-    {art:"powers",title:"Every monster has a power",text:"See yours in your account. Some are tools, some are just for fun."},
+    {art:"powers",title:"Monster powers",text:"See yours in your account. Some are tools, some are just for fun."},
     {art:"streak",title:"Level up",text:"Open the app on workdays. 3 in a row is Lv1, 7 is Lv2, 14 is Lv3. Weekends never break it."}]},
   {id:"v12",v:"v12.0",at:"2026-11-07T14:24",title:"Behind the scenes: admin logo",changes:["The admin page got its own Staff Badge logo."]},
   {id:"v11",v:"v11.0",at:"2026-11-07T14:01",title:"Usage stats",changes:[
@@ -2634,65 +2648,58 @@ function panelArt(kind){
   }
   return box;
 }
-let newsIdx=0, newsItem=null;
+let newsIdx=0;
+const comicNews=()=>NEWS.filter(n=>n.panels);
 function updatePeek(){
   const btn=$("newsBtn");
   if(!S||!NEWS.length){btn.hidden=true;return;}
   const unseen=lsGet(LS_NEWS)!==NEWS[0].id, mon=$("newsMon"), key=`${S.me.monster}|${S.me.color}`;
   if(mon.dataset.k!==key){mon.dataset.k=key;mon.replaceChildren(monEl(S.me.monster,S.me.color,"dance","still"));}
   btn.classList.toggle("fresh",unseen);
-  btn.setAttribute("aria-label",unseen?"News: something new to read":"News: every update to Clock-out");
+  btn.setAttribute("aria-label",unseen?"News: something new to read":"News: updates to Clock-out");
   btn.hidden=false;
 }
-// The list of every update. The newest one is marked New until the list has been opened once.
+// One comic page per update, newest first. Swipe left for older updates, right for newer ones.
 function openNews(){
-  const fresh=lsGet(LS_NEWS)!==NEWS[0].id, list=$("newsList");list.replaceChildren();
-  NEWS.forEach((n,i)=>{
-    const a=document.createElement("article");a.className="nitem"+(i===0?" latest":"");
+  const fresh=lsGet(LS_NEWS)!==NEWS[0].id, box=$("newsPages");box.replaceChildren();
+  comicNews().forEach((n,i)=>{
+    const pg=document.createElement("article");pg.className="npage";pg.setAttribute("aria-label",`${n.v}: ${n.title}`);
     const h=document.createElement("div");h.className="nhead";
     const v=document.createElement("span");v.className="nver";v.textContent=n.v;h.appendChild(v);
     const d=document.createElement("time");d.className="ndate";d.dateTime=n.at+"+08:00";d.textContent=newsWhen(n.at);h.appendChild(d);
     if(i===0&&fresh){const nw=document.createElement("span");nw.className="nnew";nw.textContent="New";h.appendChild(nw);}
-    a.appendChild(h);
-    const t=document.createElement("b");t.className="ntitle";t.textContent=n.title;a.appendChild(t);
-    const ul=document.createElement("ul");n.changes.forEach(c=>{const li=document.createElement("li");li.textContent=c;ul.appendChild(li);});a.appendChild(ul);
-    if(n.panels){const b=document.createElement("button");b.type="button";b.className="btn ghost ncomic";
-      b.textContent=`▶ Watch the comic · ${n.panels.length} ${n.panels.length===1?"panel":"panels"}`;b.addEventListener("click",()=>openComic(n));a.appendChild(b);}
-    list.appendChild(a);
+    pg.appendChild(h);
+    const t=document.createElement("b");t.className="ntitle";t.textContent=n.title;pg.appendChild(t);
+    const grid=document.createElement("div");grid.className=`strip n${n.panels.length}`;
+    n.panels.forEach(pn=>{
+      const f=document.createElement("figure");f.className="frame";
+      f.appendChild(panelArt(pn.art));
+      const c=document.createElement("figcaption");c.textContent=pn.title;c.title=pn.text;f.appendChild(c);
+      f.setAttribute("aria-label",`${pn.title}. ${pn.text}`);
+      grid.appendChild(f);
+    });
+    pg.appendChild(grid);box.appendChild(pg);
   });
-  showNewsList();$("newsSheet").hidden=false;list.scrollTop=0;
+  $("newsSheet").hidden=false;box.scrollLeft=0;showPage(0,false);
   if(fresh){lsSet(LS_NEWS,NEWS[0].id);updatePeek();}
 }
-function showNewsList(){
-  $("newsTitle").textContent="News";$("newsBack").hidden=true;$("newsList").hidden=false;$("newsComicView").hidden=true;newsItem=null;
+function showPage(i,smooth=true){
+  const box=$("newsPages"), n=box.childElementCount;newsIdx=Math.max(0,Math.min(n-1,i));
+  box.scrollTo({left:newsIdx*box.clientWidth,behavior:smooth?"smooth":"auto"});
+  syncNewsNav();
 }
-function openComic(item){
-  newsItem=item;newsIdx=0;
-  $("newsTitle").textContent=item.title;$("newsBack").hidden=false;$("newsList").hidden=true;$("newsComicView").hidden=false;
-  $("newsMeta").textContent=`${item.v} · ${newsWhen(item.at)}`;
-  const comic=$("comic"), dots=$("cdots");comic.replaceChildren();dots.replaceChildren();
-  item.panels.forEach((pn,i)=>{
-    const d=document.createElement("div");d.className="panel";d.setAttribute("role","group");d.setAttribute("aria-label",`${i+1} of ${item.panels.length}`);
-    d.appendChild(panelArt(pn.art));
-    const cap=document.createElement("p");cap.className="panel-cap";const b=document.createElement("b");b.textContent=pn.title;cap.appendChild(b);cap.append(pn.text);d.appendChild(cap);
-    comic.appendChild(d);dots.appendChild(document.createElement("i"));
-  });
-  comic.scrollLeft=0;showPanel(0,false);
+function syncNewsNav(){
+  const n=$("newsPages").childElementCount;
+  $("newsPos").textContent=n?`${newsIdx+1} / ${n}`:"";
+  $("newsPrev").disabled=newsIdx<=0;$("newsNext").disabled=newsIdx>=n-1;
 }
-function showPanel(i,smooth=true){
-  const comic=$("comic"), n=newsItem.panels.length;newsIdx=Math.max(0,Math.min(n-1,i));
-  comic.scrollTo({left:newsIdx*(comic.clientWidth+12),behavior:smooth?"smooth":"auto"});
-  [...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===newsIdx));
-  $("newsNext").textContent=newsIdx===n-1?"Done":"Next";
-}
-$("comic").addEventListener("scroll",()=>{
-  const c=$("comic"), i=Math.round(c.scrollLeft/(c.clientWidth+12));
-  if(i!==newsIdx&&newsItem){newsIdx=i;[...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===i));$("newsNext").textContent=i===newsItem.panels.length-1?"Done":"Next";}
+$("newsPages").addEventListener("scroll",()=>{
+  const b=$("newsPages"), i=Math.round(b.scrollLeft/Math.max(1,b.clientWidth));
+  if(i!==newsIdx){newsIdx=i;syncNewsNav();}
 },{passive:true});
-function closeNews(){$("newsSheet").hidden=true;showNewsList();}
-$("newsNext").addEventListener("click",()=>{if(newsIdx>=newsItem.panels.length-1) showNewsList();else showPanel(newsIdx+1);});
-$("newsBack").addEventListener("click",showNewsList);
-$("newsClose").addEventListener("click",closeNews);
+$("newsPrev").addEventListener("click",()=>showPage(newsIdx-1));
+$("newsNext").addEventListener("click",()=>showPage(newsIdx+1));
+$("newsClose").addEventListener("click",()=>{$("newsSheet").hidden=true;});
 $("newsBtn").addEventListener("click",openNews);
 
 /* ================= crew preview ================= */

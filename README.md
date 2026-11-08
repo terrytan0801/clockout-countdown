@@ -1,4 +1,4 @@
-# Clock-out Countdown · v22.0
+# Clock-out Countdown · v23.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -13,7 +13,7 @@ A phone app (PWA) where friends live together in a **cave** and count down to cl
 
 ## News
 
-The **News** button sits next to Screenshot at the top. It lists every update, newest first, with its version, date and time (Singapore) and what changed. Updates with a short comic (a few swipeable panels) have a **Watch the comic** button. While there's an update you haven't opened, your own monster hops inside the button and a red dot shows. New entries go at the top of the `NEWS` list in `public/index.html`.
+The **News** button sits next to Screenshot at the top. It shows one comic page per update (only updates that have a comic), newest first: version, date and time (Singapore), a title, and the comic panels with short captions. Swipe left for older updates and right for newer ones, or use the arrows. While there's an update you haven't opened, your own monster hops inside the button and a red dot shows. New entries go at the top of the `NEWS` list in `public/index.html` (entries without `panels` are kept as history but not shown).
 
 On phones, the account, Cave, Screenshot and News buttons sit in one row.
 
