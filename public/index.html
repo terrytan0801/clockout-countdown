@@ -372,7 +372,7 @@ body.booting{overflow:hidden}
 .calday.blank{visibility:hidden}
 body.noscroll{overflow:hidden}
 .cam{position:fixed;inset:0;z-index:40;background:#000;color:#fff;display:flex;flex-direction:column}
-.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .cam video.mirror{transform:scaleX(-1)}
 .cam-top{position:relative;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:max(14px,env(safe-area-inset-top,0px)) 14px 24px;background:linear-gradient(rgba(0,0,0,.55),transparent)}
 .cam-top span{font:700 14px/1.3 var(--f-mono);text-align:center;flex:1;text-shadow:0 1px 3px rgba(0,0,0,.6)}
@@ -388,19 +388,19 @@ body.noscroll{overflow:hidden}
 .cam-err:empty{display:none}
 .cam-after{display:flex;gap:10px}
 .btn.light{color:#fff;border-color:rgba(255,255,255,.55);background:rgba(0,0,0,.25)}
-.player{position:relative;aspect-ratio:9/16;width:min(100%,calc(58vh*9/16));margin:0 auto;border-radius:14px;overflow:hidden;background:#000 center/cover no-repeat}
-.player video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.player{flex:none;position:relative;aspect-ratio:9/16;width:min(100%,calc(58vh*9/16));margin:0 auto;border-radius:14px;overflow:hidden;background:#000 center/cover no-repeat}
+.player canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .psegs{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:3px}
 .psegs i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.4);overflow:hidden}
 .psegs i b{display:block;height:100%;width:0;background:#fff}
-.pwho{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;color:#fff;padding:28px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.55));text-shadow:0 1px 3px rgba(0,0,0,.6)}
-.pwho .mon{width:40px;height:40px;flex:none}
-.pwho b{font-family:var(--f-display);font-weight:400;font-size:18px;display:block;line-height:1.2}
-.pwho small{display:block;font:600 12px var(--f-mono)}
 .pplay{position:absolute;inset:0;border:0;background:rgba(0,0,0,.28);color:#fff;font-size:46px;cursor:pointer}
 .pplay[disabled]{cursor:wait;opacity:.6}
 .late{font:700 10px/1 var(--f-mono);background:var(--c-amber);color:#fff;border-radius:999px;padding:3px 6px;margin-left:6px;vertical-align:1px;text-shadow:none}
-.dpeople{display:flex;flex-wrap:wrap;gap:6px}
+.drings{display:flex;flex-direction:column;gap:8px}
+.dring{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:8px}
+.dring>b{font:700 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dring>div{display:flex;flex-wrap:wrap;gap:6px}
+.dring .none{font-size:13px;color:var(--muted)}
 .dp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 3px;font:700 12px var(--f-mono)}
 .dp .mon{width:26px;height:26px}
 .dp.miss{opacity:.65;border-style:dashed;font-weight:500}
@@ -532,8 +532,8 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>Once a day, at a random time, everyone's phone rings. Film 5 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v15.0</span>
+    <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
+    <span>v16.0</span>
   </div>
 </div>
 
@@ -736,12 +736,11 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <div class="sheet-row split"><div class="sheet-msg" id="dayTitle">Today</div><button class="x" id="dayClose" type="button" aria-label="Close">×</button></div>
     <p class="sheet-hint" id="daySub"></p>
     <div class="player" id="player">
-      <video id="pv" playsinline preload="auto"></video>
+      <canvas id="pc" width="540" height="960" role="img" aria-label="The day's clips, side by side for each ring"></canvas>
       <div class="psegs" id="pSegs"></div>
-      <div class="pwho" id="pWho"></div>
       <button class="pplay" id="pPlay" type="button" aria-label="Play the day">▶</button>
     </div>
-    <div class="dpeople" id="dayPeople"></div>
+    <div class="drings" id="dayRings"></div>
     <div class="makebox" id="makeBox" hidden>
       <div id="makeMon"></div>
       <div class="makemid"><b id="makeText">Making your video…</b><div class="prog"><i id="makeBar" style="width:0%"></i></div><small>Keep this screen open until it's done.</small></div>
@@ -1776,10 +1775,10 @@ function openWeather(p,w){
 }
 $("wxClose").addEventListener("click",()=>{$("wxSheet").hidden=true;});
 
-/* ================= Cave Calendar (v15) ================= */
-// Once a day the cave's phones ring at a random time. Everyone films 5-7 seconds; the clips fill a calendar,
-// and any day can be played back or turned into one video to save or post.
-const CLIP_MIN=5, CLIP_MAX=7, CLIP_MAX_BYTES=2_900_000, RING_LEN=238.8;
+/* ================= Cave Calendar ================= */
+// Four times a day, at random times, the cave's phones ring. Everyone films 2-4 seconds; the clips fill a calendar.
+// A day plays back the Setlog way: each ring shows everyone's clips side by side at once, then the next ring.
+const CLIP_MIN=2, CLIP_MAX=4, CLIP_MAX_BYTES=2_900_000, RING_LEN=238.8;
 const fmtLong=day=>new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(day+"T12:00:00Z"));
 const fmtLonger=day=>new Intl.DateTimeFormat("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(day+"T12:00:00Z"));
 const cssColor=k=>getComputedStyle(document.documentElement).getPropertyValue(`--c-${COLOR_KEYS.includes(k)?k:"orange"}`).trim()||"#ff6b3d";
@@ -1800,17 +1799,18 @@ function authURL(path){
   if(!urlCache.has(path)){const p=authBlob(path).then(b=>URL.createObjectURL(b));urlCache.set(path,p);p.catch(()=>urlCache.delete(path));}
   return urlCache.get(path);
 }
-const clipPath=(day,c,kind="clip")=>`${kind}/${S.cave.id}/${day}/${c.pid}?v=${c.at}`;
+const clipPath=(day,c,kind="clip")=>`${kind}/${S.cave.id}/${day}/${c.slot}?v=${c.at}`;
 
 /* ---- the ring bar on the board ---- */
 function updateRing(){
   const bar=$("ringBar"), r=S&&S.cave&&S.cave.ring;
   if(!r||view!=="board"){bar.hidden=true;return;}
-  const t=clockNow(), n=S.cave.clipsToday.length, total=S.cave.members.length, mine=S.me.clip, hot=!mine&&t<r.until;
+  const t=clockNow(), n=S.cave.clipsToday.filter(c=>c.r===r.r).length, total=S.cave.members.length, mine=S.me.clip, hot=!mine&&t<r.until;
+  const which=`Ring ${r.r+1} of ${r.of}`, last=r.r+1>=r.of;
   let title,sub,btn;
-  if(mine){title="You're in today's vlog";sub=`${n} of ${total} filmed · rang at ${sgTime(r.at)}`;btn="Watch";}
-  else if(hot){title="Film time!";sub=`${mmss(r.until-t)} left · ${n} of ${total} filmed`;btn="Film 5s";}
-  else{title="You missed the ring";sub=`It rang at ${sgTime(r.at)}. You can still post today, marked late.`;btn="Film late";}
+  if(mine){title="You're in this ring";sub=`${n} of ${total} filmed · ${which} · ${last?"that was today's last ring":"the next one is a surprise"}`;btn="Watch";}
+  else if(hot){title="Film time!";sub=`${mmss(r.until-t)} left · ${n} of ${total} filmed · ${which}`;btn="Film now";}
+  else{title="You missed the ring";sub=`${which} went off at ${sgTime(r.at)}. You can still film it, marked late.`;btn="Film late";}
   setT($("ringTitle"),title);setT($("ringSub"),sub);setT($("ringBtn"),btn);
   bar.classList.toggle("hot",hot);bar.hidden=false;
 }
@@ -1868,7 +1868,7 @@ function renderCal(){
   }
   const total=Object.values(calData.days).reduce((a,x)=>a+x.clips.length,0);
   $("daysHint").textContent=total?`${total} ${total===1?"clip":"clips"} this month. Tap a day to watch it, or make it into one video.`
-    :"No clips this month yet. Once a day, at a random time, everyone's phone rings. Film 5 seconds of what you're doing.";
+    :"No clips this month yet. Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing.";
 }
 $("mPrev").addEventListener("click",()=>loadDays(addMonth(calMonth,-1)));
 $("mNext").addEventListener("click",()=>loadDays(addMonth(calMonth,1)));
@@ -1876,9 +1876,13 @@ $("mNext").addEventListener("click",()=>loadDays(addMonth(calMonth,1)));
 /* ---- the camera ---- */
 const cam={stream:null,facing:"user",rec:null,chunks:[],blob:null,thumb:null,dur:0,t0:0,raf:0,url:null};
 const camSupported=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
-function drawCover(g,v,W,H){
+function drawCover(g,v,W,H,x=0,y=0){
   const vw=v.videoWidth,vh=v.videoHeight;if(!vw||!vh) return false;
-  const k=Math.max(W/vw,H/vh), w=vw*k, h=vh*k;g.drawImage(v,(W-w)/2,(H-h)/2,w,h);return true;
+  const k=Math.max(W/vw,H/vh), w=vw*k, h=vh*k;g.drawImage(v,x+(W-w)/2,y+(H-h)/2,w,h);return true;
+}
+function drawContain(g,v,W,H,x=0,y=0){
+  const vw=v.videoWidth,vh=v.videoHeight;if(!vw||!vh) return false;
+  const k=Math.min(W/vw,H/vh), w=vw*k, h=vh*k;g.drawImage(v,x+(W-w)/2,y+(H-h)/2,w,h);return true;
 }
 function openCam(){
   if(!S||!S.cave||!S.cave.ring){toast("Wait for your cave's ring, then film.");return;}
@@ -1887,14 +1891,29 @@ function openCam(){
   $("camSheet").hidden=false;document.body.classList.add("noscroll");
   camStart();
 }
+// Use the camera's full, unzoomed view: its own aspect ratio (usually 4:3), the widest zoom, and a sharper size when it keeps that view.
+async function widen(track){
+  try{
+    const caps=track.getCapabilities?track.getCapabilities():{}, s=track.getSettings(), w=s.width, h=s.height;
+    const zoom=caps.zoom&&caps.zoom.min!=null?{advanced:[{zoom:caps.zoom.min}]}:{};
+    if(!w||!h){if(zoom.advanced) await track.applyConstraints(zoom);return;}
+    const ratio=Math.max(w,h)/Math.min(w,h);
+    if(Math.max(w,h)<1200) await track.applyConstraints({width:{ideal:w*2},height:{ideal:h*2},aspectRatio:{ideal:w/h},...zoom});
+    else if(zoom.advanced) await track.applyConstraints({width:{ideal:w},height:{ideal:h},...zoom});
+    const s2=track.getSettings(), r2=Math.max(s2.width,s2.height)/Math.min(s2.width,s2.height);
+    if(Math.abs(r2-ratio)>0.08) await track.applyConstraints({width:{ideal:w},height:{ideal:h},aspectRatio:{ideal:w/h},...zoom});
+  }catch(e){}
+}
 async function camStart(){
   camStopStream();$("camRec").disabled=true;
-  const want={video:{facingMode:cam.facing,width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30,max:30}},audio:true};
-  try{cam.stream=await navigator.mediaDevices.getUserMedia(want);}
+  const video={facingMode:cam.facing,frameRate:{ideal:30,max:30}};
+  try{cam.stream=await navigator.mediaDevices.getUserMedia({video,audio:true});}
   catch(e){
-    try{cam.stream=await navigator.mediaDevices.getUserMedia({...want,audio:false});}
+    try{cam.stream=await navigator.mediaDevices.getUserMedia({video,audio:false});}
     catch(e2){$("camErr").textContent="The camera is blocked. Allow the camera for this app in your phone's settings, then try again.";return;}
   }
+  if($("camSheet").hidden){camStopStream();return;}
+  const track=cam.stream.getVideoTracks()[0];if(track) await widen(track);
   if($("camSheet").hidden){camStopStream();return;}
   const v=$("camVideo");v.srcObject=cam.stream;v.classList.toggle("mirror",cam.facing==="user");v.play().catch(()=>{});
   $("camRec").disabled=false;
@@ -1915,7 +1934,7 @@ function closeCam(){
 function startRec(){
   if(!cam.stream) return;
   const type=pickType();
-  try{cam.rec=new MediaRecorder(cam.stream,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_400_000,audioBitsPerSecond:64_000});}
+  try{cam.rec=new MediaRecorder(cam.stream,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_600_000,audioBitsPerSecond:64_000});}
   catch(e){try{cam.rec=new MediaRecorder(cam.stream);}catch(e2){$("camErr").textContent="This phone can't record here. Try Safari on iPhone or Chrome on Android.";return;}}
   cam.chunks=[];cam.thumb=null;$("camErr").textContent="";
   cam.rec.ondataavailable=e=>{if(e.data&&e.data.size) cam.chunks.push(e.data);};
@@ -1925,8 +1944,8 @@ function startRec(){
   let grabbed=false;
   const loop=()=>{
     const el=(performance.now()-cam.t0)/1000;setRecRing(Math.min(1,el/CLIP_MAX));
-    setT($("camHint"),el<CLIP_MIN?`Filming… ${Math.ceil(CLIP_MIN-el)}`:"Tap to stop, or keep going to 7");
-    if(!grabbed&&el>1.2){grabbed=true;grabThumb();}
+    setT($("camHint"),el<CLIP_MIN?`Filming… ${Math.ceil(CLIP_MIN-el)}`:"Tap to stop, or keep going to 4");
+    if(!grabbed&&el>0.8){grabbed=true;grabThumb();}
     if(el>=CLIP_MAX){if(cam.rec.state!=="inactive") cam.rec.stop();return;}
     cam.raf=requestAnimationFrame(loop);
   };
@@ -1981,87 +2000,14 @@ $("camPost").addEventListener("click",async()=>{if(cam.blob&&await postClip(cam.
 // Phones without in-app recording use their own camera app instead.
 $("camFile").addEventListener("change",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f) return;
-  if(f.size>CLIP_MAX_BYTES){toast("That video is too big to send. Keep it to about 5 seconds.",4500);return;}
+  if(f.size>CLIP_MAX_BYTES){toast("That video is too big to send. Keep it to about 3 seconds.",4500);return;}
   const dur=await new Promise(res=>{const v=document.createElement("video");v.preload="metadata";v.onloadedmetadata=()=>{res(v.duration);URL.revokeObjectURL(v.src);};v.onerror=()=>res(NaN);v.src=URL.createObjectURL(f);});
-  if(!(dur>=4.5&&dur<=8)){toast("Clips are 5 to 7 seconds. Film a shorter one.",4500);return;}
+  if(!(dur>=1.5&&dur<=5)){toast("Clips are 2 to 4 seconds. Film a shorter one.",4500);return;}
   postClip(f,null,dur);
 });
 
-/* ---- one day: player, people, make a video ---- */
-let dayCtx=null, making=null;
-const pv=$("pv");
-async function openDay(day){
-  if(!S||!S.cave) return;
-  let d;
-  try{d=await api("days?month="+day.slice(0,7));}catch(e){toast(e.message);return;}
-  if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
-  const info=d.days[day];
-  if(!info||!info.clips.length){toast("No clips that day yet.");return;}
-  stopPlayer();cancelMake();
-  dayCtx={day,clips:info.clips,ring:info.ring,idx:0,urls:[],out:null};
-  $("dayTitle").textContent=day===S.day?"Today":fmtLong(day);
-  $("daySub").textContent=`Rang at ${sgTime(info.ring)} · ${info.clips.length} ${info.clips.length===1?"clip":"clips"}`;
-  const people=$("dayPeople");people.replaceChildren();
-  info.clips.forEach(c=>{
-    const s=document.createElement("span");s.className="dp";s.appendChild(monEl(c.monster,c.color,"dance","still"));
-    s.append(`${c.name} · ${sgTime(c.at)}`);if(c.late){const l=document.createElement("span");l.className="late";l.textContent="Late";s.appendChild(l);}
-    people.appendChild(s);
-  });
-  if(day===S.day){
-    const posted=new Set(info.clips.map(c=>c.pid));
-    members().filter(p=>!posted.has(p.id)).forEach(p=>{
-      const s=document.createElement("span");s.className="dp miss";s.appendChild(monEl(p.monster,p.color,"work","still"));
-      s.append(`${p.name} hasn't filmed`);people.appendChild(s);
-    });
-  }
-  const segs=$("pSegs");segs.replaceChildren();info.clips.forEach(()=>{const i=document.createElement("i");i.appendChild(document.createElement("b"));segs.appendChild(i);});
-  showWho(0);$("player").style.backgroundImage="";
-  const cover=info.clips.find(c=>c.thumb);
-  if(cover) authURL(clipPath(day,cover,"thumb")).then(u=>{if(dayCtx&&dayCtx.day===day) $("player").style.backgroundImage=`url("${u}")`;}).catch(()=>{});
-  $("pPlay").hidden=false;$("pPlay").textContent="▶";$("pPlay").disabled=true;
-  $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=false;$("makeVid").textContent="Make video";
-  $("redoClip").hidden=!(day===S.day&&S.me.clip&&S.cave.ring);
-  $("daySheet").hidden=false;
-  if(day===S.day) markDaysSeen();
-  // Load every clip first, so Play starts straight away (iPhone only plays sound from a direct tap).
-  const urls=await Promise.all(info.clips.map(c=>authURL(clipPath(day,c)).catch(()=>null)));
-  if(!dayCtx||dayCtx.day!==day) return;
-  dayCtx.urls=urls;$("pPlay").disabled=false;
-  if(!urls.some(Boolean)) $("dayErr").textContent="These clips couldn't be loaded. Check your connection and try again.";
-}
-function showWho(i){
-  const c=dayCtx.clips[i], w=$("pWho");w.replaceChildren();if(!c) return;
-  w.appendChild(monEl(c.monster,c.color,"dance","still"));
-  const t=document.createElement("div"), b=document.createElement("b");b.textContent=c.name;t.appendChild(b);
-  const sm=document.createElement("small");sm.textContent=sgTime(c.at);
-  if(c.late){const l=document.createElement("span");l.className="late";l.textContent="Late";sm.appendChild(l);}
-  t.appendChild(sm);w.appendChild(t);
-}
-function playAt(i){
-  if(!dayCtx) return;
-  const segs=[...$("pSegs").children];
-  if(i>=dayCtx.clips.length){dayCtx.idx=0;$("pPlay").hidden=false;$("pPlay").textContent="↻";$("pPlay").setAttribute("aria-label","Play the day again");return;}
-  dayCtx.idx=i;
-  segs.forEach((s,j)=>{s.firstChild.style.width=j<i?"100%":"0%";});
-  const u=dayCtx.urls[i];if(!u) return playAt(i+1);
-  showWho(i);$("pPlay").hidden=true;
-  pv.src=u;
-  const p=pv.play();
-  if(p) p.catch(()=>{pv.muted=true;pv.play().catch(()=>{$("pPlay").hidden=false;});});
-}
-pv.addEventListener("timeupdate",()=>{
-  if(!dayCtx) return;const c=dayCtx.clips[dayCtx.idx], s=$("pSegs").children[dayCtx.idx];
-  if(c&&s) s.firstChild.style.width=Math.min(100,pv.currentTime/(isFinite(pv.duration)&&pv.duration>0?pv.duration:c.dur||6)*100)+"%";
-});
-pv.addEventListener("ended",()=>{if(dayCtx) playAt(dayCtx.idx+1);});
-pv.addEventListener("click",()=>{if(dayCtx&&!pv.paused) playAt(dayCtx.idx+1);});
-$("pPlay").addEventListener("click",()=>{if(dayCtx) playAt(dayCtx.idx||0);});
-function stopPlayer(){pv.pause();pv.removeAttribute("src");pv.load();}
-function closeDay(){stopPlayer();cancelMake();if(dayCtx&&dayCtx.saveUrl) URL.revokeObjectURL(dayCtx.saveUrl);dayCtx=null;$("daySheet").hidden=true;}
-$("dayClose").addEventListener("click",closeDay);
-$("redoClip").addEventListener("click",()=>{closeDay();openCam();});
-
-// Turn a monster into a picture for the video: copy each part's computed colours into the SVG.
+/* ---- drawing a day: a title card, then one split screen per ring ---- */
+// Turn a monster into a picture for the canvas: copy each part's computed colours into the SVG.
 const monImgCache=new Map();
 function monImage(i,color){
   const key=i+"|"+color;
@@ -2088,78 +2034,193 @@ function wrapText(g,text,maxW){
   words.forEach(w=>{const t=line?line+" "+w:w;if(g.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
   if(line) lines.push(line);return lines;
 }
-function drawIntro(g,W,H,ctx,mons,f){
-  g.fillStyle="#18231d";g.fillRect(0,0,W,H);
+const VW=720, VH=1280, HEAD=132, GAP=8;
+// Pick the grid that shows the clips (usually 3:4 portrait) as big as possible, without cropping.
+function gridFor(n,aspect=3/4){
+  let best=null;
+  for(let cols=1;cols<=4;cols++){
+    const rows=Math.ceil(n/cols), tw=(VW-GAP*(cols+1))/cols, th=(VH-HEAD-GAP*(rows+1))/rows;
+    const w=Math.min(tw,th*aspect), area=w*(w/aspect)*n;
+    if(!best||area>best.area) best={cols,rows,tw,th,area};
+  }
+  const tiles=[];
+  for(let i=0;i<n;i++){
+    const row=Math.floor(i/best.cols), col=i%best.cols, inRow=Math.min(best.cols,n-row*best.cols);
+    const x0=(VW-(inRow*best.tw+(inRow-1)*GAP))/2;
+    tiles.push({x:x0+col*(best.tw+GAP),y:HEAD+GAP+row*(best.th+GAP),w:best.tw,h:best.th});
+  }
+  return tiles;
+}
+function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function drawIntro(g,ctx,mons,f){
+  g.fillStyle="#18231d";g.fillRect(0,0,VW,VH);
   g.globalAlpha=Math.min(1,f*3);g.textAlign="center";g.fillStyle="#ff6b3d";
-  g.font="700 26px 'JetBrains Mono', monospace";g.fillText("CLOCK-OUT · CAVE CALENDAR",W/2,330);
+  g.font="700 26px 'JetBrains Mono', monospace";g.fillText("CLOCK-OUT · CAVE CALENDAR",VW/2,330);
   g.fillStyle="#ffffff";g.font="64px Bungee, sans-serif";
-  wrapText(g,S.cave.name,W-120).slice(0,3).forEach((l,i)=>g.fillText(l,W/2,430+i*76));
+  wrapText(g,S.cave.name,VW-120).slice(0,3).forEach((l,i)=>g.fillText(l,VW/2,430+i*76));
   g.fillStyle="#cfdcd4";g.font="600 32px 'JetBrains Mono', monospace";
-  g.fillText(fmtLonger(ctx.day),W/2,700);g.fillText(`Rang at ${sgTime(ctx.ring)}`,W/2,748);
-  const n=ctx.clips.length, size=Math.min(130,(W-80)/Math.min(n,5)), cols=Math.min(n,5);
-  ctx.clips.forEach((c,i)=>{
-    const row=Math.floor(i/cols), col=i%cols, inRow=Math.min(cols,n-row*cols), x0=(W-inRow*size)/2+col*size, y=820+row*(size+44);
-    const bob=Math.sin(f*Math.PI*4+i)*6;
-    if(mons[i]) g.drawImage(mons[i],x0+8,y+bob,size-16,size-16);
-    g.fillStyle=cssColor(c.color);g.font="700 22px 'JetBrains Mono', monospace";g.fillText(c.name.slice(0,10),x0+size/2,y+size+12);
+  g.fillText(fmtLonger(ctx.day),VW/2,700);
+  g.fillText(`${ctx.groups.length} ${ctx.groups.length===1?"ring":"rings"} · ${ctx.people.length} ${ctx.people.length===1?"monster":"monsters"}`,VW/2,748);
+  const n=ctx.people.length, cols=Math.min(n,6), size=Math.min(120,(VW-60)/cols);
+  ctx.people.forEach((c,i)=>{
+    const row=Math.floor(i/cols), col=i%cols, inRow=Math.min(cols,n-row*cols), x0=(VW-inRow*size)/2+col*size, y=820+row*(size+44);
+    const bob=Math.sin(f*Math.PI*4+i)*6, m=mons[c.monster+"|"+c.color];
+    if(m) g.drawImage(m,x0+8,y+bob,size-16,size-16);
+    g.fillStyle=cssColor(c.color);g.font="700 20px 'JetBrains Mono', monospace";g.fillText(c.name.slice(0,9),x0+size/2,y+size+12);
   });
   g.globalAlpha=1;g.textAlign="left";
 }
-function drawClip(g,W,H,v,c,mon,ctx){
-  g.fillStyle="#000";g.fillRect(0,0,W,H);drawCover(g,v,W,H);
-  let gr=g.createLinearGradient(0,H-360,0,H);gr.addColorStop(0,"rgba(0,0,0,0)");gr.addColorStop(1,"rgba(0,0,0,.65)");g.fillStyle=gr;g.fillRect(0,H-360,W,360);
-  gr=g.createLinearGradient(0,0,0,160);gr.addColorStop(0,"rgba(0,0,0,.45)");gr.addColorStop(1,"rgba(0,0,0,0)");g.fillStyle=gr;g.fillRect(0,0,W,160);
-  g.shadowColor="rgba(0,0,0,.6)";g.shadowBlur=8;
-  g.fillStyle="#ffffff";g.font="700 24px 'JetBrains Mono', monospace";g.fillText(`${S.cave.name} · ${fmtLong(ctx.day)}`.toUpperCase(),36,70);
-  if(mon) g.drawImage(mon,28,H-196,130,130);
-  g.font="52px Bungee, sans-serif";g.fillStyle="#ffffff";g.fillText(c.name,170,H-118);
-  g.font="700 30px 'JetBrains Mono', monospace";g.fillStyle=cssColor(c.color);
-  const t=sgTime(c.at);g.fillText(t,172,H-74);
-  if(c.late){const x=172+g.measureText(t).width+16;g.shadowBlur=0;g.fillStyle="#c2701b";g.fillRect(x,H-102,92,36);g.fillStyle="#fff";g.font="700 22px 'JetBrains Mono', monospace";g.fillText("LATE",x+18,H-76);}
-  g.shadowBlur=0;
+function drawRing(g,ctx,grp,vids,mons){
+  g.fillStyle="#101613";g.fillRect(0,0,VW,VH);
+  // header: which ring and when
+  g.textAlign="center";g.fillStyle="#ffffff";g.font="46px Bungee, sans-serif";
+  g.fillText(sgTime(grp.at).toUpperCase(),VW/2,70);
+  g.fillStyle="#9fb3a8";g.font="700 22px 'JetBrains Mono', monospace";
+  g.fillText(`${S.cave.name} · ${fmtLong(ctx.day)} · ring ${grp.r+1}`.toUpperCase(),VW/2,108);
+  g.textAlign="left";
+  const tiles=gridFor(grp.clips.length);
+  grp.clips.forEach((c,i)=>{
+    const t=tiles[i], v=vids[i], r=Math.min(18,t.w*.06);
+    g.save();roundRect(g,t.x,t.y,t.w,t.h,r);g.clip();
+    g.fillStyle=cssColor(c.color);g.fillRect(t.x,t.y,t.w,t.h);
+    if(v&&v.videoWidth){g.globalAlpha=.35;drawCover(g,v,t.w,t.h,t.x,t.y);g.globalAlpha=1;g.fillStyle="rgba(0,0,0,.35)";g.fillRect(t.x,t.y,t.w,t.h);drawContain(g,v,t.w,t.h,t.x,t.y);}
+    // name label
+    const k=Math.max(.55,Math.min(1,t.w/360)), lh=Math.round(64*k);
+    const gr=g.createLinearGradient(0,t.y+t.h-lh*1.6,0,t.y+t.h);gr.addColorStop(0,"rgba(0,0,0,0)");gr.addColorStop(1,"rgba(0,0,0,.6)");
+    g.fillStyle=gr;g.fillRect(t.x,t.y+t.h-lh*1.6,t.w,lh*1.6);
+    const m=mons[c.monster+"|"+c.color], ms=Math.round(56*k);
+    if(m) g.drawImage(m,t.x+8*k,t.y+t.h-ms-8*k,ms,ms);
+    g.fillStyle="#ffffff";g.font=`${Math.round(28*k)}px Bungee, sans-serif`;
+    const nx=t.x+ms+14*k;g.fillText(c.name,nx,t.y+t.h-(c.late?32:18)*k);
+    if(c.late){g.font=`700 ${Math.round(15*k)}px 'JetBrains Mono', monospace`;const lw=g.measureText("LATE").width+12*k;
+      g.fillStyle="#c2701b";g.fillRect(nx,t.y+t.h-20*k,lw,20*k);g.fillStyle="#fff";g.fillText("LATE",nx+6*k,t.y+t.h-5*k);}
+    g.restore();
+  });
 }
 function frames(ms,draw,job,done){
   return new Promise(res=>{const st=performance.now();(function f(){
     if(job.cancel) return res();const el=performance.now()-st;draw(Math.min(el,ms));
     if(el>=ms||(done&&done())) return res();requestAnimationFrame(f);})();});
 }
+// Groups the day's clips by ring, in ring order.
+function groupDay(day,info){
+  const groups=[];
+  info.clips.forEach(c=>{let gp=groups.find(x=>x.r===c.r);if(!gp){gp={r:c.r,at:info.rings[c.r]||c.at,clips:[]};groups.push(gp);}gp.clips.push(c);});
+  groups.sort((a,b)=>a.r-b.r);
+  const people=[];info.clips.forEach(c=>{if(!people.some(p=>p.pid===c.pid)) people.push(c);});
+  return {groups,people};
+}
+async function dayAssets(ctx){
+  const mons={};
+  await Promise.all(ctx.people.concat(ctx.clips).map(async c=>{const k=c.monster+"|"+c.color;if(!(k in mons)) mons[k]=await monImage(c.monster,c.color).catch(()=>null);}));
+  return mons;
+}
+// Plays a day onto a canvas (2d context g, drawing in 720x1280). With audio, each ring's clips sound together.
+async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
+  await Promise.all([document.fonts.load("46px Bungee"),document.fonts.load("700 22px 'JetBrains Mono'")]).catch(()=>{});
+  const mons=await dayAssets(ctx);
+  const segOf=gp=>Math.min(CLIP_MAX+.3,Math.max(...gp.clips.map(c=>c.dur||3)))+.25;
+  const total=1.4+ctx.groups.reduce((a,gp)=>a+segOf(gp),0);let done=0;
+  await frames(1400,el=>{drawIntro(g,ctx,mons,el/1400);onPct&&onPct(el/1000/total);},job);done=1.4;
+  for(let gi=0;gi<ctx.groups.length&&!job.cancel;gi++){
+    const gp=ctx.groups[gi];onRing&&onRing(gi);
+    const urls=await Promise.all(gp.clips.map(c=>authURL(clipPath(ctx.day,c)).catch(()=>null)));
+    const vids=urls.map(u=>{if(!u) return null;const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.className="offstage";v.src=u;document.body.appendChild(v);return v;});
+    await Promise.all(vids.map(v=>v&&new Promise(res=>{if(v.readyState>=2) return res();v.onloadeddata=res;v.onerror=res;setTimeout(res,8000);})));
+    let srcs=[];
+    if(ac&&out){
+      const bufs=await Promise.all(gp.clips.map(c=>authBlob(clipPath(ctx.day,c)).then(b=>b.arrayBuffer()).then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null)));
+      const gain=ac.createGain();gain.gain.value=1/Math.sqrt(Math.max(1,bufs.filter(Boolean).length));gain.connect(out);
+      srcs=bufs.map(b=>{if(!b) return null;const s=ac.createBufferSource();s.buffer=b;s.connect(gain);return s;});
+    }
+    await Promise.all(vids.map(v=>v&&v.play().catch(()=>{})));
+    srcs.forEach(s=>s&&s.start());
+    const seg=segOf(gp)*1000;
+    await frames(seg,el=>{drawRing(g,ctx,gp,vids,mons);onPct&&onPct((done+el/1000)/total,gi,el/seg);},job,()=>vids.every(v=>!v||v.ended));
+    srcs.forEach(s=>{if(s) try{s.stop();}catch(e){}});
+    vids.forEach(v=>{if(v){v.pause();v.remove();}});
+    done+=segOf(gp);
+  }
+}
+
+/* ---- one day: the player, who filmed each ring, make a video ---- */
+let dayCtx=null, making=null, playing=null;
+async function openDay(day){
+  if(!S||!S.cave) return;
+  let d;
+  try{d=await api("days?month="+day.slice(0,7));}catch(e){toast(e.message);return;}
+  if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
+  const info=d.days[day];
+  if(!info||!info.clips.length){toast("No clips that day yet.");return;}
+  stopPlayer();cancelMake();
+  dayCtx={day,clips:info.clips,rings:info.rings,...groupDay(day,info)};
+  $("dayTitle").textContent=day===S.day?"Today":fmtLong(day);
+  $("daySub").textContent=`${info.clips.length} ${info.clips.length===1?"clip":"clips"} from ${dayCtx.groups.length} ${dayCtx.groups.length===1?"ring":"rings"}`;
+  const box=$("dayRings");box.replaceChildren();
+  info.rings.forEach((at,r)=>{
+    const clips=info.clips.filter(c=>c.r===r), row=document.createElement("div");row.className="dring";
+    const b=document.createElement("b");b.textContent=`Ring ${r+1} · ${sgTime(at)}`;row.appendChild(b);
+    const list=document.createElement("div");
+    clips.forEach(c=>{
+      const s=document.createElement("span");s.className="dp";s.appendChild(monEl(c.monster,c.color,"dance","still"));
+      s.append(c.name);if(c.late){const l=document.createElement("span");l.className="late";l.textContent="Late";s.appendChild(l);}
+      list.appendChild(s);
+    });
+    if(!clips.length){const n=document.createElement("span");n.className="none";n.textContent="Nobody filmed this one.";list.appendChild(n);}
+    row.appendChild(list);box.appendChild(row);
+  });
+  const segs=$("pSegs");segs.replaceChildren();dayCtx.groups.forEach(()=>{const i=document.createElement("i");i.appendChild(document.createElement("b"));segs.appendChild(i);});
+  $("pPlay").hidden=false;$("pPlay").textContent="▶";$("pPlay").disabled=false;$("pPlay").setAttribute("aria-label","Play the day");
+  $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=false;$("makeVid").textContent="Make video";
+  $("redoClip").hidden=!(day===S.day&&S.me.clip&&S.cave.ring);
+  $("daySheet").hidden=false;
+  if(day===S.day) markDaysSeen();
+  // a still title card until Play, and fetch the clips in the background so playback starts quickly
+  const g=$("pc").getContext("2d");g.setTransform($("pc").width/VW,0,0,$("pc").height/VH,0,0);
+  dayAssets(dayCtx).then(m=>{if(dayCtx&&dayCtx.day===day&&!playing) drawIntro(g,dayCtx,m,1);});
+  info.clips.forEach(c=>authURL(clipPath(day,c)).catch(()=>{}));
+}
+async function playDay(){
+  if(!dayCtx||playing||making) return;
+  let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
+  const job={cancel:false};playing=job;const ctx=dayCtx;
+  $("pPlay").hidden=true;
+  const segs=[...$("pSegs").children];segs.forEach(s=>s.firstChild.style.width="0%");
+  const g=$("pc").getContext("2d");g.setTransform($("pc").width/VW,0,0,$("pc").height/VH,0,0);
+  let cur=-1;
+  try{
+    await runDay(ctx,g,{ac,out:ac&&ac.destination,job,
+      onRing:i=>{cur=i;segs.forEach((s,j)=>{s.firstChild.style.width=j<i?"100%":"0%";});},
+      onPct:(f,i,rf)=>{if(i!=null&&segs[i]) segs[i].firstChild.style.width=Math.min(100,rf*100).toFixed(1)+"%";}});
+  }catch(e){$("dayErr").textContent="Playback stopped. Try again.";}
+  finally{
+    if(ac) ac.close().catch(()=>{});
+    if(playing===job) playing=null;
+    if(dayCtx===ctx){segs.forEach(s=>s.firstChild.style.width=job.cancel?"0%":"100%");$("pPlay").hidden=false;$("pPlay").textContent=job.cancel?"▶":"↻";
+      $("pPlay").setAttribute("aria-label",job.cancel?"Play the day":"Play the day again");}
+  }
+}
+$("pPlay").addEventListener("click",playDay);
+$("pc").addEventListener("click",()=>{if(playing) playing.cancel=true;});
+function stopPlayer(){if(playing) playing.cancel=true;}
+function closeDay(){stopPlayer();cancelMake();if(dayCtx&&dayCtx.saveUrl) URL.revokeObjectURL(dayCtx.saveUrl);dayCtx=null;$("daySheet").hidden=true;}
+$("dayClose").addEventListener("click",closeDay);
+$("redoClip").addEventListener("click",()=>{closeDay();openCam();});
+
 async function renderVlog(ctx,ac,job,onPct){
-  const W=720,H=1280,cv=document.createElement("canvas");cv.width=W;cv.height=H;const g=cv.getContext("2d");
+  const cv=document.createElement("canvas");cv.width=VW;cv.height=VH;const g=cv.getContext("2d");
   if(!cv.captureStream) throw new Error("This browser can't make videos. Try Safari on iPhone or Chrome.");
-  await Promise.all([document.fonts.load("52px Bungee"),document.fonts.load("700 28px 'JetBrains Mono'")]).catch(()=>{});
-  const idx=ctx.clips.map((c,i)=>i).filter(i=>ctx.urls[i]);
-  if(!idx.length) throw new Error("These clips couldn't be loaded.");
-  const clips=idx.map(i=>ctx.clips[i]), urls=idx.map(i=>ctx.urls[i]);
-  const blobs=await Promise.all(clips.map(c=>authBlob(clipPath(ctx.day,c))));
-  const bufs=ac?await Promise.all(blobs.map(b=>b.arrayBuffer().then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null))):[];
-  const mons=await Promise.all(clips.map(c=>monImage(c.monster,c.color).catch(()=>null)));
   const stream=cv.captureStream(30);let dest=null;
-  if(ac&&bufs.some(Boolean)){dest=ac.createMediaStreamDestination();dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));}
+  if(ac){try{dest=ac.createMediaStreamDestination();dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));}catch(e){dest=null;}}
   const type=pickType();
   let rec;
   try{rec=new MediaRecorder(stream,{...(type?{mimeType:type}:{}),videoBitsPerSecond:5_000_000});}
   catch(e){stream.getAudioTracks().forEach(t=>{stream.removeTrack(t);t.stop();});dest=null;rec=new MediaRecorder(stream,{videoBitsPerSecond:5_000_000});}
   const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size) chunks.push(e.data);};
   const stopped=new Promise(r=>{rec.onstop=r;});
-  const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.className="offstage";document.body.appendChild(v);
-  const total=1.6+clips.reduce((a,c)=>a+(c.dur||6),0);let done=0;
-  const ictx={...ctx,clips};
-  try{
-    drawIntro(g,W,H,ictx,mons,0);rec.start(500);
-    await frames(1600,el=>{drawIntro(g,W,H,ictx,mons,el/1600);onPct(el/1000/total);},job);done=1.6;
-    for(let i=0;i<clips.length&&!job.cancel;i++){
-      const c=clips[i];v.src=urls[i];
-      await new Promise((res,rej)=>{v.onloadeddata=res;v.onerror=()=>rej(new Error("A clip couldn't be loaded."));v.load();});
-      await v.play();
-      let src=null;if(dest&&bufs[i]){src=ac.createBufferSource();src.buffer=bufs[i];src.connect(dest);src.start();}
-      await frames((c.dur||7)*1000+900,el=>{drawClip(g,W,H,v,c,mons[i],ctx);onPct((done+el/1000)/total);},job,()=>v.ended);
-      if(src) try{src.stop();}catch(e){}
-      v.pause();done+=c.dur||6;
-    }
-  }finally{
-    if(rec.state!=="inactive") rec.stop();
-    await stopped;v.remove();stream.getTracks().forEach(t=>t.stop());
-  }
+  g.fillStyle="#18231d";g.fillRect(0,0,VW,VH);rec.start(500);
+  try{await runDay(ctx,g,{ac:dest?ac:null,out:dest,job,onPct});}
+  finally{if(rec.state!=="inactive") rec.stop();await stopped;stream.getTracks().forEach(t=>t.stop());}
   if(job.cancel) return null;
   return new Blob(chunks,{type:(rec.mimeType||type||"video/webm").split(";")[0]});
 }
@@ -2168,12 +2229,12 @@ async function makeVideo(){
   if(!dayCtx||making) return;
   if(!window.MediaRecorder){$("dayErr").textContent="This browser can't make videos. Try Safari on iPhone or Chrome.";return;}
   let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
-  stopPlayer();$("pPlay").hidden=false;$("pPlay").textContent="▶";$("pPlay").disabled=true;$("redoClip").hidden=true;
+  stopPlayer();$("pPlay").disabled=true;$("redoClip").hidden=true;
   const job={cancel:false,left:false};making=job;
   const onHide=()=>{if(document.visibilityState==="hidden"){job.left=true;job.cancel=true;}};
   document.addEventListener("visibilitychange",onHide);
   $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=true;$("makeBox").hidden=false;
-  const mm=$("makeMon");mm.replaceChildren(monEl(S.me.monster,S.me.color,"work"));
+  $("makeMon").replaceChildren(monEl(S.me.monster,S.me.color,"work"));
   $("makeBar").style.width="0%";$("makeText").textContent="Making your video…";
   const ctx=dayCtx;
   try{

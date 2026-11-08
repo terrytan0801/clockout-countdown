@@ -14,18 +14,18 @@
 //   chat/<cid>/<ts>-<rand>     {pid,name,color,monster,text,at}
 //   vapid                      {publicKey, privateKey}
 //   meta/v9                    marks the v8 -> v9 migration as done
-//   clip/<cid>/<day>/<pid>     video bytes (metadata: {type})          v15 Cave Calendar
-//   thumb/<cid>/<day>/<pid>    JPEG cover frame
-//   clipmeta/<cid>/<day>/<pid> {pid,name,color,monster,at,late,dur,type,size}
-//   myclip/<pid>/<cid>/<day>_<bytes>   index for account deletion and the admin storage total
-//   ringsent/<cid>/<day>       the day's ring push went out
+//   clip/<cid>/<day>/<slot>     video bytes (metadata: {type})          Cave Calendar; slot = <pid>.<ring 0-3>
+//   thumb/<cid>/<day>/<slot>    JPEG cover frame                        (v15 clips have slot = <pid>, ring 0)
+//   clipmeta/<cid>/<day>/<slot> {pid,r,name,color,monster,at,late,dur,type,size,thumb}
+//   myclip/<pid>/<cid>/<day>/<slot>_<bytes>   index for account deletion and the admin storage total
+//   ringsent/<cid>/<day>.<r>    that ring's push went out
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
   POWERS, READY, M, CHEERS_PER_DAY, NOTES_AT_ONCE, levelInfo, streakUpdate, backfill, isWorkday, weekdayOf, addDays,
   dayStartMs, monthOf, sgSeconds, getWeather, weatherAt, dailyOf, geocode,
 } from "./powers.mjs";
-import { ringAt, RING_WINDOW_MS, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
+import { ringTimes, currentRing, slotKey, parseSlot, RING_COUNT, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
 export const LOCK_AFTER = 5;
@@ -179,10 +179,10 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     });
     const ids = new Set(members.map((p) => p.id));
     const extra = await powersState(me, lv.level, power, cave, members, ids, day, t, base.me);
-    const ring = ringAt(cave.id, day), rang = t >= ring;
-    const today = rang ? await clipsOf(cave.id, day) : [];
-    const mine = today.find((c) => c.pid === me.id);
-    base.me.clip = mine ? { at: mine.at, late: mine.late } : null;
+    const ring = currentRing(cave.id, day, t);
+    const today = ring ? await clipsOf(cave.id, day) : [];
+    const mine = ring && today.find((c) => c.pid === me.id && c.r === ring.r);
+    base.me.clip = mine ? { at: mine.at, late: mine.late, r: mine.r } : null;
     return {
       ...base,
       cave: {
@@ -191,8 +191,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         ot: otMap, zaps: zapMap,
         reachable: members.filter((_, i) => reach[i]).map((p) => p.id),
         chatLatest: latest,
-        ring: rang ? { at: ring, until: ring + RING_WINDOW_MS } : null,
-        clipsToday: today.map((c) => ({ pid: c.pid, at: c.at, late: c.late })),
+        ring: ring ? { ...ring, of: RING_COUNT } : null,
+        clipsToday: today.map((c) => ({ pid: c.pid, at: c.at, late: c.late, r: c.r })),
         ...extra,
       },
     };
@@ -254,39 +254,49 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   }
 
   /* ---------- Cave Calendar clips ---------- */
-  async function clipsOf(cid, day) {
-    return (await Promise.all((await keys(`clipmeta/${cid}/${day}/`)).map((k) => getJSON(k)))).filter(Boolean).sort((a, b) => a.at - b.at);
+  // Clip metadata under a prefix, each with its slot (the last key segment) and ring number.
+  async function metasUnder(prefix) {
+    const ks = await keys(prefix);
+    return (await Promise.all(ks.map(async (k) => {
+      const m = await getJSON(k), seg = k.split("/").pop();
+      return m && { ...m, slot: seg, r: m.r ?? parseSlot(seg).r, day: k.split("/")[2] };
+    }))).filter(Boolean);
   }
-  async function dropClip(cid, day, pid) {
-    const idx = (await keys(`myclip/${pid}/${cid}/${day}_`));
-    await Promise.all([`clip/${cid}/${day}/${pid}`, `thumb/${cid}/${day}/${pid}`, `clipmeta/${cid}/${day}/${pid}`, ...idx].map((k) => store.delete(k)));
+  const clipsOf = async (cid, day) => (await metasUnder(`clipmeta/${cid}/${day}/`)).sort((a, b) => a.r - b.r || a.at - b.at);
+  async function dropClip(cid, day, slot, pid) {
+    const idx = await keys(`myclip/${pid}/${cid}/${day}/${slot}_`);
+    if (slot === pid) idx.push(...(await keys(`myclip/${pid}/${cid}/${day}_`))); // v15 index
+    await Promise.all([`clip/${cid}/${day}/${slot}`, `thumb/${cid}/${day}/${slot}`, `clipmeta/${cid}/${day}/${slot}`, ...idx].map((k) => store.delete(k)));
   }
   async function dropCaveClips(cid) {
     const metas = await keys(`clipmeta/${cid}/`);
-    await Promise.all(metas.map((k) => { const [, , day, pid] = k.split("/"); return dropClip(cid, day, pid); }));
+    await Promise.all(metas.map((k) => { const [, , day, slot] = k.split("/"); return dropClip(cid, day, slot, parseSlot(slot).pid); }));
   }
   async function dropPersonClips(pid) {
     const idx = await keys(`myclip/${pid}/`);
-    await Promise.all(idx.map((k) => { const [, , cid, rest] = k.split("/"); return dropClip(cid, rest.split("_")[0], pid); }));
+    await Promise.all(idx.map((k) => {
+      const parts = k.split("/");
+      return parts.length === 5 ? dropClip(parts[2], parts[3], parts[4].split("_")[0], pid) : dropClip(parts[2], parts[3].split("_")[0], pid, pid);
+    }));
   }
 
-  // Scheduled every 5 minutes: ring each cave's phones once a day at its random time.
+  // Scheduled every 5 minutes: ring each cave's phones at its random times (RING_COUNT a day).
   async function ringTick() {
     const t = now(), day = sgDay(t);
     let caves = 0, sent = 0;
     for (const k of await keys("cave/")) {
       const cave = await getJSON(k);
       if (!cave) continue;
-      const at = ringAt(cave.id, day);
-      if (t < at || t >= at + 30 * 60e3) continue; // only around the ring time; a late job doesn't ring hours later
-      const claim = await store.setJSON(`ringsent/${cave.id}/${day}`, { at: t }, { onlyIfNew: true });
+      const r = ringTimes(cave.id, day).findIndex((at) => t >= at && t < at + 30 * 60e3); // a late job doesn't ring hours later
+      if (r < 0) continue;
+      const claim = await store.setJSON(`ringsent/${cave.id}/${day}.${r}`, { at: t }, { onlyIfNew: true });
       if (claim && claim.modified === false) continue;
       caves++;
       for (const p of await caveMembers(cave.id)) {
         sent += await sendPush(p.id, {
           title: `⏰ ${cave.name}: film time!`,
-          body: "Show your cave what you're doing right now. 5 seconds, you have 10 minutes.",
-          tag: `ring-${day}`, url: "/?film=1", buzz: p.buzz !== false, kind: "ring",
+          body: "Film 3 seconds of what you're doing right now. You have 10 minutes.",
+          tag: `ring-${day}-${r}`, url: "/?film=1", buzz: p.buzz !== false, kind: "ring",
         });
       }
     }
@@ -478,8 +488,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       /* ---------- Cave Calendar ---------- */
       if (route === "clip" && method === "POST") {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
-        const t = now(), day = sgDay(t), ring = ringAt(me.cave, day);
-        if (t < ring) return json({ error: "Your cave's phones haven't rung yet today. Wait for the ring!" }, 409);
+        const t = now(), day = sgDay(t), ring = currentRing(me.cave, day, t);
+        if (!ring) return json({ error: "Your cave's phones haven't rung yet today. Wait for the ring!" }, 409);
         let fd;
         try { fd = await req.formData(); } catch { return json({ error: "That upload didn't come through. Try again." }, 400); }
         const video = fd.get("video"), thumb = fd.get("thumb"), dur = Number(fd.get("dur"));
@@ -487,24 +497,25 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         const type = String(video.type || "").split(";")[0].toLowerCase();
         if (!CLIP_TYPES.includes(type)) return json({ error: "That isn't a video this app can keep." }, 400);
         if (video.size > CLIP_MAX_BYTES) return json({ error: "That clip is too big. Film it in the app so it stays small." }, 413);
-        if (!(dur >= CLIP_MIN_S && dur <= CLIP_MAX_S)) return json({ error: "Clips are 5 to 7 seconds." }, 400);
+        if (!(dur >= CLIP_MIN_S && dur <= CLIP_MAX_S)) return json({ error: "Clips are 2 to 4 seconds." }, 400);
         const hasThumb = thumb && typeof thumb !== "string" && thumb.size && thumb.size <= THUMB_MAX_BYTES && /^image\/(jpeg|webp|png)$/.test(thumb.type);
-        await dropClip(me.cave, day, me.id); // a retake replaces the earlier clip
-        await store.set(`clip/${me.cave}/${day}/${me.id}`, await video.arrayBuffer(), { metadata: { type } });
-        if (hasThumb) await store.set(`thumb/${me.cave}/${day}/${me.id}`, await thumb.arrayBuffer(), { metadata: { type: thumb.type } });
-        await store.setJSON(`clipmeta/${me.cave}/${day}/${me.id}`, {
-          pid: me.id, name: me.name, color: me.color, monster: me.monster, at: t, late: t > ring + RING_WINDOW_MS,
+        const slot = slotKey(me.id, ring.r);
+        await dropClip(me.cave, day, slot, me.id); // a retake replaces the earlier clip for this ring
+        await store.set(`clip/${me.cave}/${day}/${slot}`, await video.arrayBuffer(), { metadata: { type } });
+        if (hasThumb) await store.set(`thumb/${me.cave}/${day}/${slot}`, await thumb.arrayBuffer(), { metadata: { type: thumb.type } });
+        await store.setJSON(`clipmeta/${me.cave}/${day}/${slot}`, {
+          pid: me.id, r: ring.r, name: me.name, color: me.color, monster: me.monster, at: t, late: t > ring.until,
           dur: Math.round(dur * 10) / 10, type, size: video.size, thumb: !!hasThumb,
         });
-        await store.setJSON(`myclip/${me.id}/${me.cave}/${day}_${video.size}`, 0);
+        await store.setJSON(`myclip/${me.id}/${me.cave}/${day}/${slot}_${video.size}`, 0);
         await stats.log("clip", me.id, me.cave);
         return json(await state(me));
       }
-      const media = /^(clip|thumb)\/([\w-]+)\/(\d{4}-\d{2}-\d{2})\/([\w-]+)$/.exec(route);
+      const media = /^(clip|thumb)\/([\w-]+)\/(\d{4}-\d{2}-\d{2})\/([\w.-]+)$/.exec(route);
       if (media && method === "GET") {
-        const [, kind, cid, day, pid] = media;
+        const [, kind, cid, day, slot] = media;
         if (cid !== me.cave) return json({ error: "That clip belongs to another cave." }, 403);
-        const r = await store.getWithMetadata(`${kind}/${cid}/${day}/${pid}`, { type: "arrayBuffer" });
+        const r = await store.getWithMetadata(`${kind}/${cid}/${day}/${slot}`, { type: "arrayBuffer" });
         if (!r || !r.data) return json({ error: "That clip is gone." }, 404);
         return new Response(r.data, { headers: {
           "content-type": (r.metadata && r.metadata.type) || (kind === "clip" ? "video/mp4" : "image/jpeg"),
@@ -515,18 +526,18 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
         const t = now(), today = sgDay(t);
         const month = /^\d{4}-\d{2}$/.test(url.searchParams.get("month") || "") ? url.searchParams.get("month") : today.slice(0, 7);
-        const metas = (await Promise.all((await keys(`clipmeta/${me.cave}/${month}`)).map((k) => getJSON(k)))).filter(Boolean);
+        const metas = await metasUnder(`clipmeta/${me.cave}/${month}`);
         const pids = [...new Set(metas.map((c) => c.pid))];
         const live = Object.fromEntries((await Promise.all(pids.map(getPerson))).filter(Boolean).map((p) => [p.id, p]));
         const days = {};
         metas.forEach((c) => {
-          const d = sgDay(c.at), p = live[c.pid];
-          (days[d] ||= { ring: ringAt(me.cave, d), clips: [] }).clips.push({
-            pid: c.pid, name: p ? p.name : c.name, color: p ? p.color : c.color, monster: p ? p.monster : c.monster,
+          const d = c.day, p = live[c.pid];
+          (days[d] ||= { rings: ringTimes(me.cave, d).filter((at) => at <= t), clips: [] }).clips.push({
+            pid: c.pid, slot: c.slot, r: c.r, name: p ? p.name : c.name, color: p ? p.color : c.color, monster: p ? p.monster : c.monster,
             at: c.at, late: c.late, dur: c.dur, thumb: c.thumb,
           });
         });
-        Object.values(days).forEach((d) => d.clips.sort((a, b) => a.at - b.at));
+        Object.values(days).forEach((d) => d.clips.sort((a, b) => a.r - b.r || a.at - b.at));
         return json({ month, today, days });
       }
 

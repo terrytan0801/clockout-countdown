@@ -3,7 +3,7 @@
 import { scryptSync } from "node:crypto";
 import { sgDayOf } from "../netlify/lib/stats.mjs";
 import { M, sgSeconds, addDays } from "../netlify/lib/powers.mjs";
-import { ringAt } from "../netlify/lib/clips.mjs";
+import { ringTimes } from "../netlify/lib/clips.mjs";
 import { readFile } from "node:fs/promises";
 
 export async function seed(store, now = Date.now()) {
@@ -64,16 +64,15 @@ export async function seed(store, now = Date.now()) {
     const dir = process.env.SEED_CLIPS, vids = [], thumbs = [];
     for (let i = 1; i <= 6; i++) { vids.push(await readFile(`${dir}/clip-${i}.mp4`)); thumbs.push(await readFile(`${dir}/thumb-${i}.jpg`)); }
     for (let d = 1; d <= 12; d++) {
-      const day = addDays(today, -d), ring = ringAt(cave.id, day);
-      for (let j = 0; j < ppl.length; j++) {
-        if ((d * 7 + j * 3) % 5 === 0) continue; // a few people miss a few days
-        const [id, name, color, monster] = ppl[j], at = ring + (j * 90 + d * 13) * 1000 + ((d + j) % 4 === 0 ? 20 * 60e3 : 0);
-        const v = vids[(j + d) % 6];
-        await store.set(`clip/${cave.id}/${day}/${id}`, v.buffer.slice(v.byteOffset, v.byteOffset + v.length), { metadata: { type: "video/mp4" } });
-        const t = thumbs[(j + d) % 6];
-        await store.set(`thumb/${cave.id}/${day}/${id}`, t.buffer.slice(t.byteOffset, t.byteOffset + t.length), { metadata: { type: "image/jpeg" } });
-        await store.setJSON(`clipmeta/${cave.id}/${day}/${id}`, { pid: id, name, color, monster, at, late: at > ring + 10 * 60e3, dur: 6, type: "video/mp4", size: v.length, thumb: true });
-        await store.setJSON(`myclip/${id}/${cave.id}/${day}_${v.length}`, 0);
+      const day = addDays(today, -d);
+      for (const [r, ring] of ringTimes(cave.id, day).entries()) for (let j = 0; j < ppl.length; j++) {
+        if ((d * 7 + j * 3 + r * 5) % 4 === 0) continue; // people miss some rings
+        const [id, name, color, monster] = ppl[j], at = ring + (j * 50 + d * 13) * 1000 + ((d + j + r) % 5 === 0 ? 20 * 60e3 : 0);
+        const v = vids[(j + d + r) % 6], t = thumbs[(j + d + r) % 6], slot = `${id}.${r}`;
+        await store.set(`clip/${cave.id}/${day}/${slot}`, v.buffer.slice(v.byteOffset, v.byteOffset + v.length), { metadata: { type: "video/mp4" } });
+        await store.set(`thumb/${cave.id}/${day}/${slot}`, t.buffer.slice(t.byteOffset, t.byteOffset + t.length), { metadata: { type: "image/jpeg" } });
+        await store.setJSON(`clipmeta/${cave.id}/${day}/${slot}`, { pid: id, r, name, color, monster, at, late: at > ring + 10 * 60e3, dur: 3, type: "video/mp4", size: v.length, thumb: true });
+        await store.setJSON(`myclip/${id}/${cave.id}/${day}/${slot}_${v.length}`, 0);
       }
     }
   }
