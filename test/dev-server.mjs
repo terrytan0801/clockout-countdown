@@ -11,8 +11,10 @@ const webpush = {
   async sendNotification(sub, payload) { console.log("[push]", sub.endpoint, payload); },
 };
 const store = memStore();
-const handle = makeHandler({ store, webpush, now: () => Date.now() + Number(process.env.SHIFT_MS || 0) });
-if (process.env.SEED) await (await import("./seed.mjs")).seed(store);
+const now = () => Date.now() + Number(process.env.SHIFT_MS || 0);
+const seedMod = process.env.SEED ? await import("./seed.mjs") : null;
+const handle = makeHandler({ store, webpush, now, ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}) });
+if (seedMod) await seedMod.seed(store, now());
 const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 const root = new URL("../public/", import.meta.url).pathname;
 

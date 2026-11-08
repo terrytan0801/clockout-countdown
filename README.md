@@ -1,4 +1,4 @@
-# Clock-out Countdown · v12.0
+# Clock-out Countdown · v13.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -10,6 +10,22 @@ A phone app (PWA) where friends live together in a **cave** and count down to cl
 - **Cave chat.** Messages show the sender's monster (in its current mood) and colour. No push for chat; a red dot shows unread messages.
 - **Loading screen.** The app stays on a loading screen until your login is checked. Each visit plays a different monster scene (tag, a meeting, the night shift, a race to the exit). Signed out, the log-in card sits on top of the scene and you only go in after logging in.
 - **Accounts.** Join with a unique name, clock-out time, colour and a passcode (4+ characters). 5 wrong passcodes lock that name for 10 minutes.
+
+## Monster powers
+
+Every monster has a power that levels up with a streak of **workdays** (Mon–Fri) on which you open the app: **Lv1 at 3, Lv2 at 7, Lv3 at 14**. Weekends never break a streak. Missing a workday drops you **one level**, not back to zero. People who already used the app get credit for their recent streak. You can **reroll** your monster at random once a calendar month and keep your level.
+
+| Monster | Power | Lv1 | Lv2 | Lv3 |
+|---|---|---|---|---|
+| Jelly | Jiggle Party | your clock-out makes the cave's board jiggle | plus confetti | plus a rainbow trail on your card |
+| Cyclo | All-Seeing Eye | see who's in the app now | see who read the chat | see who left last this week |
+| Tako | Ink Notes | 1 note on the cave board | 2 notes | 3 notes, pin one for a week |
+| Mush | Spore Cheer | 1 cheer a day, mushrooms on their card | 3 a day | 5 a day, bigger mushrooms |
+| Fluff | Weather Eye | weather at your clock-out time (set your city) | rain alert push 25–45 min before you leave | 3-day forecast |
+| Dino | Roar | roar to the cave when you leave (push + banner) | write your own roar | roar with sound |
+| Noodle, Spike, Bun, Chomp | coming soon | | | |
+
+**Show friends' effects** in the account sheet turns off Jelly parties and Dino roars, both the banners and the push. Notes come down at midnight, and pinned notes after 7 days. Weather comes from Open-Meteo (free, no key). The rain alert runs from a scheduled Netlify function every 15 minutes (`netlify/functions/rain-alert.mjs`).
 
 ## Admin page
 
@@ -55,7 +71,9 @@ public/manifest.webmanifest, public/icons/
 netlify/functions/api.mjs   /api/* endpoint (Netlify Function)
 netlify/lib/handler.mjs     API: accounts, caves, chat, overtime, zaps, v8 migration
 netlify/lib/stats.mjs       usage stats and the admin report
+netlify/lib/powers.mjs      streaks, levels, weather helpers for the monster powers
+netlify/functions/rain-alert.mjs  scheduled every 15 min: Fluff rain alerts
 public/admin.html           admin page (/admin)
-test/api.test.mjs           npm test: API checks against an in-memory store
+test/api.test.mjs, test/powers.test.mjs   npm test: API and power checks against an in-memory store
 test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs (SEED=1 adds demo data)
 ```

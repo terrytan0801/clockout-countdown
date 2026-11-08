@@ -16,6 +16,10 @@
 //   meta/v9                    marks the v8 -> v9 migration as done
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
+import {
+  POWERS, READY, M, CHEERS_PER_DAY, NOTES_AT_ONCE, levelInfo, streakUpdate, backfill, isWorkday, weekdayOf, addDays,
+  dayStartMs, monthOf, sgSeconds, getWeather, weatherAt, dailyOf, geocode,
+} from "./powers.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
 export const LOCK_AFTER = 5;
@@ -50,7 +54,10 @@ const newCode = () => Array.from({ length: 6 }, () => CODE_ALPHABET[randomInt(CO
 const publicPerson = ({ id, name, h, m, color, monster }) => ({ id, name, h, m, color, monster });
 const chatKeyTs = (key) => Number(key.split("/").pop().split("-")[0]);
 
-export function makeHandler({ store, webpush, now = () => Date.now(), adminKey = null }) {
+export const makeHandler = (opts) => makeApp(opts).handle;
+const fmt12 = (h, m) => `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+
+export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a) }) {
   const stats = makeStats({ store, now, adminKey });
   const getJSON = async (key, fallback = null) => (await store.get(key, { type: "json" })) ?? fallback;
   const exists = async (key) => (await store.getMetadata(key)) !== null;
@@ -116,8 +123,9 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
   async function caveMembers(cid) {
     const mkeys = await keys(`member/${cid}/`);
     const rows = await Promise.all(mkeys.map(async (k) => {
-      const [p, mem] = await Promise.all([getPerson(k.split("/")[2]), getJSON(k)]);
-      return p && p.cave === cid ? { ...p, joinedAt: mem?.at ?? p.at } : null;
+      const pid = k.split("/")[2];
+      const [p, mem, lv] = await Promise.all([getPerson(pid), getJSON(k), getJSON(`lvl/${pid}`)]);
+      return p && p.cave === cid ? { ...p, joinedAt: mem?.at ?? p.at, level: levelInfo(lv).level } : null;
     }));
     return rows.filter(Boolean).sort((x, y) => x.joinedAt - y.joinedAt || (x.id < y.id ? -1 : 1));
   }
@@ -133,9 +141,19 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
   async function state(me) {
     const t = now();
     const day = sgDay(t);
+    const lv = levelInfo(await getJSON(`lvl/${me.id}`));
+    const power = POWERS[me.monster] || "jelly";
+    const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
+    const [yy, mm] = monthOf(t).split("-").map(Number);
     const base = {
       now: t, day, cooldownMs: ZAP_COOLDOWN_MS, colors: COLORS,
-      me: { ...publicPerson(me), buzz: me.buzz !== false },
+      me: {
+        ...publicPerson(me), buzz: me.buzz !== false, fx: me.fx !== false, city: me.city || null,
+        ...lv, power, ready: READY.has(power),
+        canReroll: !sameMonth,
+        nextReroll: sameMonth ? `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01` : null,
+        cheersLeft: 0, notesLeft: 0, canPin: false, roared: false,
+      },
       cave: null,
     };
     if (!me.cave) return base;
@@ -153,16 +171,117 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
       if (ot[i]) otMap[p.id] = ot[i];
       if (zaps[i] && t - zaps[i].at < ZAP_COOLDOWN_MS) zapMap[p.id] = zaps[i].at;
     });
+    const ids = new Set(members.map((p) => p.id));
+    const extra = await powersState(me, lv.level, power, cave, members, ids, day, t, base.me);
     return {
       ...base,
       cave: {
         id: cave.id, name: cave.name, owner: cave.owner, code: cave.code,
-        members: members.map(publicPerson),
+        members: members.map((p) => ({ ...publicPerson(p), level: p.level })),
         ot: otMap, zaps: zapMap,
         reachable: members.filter((_, i) => reach[i]).map((p) => p.id),
         chatLatest: latest,
+        ...extra,
       },
     };
+  }
+
+  /* ---------- monster powers in the cave state ---------- */
+  async function cheersToday(day) {
+    return (await keys(`cheer/${day}/`)).map((k) => { const [, , to, rest] = k.split("/"); const [ts, from, l] = rest.split("_"); return { to, from, at: Number(ts), lv: Number(l) || 1 }; });
+  }
+  async function liveNotes(cid, t) {
+    const rows = (await Promise.all((await keys(`note/${cid}/`)).map(async (k) => { const v = await getJSON(k); return v && { ...v, k }; }))).filter(Boolean);
+    const dead = rows.filter((n) => n.expires <= t);
+    await Promise.all(dead.map((n) => store.delete(n.k)));
+    return rows.filter((n) => n.expires > t).sort((a, b) => (b.pinned - a.pinned) || (a.at - b.at)).map(({ k, ...n }) => n);
+  }
+  async function powersState(me, level, power, cave, members, ids, day, t, meOut) {
+    const [cheers, notes, roarKeys] = await Promise.all([cheersToday(day), liveNotes(cave.id, t), keys(`roar/${day}/`)]);
+    const roars = (await Promise.all(roarKeys.map((k) => getJSON(k)))).filter((r) => r && ids.has(r.pid)).sort((a, b) => a.at - b.at);
+    const cheerMap = {};
+    for (const c of cheers) if (ids.has(c.to)) (cheerMap[c.to] ||= []).push({ from: c.from, lv: c.lv });
+    if (power === "mush" && level >= 1) meOut.cheersLeft = Math.max(0, CHEERS_PER_DAY[level] - cheers.filter((c) => c.from === me.id).length);
+    if (power === "tako" && level >= 1) {
+      const mine = notes.filter((n) => n.pid === me.id);
+      meOut.notesLeft = Math.max(0, NOTES_AT_ONCE[level] - mine.length);
+      meOut.canPin = level >= 3 && !mine.some((n) => n.pinned);
+    }
+    meOut.roared = roars.some((r) => r.pid === me.id);
+
+    // Fluff: weather at each Fluff's clock-out time (whole cave sees it on their card)
+    const weather = {};
+    await Promise.all(members.filter((p) => p.monster === M.fluff && p.level >= 1 && p.city).map(async (p) => {
+      try {
+        const data = await getWeather({ store, fetchFn, now, lat: p.city.lat, lon: p.city.lon });
+        weather[p.id] = { city: p.city.name, at: weatherAt(data, day, p.h), daily: p.level >= 3 ? dailyOf(data) : null };
+      } catch (e) { console.error("weather", e.message); }
+    }));
+
+    const out = { cheers: cheerMap, notes, roars, weather };
+    // Cyclo: only the Cyclo owner sees these
+    if (power === "cyclo" && level >= 1) {
+      const uses = await Promise.all(members.map((p) => getJSON(`use/${day}/${p.id}`)));
+      out.online = members.filter((p, i) => uses[i] && t - uses[i].last < 3 * 60e3).map((p) => p.id);
+      if (level >= 2) {
+        const reads = await Promise.all(members.map((p) => getJSON(`read/${cave.id}/${p.id}`)));
+        out.seen = Object.fromEntries(members.map((p, i) => [p.id, reads[i]?.at || 0]));
+      }
+      if (level >= 3) {
+        const days = [];
+        for (let d = addDays(day, -((weekdayOf(day) + 6) % 7)); d <= day; d = addDays(d, 1)) if (isWorkday(d)) days.push(d);
+        let owl = null;
+        await Promise.all(days.flatMap((d) => members.map(async (p) => {
+          const o = await getJSON(`ot/${d}/${p.id}`);
+          if (o && o.on && o.end != null && o.end > p.h * 3600 + p.m * 60 && (!owl || o.end > owl.end)) owl = { pid: p.id, end: o.end, day: d };
+        })));
+        out.nightOwl = owl;
+      }
+    }
+    return out;
+  }
+
+  async function touchStreak(pid) {
+    const today = sgDay(now());
+    if (!isWorkday(today)) return;
+    let rec = await getJSON(`lvl/${pid}`);
+    if (rec && rec.lastDay === today) return;
+    if (!rec) {
+      const days = new Set((await keys("use/")).filter((k) => k.endsWith("/" + pid)).map((k) => k.split("/")[1]));
+      days.delete(today);
+      rec = backfill(days, today);
+    }
+    await store.setJSON(`lvl/${pid}`, streakUpdate(rec, today));
+  }
+
+  // Scheduled every 15 minutes: Fluff Lv2+ gets one rain alert 25-45 minutes before clock-out.
+  async function rainAlerts() {
+    const t = now(), today = sgDay(t), nowSec = sgSeconds(t);
+    if (nowSec < 15 * 60) { // once a day, tidy up old power records
+      const cut = addDays(today, -14);
+      const old = (await Promise.all(["cheer/", "roar/", "rainalert/"].map(keys))).flat().filter((k) => k.split("/")[1] < cut);
+      await Promise.all(old.map((k) => store.delete(k)));
+    }
+    if (!isWorkday(today)) return { checked: 0, sent: 0 };
+    let checked = 0, sent = 0;
+    const people = (await Promise.all((await keys("person/")).map((k) => getJSON(k)))).filter((p) => p && p.monster === M.fluff && p.city);
+    for (const p of people) {
+      const off = p.h * 3600 + p.m * 60;
+      if (nowSec < off - 45 * 60 || nowSec >= off - 25 * 60) continue;
+      if (levelInfo(await getJSON(`lvl/${p.id}`)).level < 2) continue;
+      const ak = `rainalert/${today}/${p.id}`;
+      if (await exists(ak)) continue;
+      checked++;
+      let w = null;
+      try { w = weatherAt(await getWeather({ store, fetchFn, now, lat: p.city.lat, lon: p.city.lon }), today, p.h); } catch (e) { continue; }
+      await store.setJSON(ak, { at: t, rain: w ? w.rain : null });
+      if (w && w.rain >= 50) sent += await sendPush(p.id, {
+        title: "Fluff says: bring an umbrella",
+        body: `${w.rain}% chance of rain around ${fmt12(p.h, p.m)} in ${p.city.name}.`,
+        tag: "rain", url: "/", buzz: p.buzz !== false,
+      });
+    }
+    return { checked, sent };
   }
 
   async function sendPush(pid, payload) {
@@ -224,7 +343,7 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
     return null;
   }
 
-  return async function handle(req) {
+  async function handle(req) {
     const url = new URL(req.url);
     const route = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
     const method = req.method.toUpperCase();
@@ -296,7 +415,18 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
 
       if (route === "state" && method === "GET") return json(await state(me));
 
-      if (route === "ping" && method === "POST") { await stats.ping(me.id, body.open === true); return json({ ok: true }); }
+      if (route === "ping" && method === "POST") {
+        await stats.ping(me.id, body.open === true);
+        await touchStreak(me.id);
+        return json({ ok: true });
+      }
+
+      if (route === "geo" && method === "GET") {
+        const q = String(url.searchParams.get("q") || "").trim().slice(0, 60);
+        if (q.length < 2) return json({ results: [] });
+        try { return json({ results: await geocode(fetchFn, q) }); }
+        catch (e) { return json({ error: "Couldn't look up places right now. Try again in a moment." }, 502); }
+      }
 
       if (route === "logout" && method === "POST") { await store.delete(`sessions/${a.token}`); return json({ ok: true }); }
 
@@ -308,6 +438,21 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
           case "color":
             if (!COLORS.includes(body.color)) return json({ error: "Pick one of the colours." }, 400);
             me = { ...me, color: body.color }; break;
+          case "fx":
+            me = { ...me, fx: body.fx === true }; break;
+          case "city": {
+            if (body.clear) { me = { ...me, city: null }; break; }
+            const name = cleanText(body.name, 60), lat = Number(body.lat), lon = Number(body.lon);
+            if (!name || !(lat >= -90 && lat <= 90) || !(lon >= -180 && lon <= 180)) return json({ error: "Pick a place from the list." }, 400);
+            me = { ...me, city: { name, lat, lon } }; break;
+          }
+          case "reroll": {
+            const t = now();
+            if (me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t)) return json({ error: "You've already rerolled this month." }, 409);
+            let next = randomInt(MONSTER_COUNT - 1);
+            if (next >= me.monster) next += 1; // never the same monster again
+            me = { ...me, monster: next, monsterChangedAt: t }; break;
+          }
           case "buzz":
             me = { ...me, buzz: body.buzz === true }; break;
           case "pin": {
@@ -318,6 +463,7 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
           case "delete":
             await leaveCave(me);
             await stats.forget(me.id);
+            await store.delete(`lvl/${me.id}`);
             await Promise.all([`person/${me.id}`, `uname/${nameKey(me.name)}`, `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
             return json({ ok: true });
           default:
@@ -445,6 +591,80 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
         return json({ ok: true, sent, at: t, buzz });
       }
 
+      /* ---------- monster powers ---------- */
+      if ((route === "cheer" || route === "note" || route === "roar") && method === "POST") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const t = now(), day = sgDay(t);
+        const level = levelInfo(await getJSON(`lvl/${me.id}`)).level;
+        const power = POWERS[me.monster];
+        const need = { cheer: "mush", note: "tako", roar: "dino" }[route];
+        const takingNoteDown = route === "note" && body.action === "remove"; // writer or cave owner, any monster
+        if (!takingNoteDown) {
+          if (power !== need) return json({ error: "Your monster doesn't have that power." }, 403);
+          if (level < 1) return json({ error: "Open the app 3 workdays in a row to unlock your power." }, 403);
+        }
+
+        if (route === "cheer") {
+          const to = await getPerson(String(body.to || ""));
+          if (!to || to.cave !== me.cave) return json({ error: "You can only cheer people in your cave." }, 404);
+          if (to.id === me.id) return json({ error: "Cheer a friend, not yourself." }, 400);
+          const used = (await cheersToday(day)).filter((c) => c.from === me.id).length;
+          if (used >= CHEERS_PER_DAY[level]) return json({ error: "No cheers left today. More tomorrow!" }, 429);
+          await store.setJSON(`cheer/${day}/${to.id}/${String(t).padStart(13, "0")}_${me.id}_${level}`, { from: me.id, at: t, lv: level });
+          return json(await state(me));
+        }
+
+        if (route === "note") {
+          const cave = await getJSON(`cave/${me.cave}`);
+          if (body.action === "remove") {
+            const id = String(body.id || "");
+            const k = `note/${me.cave}/${id}`;
+            const n = /^[0-9]{13}-[0-9a-f]{6}$/.test(id) ? await getJSON(k) : null;
+            if (!n) return json({ error: "That note is already gone." }, 404);
+            if (n.pid !== me.id && cave?.owner !== me.id) return json({ error: "Only the writer or the cave owner can take a note down." }, 403);
+            await store.delete(k);
+            return json(await state(me));
+          }
+          const text = cleanText(body.text, 80).replace(/\n+/g, " ");
+          if (!text) return json({ error: "Write something on the note first." }, 400);
+          const mine = (await liveNotes(me.cave, t)).filter((n) => n.pid === me.id);
+          if (mine.length >= NOTES_AT_ONCE[level]) return json({ error: `You can have ${NOTES_AT_ONCE[level]} ${NOTES_AT_ONCE[level] === 1 ? "note" : "notes"} up at once. Take one down first.` }, 429);
+          const pinned = body.pin === true;
+          if (pinned && (level < 3 || mine.some((n) => n.pinned))) return json({ error: "Pinning unlocks at Lv3, one pinned note at a time." }, 403);
+          const id = `${String(t).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
+          const expires = pinned ? t + 7 * 864e5 : dayStartMs(addDays(day, 1));
+          await store.setJSON(`note/${me.cave}/${id}`, { id, pid: me.id, text, at: t, pinned, expires });
+          return json(await state(me));
+        }
+
+        if (route === "roar") {
+          const rk = `roar/${day}/${me.id}`;
+          if (await exists(rk)) return json({ error: "You've already roared today." }, 409);
+          const o = await getJSON(`ot/${day}/${me.id}`);
+          const offSec = me.h * 3600 + me.m * 60;
+          if (isWorkday(day)) {
+            if (o && o.on && o.end == null && sgSeconds(t) >= offSec) return json({ error: "Clock out first, then roar." }, 409);
+            if (sgSeconds(t) < offSec && !(o && o.on && o.end != null)) return json({ error: `You can roar once you're off at ${fmt12(me.h, me.m)}.` }, 409);
+          }
+          const text = (level >= 2 && cleanText(body.text, 60).replace(/\n+/g, " ")) || "I'm out!";
+          await store.setJSON(rk, { pid: me.id, text, at: t, sound: level >= 3 });
+          const mates = (await caveMembers(me.cave)).filter((p) => p.id !== me.id && p.fx !== false);
+          await Promise.all(mates.map((p) => sendPush(p.id, {
+            title: `${me.name} roars!`, body: text, tag: `roar-${me.id}`, url: "/", buzz: p.buzz !== false, kind: "roar",
+          })));
+          return json(await state(me));
+        }
+      }
+
+      if (route === "chat/read" && method === "POST") {
+        if (!me.cave) return json({ ok: true });
+        const at = Math.min(Number(body.at) || 0, now());
+        const k = `read/${me.cave}/${me.id}`;
+        const prev = await getJSON(k);
+        if (at > (prev?.at || 0)) await store.setJSON(k, { at });
+        return json({ ok: true });
+      }
+
       if (route === "chat") {
         if (!me.cave) return json({ error: "Join a cave to chat." }, 409);
         const prefix = `chat/${me.cave}/`;
@@ -474,5 +694,7 @@ export function makeHandler({ store, webpush, now = () => Date.now(), adminKey =
       console.error(e);
       return json({ error: "Something went wrong on the server. Try again in a moment." }, 500);
     }
-  };
+  }
+
+  return { handle, rainAlerts };
 }

@@ -288,6 +288,63 @@ body.booting{overflow:hidden}
 #authSheet{z-index:30}
 
 @media (prefers-reduced-motion:reduce){.scene *{animation:none!important}.runner,.rusher{left:20%}.runner:nth-child(3),.rusher:nth-child(3){left:45%}.runner:nth-child(4),.rusher:nth-child(4){left:70%}}
+/* monster powers */
+.lvl{font:700 10px/1 var(--f-mono);letter-spacing:.06em;padding:3px 6px;border-radius:999px;background:var(--track);color:var(--muted)}
+.lvl.l1{background:var(--c-teal-soft);color:var(--c-teal)} .lvl.l2{background:var(--c-violet-soft);color:var(--c-violet)} .lvl.l3{background:var(--done-soft);color:var(--done-ink)}
+.perks{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.perks:empty{display:none}
+.online{width:9px;height:9px;border-radius:50%;background:var(--c-teal);box-shadow:0 0 0 3px var(--c-teal-soft);margin-right:2px}
+.wx{font:700 12px/1 var(--f-mono);display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:var(--bg);color:var(--ink);cursor:pointer;min-height:32px}
+.wx svg{width:16px;height:16px;flex:none}
+.shrooms{display:inline-flex;align-items:flex-end;gap:1px}
+.shrooms svg{width:16px;height:16px}.shrooms svg.big{width:23px;height:23px}
+.shrooms>span{font:700 11px var(--f-mono);color:var(--muted);margin-left:3px}
+@property --rb{syntax:'<angle>';inherits:false;initial-value:0deg}
+.lane.rainbow{border:2px solid transparent;padding:13px 15px;background:linear-gradient(var(--card),var(--card)) padding-box,conic-gradient(from var(--rb),#ff6b3d,#ffd23f,#0fa37f,#2a8fd6,#7a5cff,#e0458b,#ff6b3d) border-box;animation:rb 4s linear infinite}
+@keyframes rb{to{--rb:360deg}}
+.extras{display:flex;flex-direction:column;gap:10px}
+.roar{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--mc0);border-radius:14px;padding:6px 8px 6px 12px}
+.roar .mon{width:54px;height:54px;flex:none}
+.roar b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;line-height:1.2}
+.roar p{margin:0;font-size:14px;overflow-wrap:anywhere}
+.roar>div{min-width:0;flex:1}
+.x{width:32px;height:32px;flex:none;border-radius:8px;border:0;background:transparent;color:var(--muted);cursor:pointer;font:700 18px/1 var(--f-body)}
+.x:hover{color:var(--ink);background:var(--track)}
+.notes{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.note{position:relative;background:var(--ns);color:var(--ink);border-radius:4px 14px 14px 14px;padding:10px 34px 10px 12px;max-width:260px;transform:rotate(var(--tilt,0deg));font-size:14px;overflow-wrap:anywhere;box-shadow:0 2px 0 rgba(0,0,0,.05)}
+.note small{display:block;margin-top:4px;font:700 11px var(--f-mono);color:var(--muted)}
+.note .pin{display:block;font:700 10px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--nc);margin-bottom:4px}
+.note .x{position:absolute;top:2px;right:2px}
+.addnote{font:700 13px var(--f-mono);border:1px dashed var(--muted);background:transparent;border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);min-height:44px}
+.owl{margin:0;font:500 13px var(--f-mono);color:var(--muted)}
+.owl b{color:var(--ink)}
+.seen{align-self:flex-end;font:500 11px var(--f-mono);color:var(--muted)}
+.power{display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:14px;padding:12px}
+.power-head{display:flex;align-items:center;gap:12px}
+.power-head .mon{width:76px;height:76px;flex:none}
+.power-head b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;line-height:1.2}
+.power-head small{color:var(--muted);font-size:13px}
+.prog{height:8px;border-radius:999px;background:var(--track);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--c-teal);border-radius:inherit}
+.lvls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.lvls li{display:flex;gap:8px;color:var(--muted)}
+.lvls li.on{color:var(--ink)}
+.lvls li b{font:700 11px/1.6 var(--f-mono);min-width:28px}
+.soon{display:inline-block;margin-top:4px;font:700 10px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;border:1px dashed var(--muted);color:var(--muted);border-radius:999px;padding:3px 6px}
+.places{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.places:empty{display:none}
+.places button{width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;cursor:pointer;font:500 14px var(--f-body);color:var(--ink);min-height:44px}
+.places small{color:var(--muted)}
+.confetti{position:fixed;top:-14px;width:8px;height:12px;border-radius:2px;z-index:45;pointer-events:none;animation:fall var(--d,2.4s) cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes fall{to{transform:translate(var(--dx,0),105vh) rotate(var(--r,540deg))}}
+#lanes.jiggle .lane{animation:jig .6s ease}
+@keyframes jig{0%,100%{transform:none}20%{transform:translateY(-6px) scale(1.01,.98)}45%{transform:translateY(2px) scale(.99,1.02)}70%{transform:translateY(-2px)}}
+.crew-item small{font:500 11px/1.25 var(--f-mono);color:var(--muted);text-align:center}
+.wx-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wx-day{background:var(--bg);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:3px;font-size:13px}
+.wx-day svg{width:28px;height:28px}
+.wx-day b{font-family:var(--f-mono)}
+@media (prefers-reduced-motion:reduce){.lane.rainbow,#lanes.jiggle .lane,.confetti{animation:none!important}.confetti{display:none}}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}.lane.overtime .bar i,.lane.zapped,.lane.zapped::after,#shot.zapped{animation:none!important}}
 </style>
 </head>
@@ -333,6 +390,8 @@ body.booting{overflow:hidden}
       <p id="bannerText"></p>
       <button class="btn" id="bannerBtn" type="button" hidden>Turn on zaps</button>
     </div>
+
+    <section class="extras" id="extras" hidden aria-label="Cave board"></section>
 
     <section class="lanes" id="lanes" aria-live="polite" hidden></section>
   </div>
@@ -380,7 +439,7 @@ body.booting{overflow:hidden}
         <button class="mood" type="button" data-mood="dance" aria-pressed="true">Off</button>
       </div>
     </div>
-    <p>You get one of these when you join. It types away while you work, wilts on overtime, and dances once you clock out.</p>
+    <p>You get one of these when you join. It types away while you work, wilts on overtime, and dances once you clock out. Each one has a power that levels up when you open the app on workdays in a row.</p>
     <div class="crew-row" id="crewRow"></div>
   </section>
 
@@ -388,7 +447,7 @@ body.booting{overflow:hidden}
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>v11.0</span>
+    <span>v13.0</span>
   </div>
 </div>
 
@@ -427,7 +486,22 @@ body.booting{overflow:hidden}
 <div class="sheet" id="acctSheet" hidden>
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="acctTitle">
     <div class="sheet-msg" id="acctTitle">Hi!</div>
-    <div class="me-mon"><div class="mon dance" id="acctMon"></div><p>Your monster is <b id="acctMonName"></b>.<br>Monsters are handed out when you join and stay with you.</p></div>
+    <div class="power" id="powerCard"></div>
+    <div class="sheet-row split">
+      <span class="sheet-hint" id="rerollHint"></span>
+      <button class="btn ghost" id="rerollBtn" type="button">Reroll monster</button>
+    </div>
+    <div id="citySection" hidden style="display:flex;flex-direction:column;gap:8px">
+      <div class="section-label">Weather city</div>
+      <p class="sheet-hint" id="cityNow"></p>
+      <form id="cityForm" class="inline-form" novalidate>
+        <label for="cityInput">Search a city
+          <input id="cityInput" name="cityInput" maxlength="60" placeholder="e.g. Kuala Lumpur" autocomplete="off">
+        </label>
+        <button class="btn ghost" type="submit" id="citySearch">Search</button>
+      </form>
+      <ul class="places" id="cityResults"></ul>
+    </div>
     <div class="section-label" id="acctColorLabel">Your colour</div>
     <div class="swatches" id="acctColors" role="radiogroup" aria-labelledby="acctColorLabel"></div>
     <form id="acctTimeForm" class="inline-form" novalidate>
@@ -439,6 +513,10 @@ body.booting{overflow:hidden}
     <label class="switch" for="buzzToggle">
       <span>Let friends buzz my phone<small>When someone zaps you, your phone vibrates. Turn off to get quiet zaps.</small></span>
       <input id="buzzToggle" name="buzzToggle" type="checkbox" role="switch">
+    </label>
+    <label class="switch" for="fxToggle">
+      <span>Show friends' effects<small>Jelly parties, Dino roars and their alerts. Turn off for a calmer board.</small></span>
+      <input id="fxToggle" name="fxToggle" type="checkbox" role="switch">
     </label>
     <form id="acctPinForm" class="inline-form" novalidate>
       <label for="acctPin">New passcode
@@ -495,6 +573,47 @@ body.booting{overflow:hidden}
       <button class="btn ghost" id="inviteNo" type="button">Not now</button>
       <button class="btn" id="inviteYes" type="button">Join cave</button>
     </div>
+  </div>
+</div>
+
+<!-- Tako: stick a note -->
+<div class="sheet" id="noteSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="noteTitle">
+    <div class="sheet-msg" id="noteTitle">Stick a note</div>
+    <form id="noteForm" novalidate>
+      <label for="noteText">Note for the cave
+        <input id="noteText" name="noteText" maxlength="80" placeholder="Lunch at 1?" autocomplete="off">
+      </label>
+      <label class="switch" for="notePin" id="notePinWrap">
+        <span>Pin it for a week<small>Pinned notes stay on top for 7 days. Other notes come down at midnight.</small></span>
+        <input id="notePin" name="notePin" type="checkbox" role="switch">
+      </label>
+      <div class="err" id="noteErr" role="alert"></div>
+      <div class="sheet-row"><button class="btn ghost" type="button" id="noteCancel">Cancel</button><button class="btn" type="submit" id="noteSubmit">Stick it</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Dino: roar -->
+<div class="sheet" id="roarSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="roarTitle">
+    <div class="sheet-msg" id="roarTitle">Roar to the cave</div>
+    <form id="roarForm" novalidate>
+      <label for="roarText">Your roar
+        <input id="roarText" name="roarText" maxlength="60" placeholder="I'm out!" autocomplete="off">
+      </label>
+      <div class="err" id="roarErr" role="alert"></div>
+      <div class="sheet-row"><button class="btn ghost" type="button" id="roarCancel">Cancel</button><button class="btn" type="submit" id="roarSubmit">Roar</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Fluff: 3-day forecast -->
+<div class="sheet" id="wxSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="wxTitle">
+    <div class="sheet-msg" id="wxTitle">Forecast</div>
+    <div class="wx-days" id="wxDays"></div>
+    <div class="sheet-row"><button class="btn" type="button" id="wxClose">Done</button></div>
   </div>
 </div>
 
@@ -577,12 +696,15 @@ function applyState(d){
   S=d;offset=d.now-Date.now();
   $("offline").hidden=true;
   if(!S.cave&&view==="chat") view="board";
-  if((S.cave&&S.cave.id)!==prevCave) resetChat();
+  if((S.cave&&S.cave.id)!==prevCave){resetChat();prevLaneState={};seenRoars=null;}
   if(S.cave){
-    const sig=JSON.stringify([S.cave.id,S.cave.members,S.me.id]);
+    const sig=JSON.stringify([S.cave.id,S.cave.members,S.me.id,S.me.power,S.me.level]);
     if(sig!==lastSig){lastSig=sig;buildLanes();}
   }else{lastSig="";lanesData=[];$("lanes").replaceChildren();}
   renderChrome();tick();updateBanner();updateUnread();
+  if(S.cave) decorate();
+  checkLevelUp();
+  if(!$("acctSheet").hidden) renderPower();
   if(!usageStarted){usageStarted=true;ping(true);}
   if(!$("caveSheet").hidden) renderCaveSheet();
   checkInvite();
@@ -615,6 +737,7 @@ function renderChrome(){
   $("tabBoard").setAttribute("aria-selected",String(view==="board"));
   $("tabChat").setAttribute("aria-selected",String(view==="chat"));
   $("lanes").hidden=!inCave||view!=="board";
+  $("extras").hidden=!inCave||view!=="board"||!$("extras").childElementCount;
   $("chatView").hidden=!inCave||view!=="chat";
   $("snap").hidden=!inCave||view!=="board";
   $("crew").hidden=inCave&&view==="chat";
@@ -650,20 +773,27 @@ function buildLanes(){
     el.style.setProperty("--c0",p.c);el.style.setProperty("--cs0",p.cs);
     el.innerHTML=`<div class="row1"><div class="who"><span class="dot"></span><span class="name"></span><span class="off"></span></div><span class="tag"></span></div>
       <div class="big"></div>
+      <div class="perks"></div>
       <div class="mid"><div class="sub"></div></div>
       <div class="bar"><i></i></div>
       <div class="acts" data-html2canvas-ignore></div>`;
     el.querySelector(".mid").appendChild(monEl(p.monster,p.color,"work"));
     el.querySelector(".name").textContent=p.name;
     el.querySelector(".off").textContent=fmt12(p.h,p.m);
+    if(p.level>=1){const l=document.createElement("span");l.className=`lvl l${p.level}`;l.textContent=`Lv${p.level}`;
+      l.title=`${MONSTERS[p.monster].name} Lv${p.level}: ${powerOf(p.monster).name}`;el.querySelector(".who").appendChild(l);}
     const acts=el.querySelector(".acts");
     if(isMe){
       const y=document.createElement("span");y.className="you";y.textContent="You";el.querySelector(".who").appendChild(y);
       const ot=document.createElement("button");ot.type="button";ot.className="lbtn";
       ot.addEventListener("click",()=>onOT(el));acts.appendChild(ot);p.otBtn=ot;
+      if(S.me.power==="dino"&&S.me.level>=1){const rb=document.createElement("button");rb.type="button";rb.className="lbtn";rb.textContent="Roar";
+        rb.title="Tell the whole cave you're out";rb.addEventListener("click",onRoar);acts.appendChild(rb);p.roarBtn=rb;}
     }else{
       const z=document.createElement("button");z.type="button";z.className="lbtn zap";
       z.addEventListener("click",()=>zap(p,el,z));acts.appendChild(z);p.zapBtn=z;
+      if(S.me.power==="mush"&&S.me.level>=1){const cb=document.createElement("button");cb.type="button";cb.className="lbtn";
+        cb.addEventListener("click",()=>cheer(p,cb));acts.appendChild(cb);p.cheerBtn=cb;}
     }
     p.el=el;lanes.appendChild(el);
   });
@@ -672,7 +802,7 @@ function buildLanes(){
     hint.innerHTML=`<div class="name">It's just you in here</div><p>Tap <b>Cave</b> at the top to share the invite link, so friends can move in.</p>`;
     lanes.appendChild(hint);
   }
-  tick();
+  tick();decorate();
 }
 
 function tick(){
@@ -693,6 +823,7 @@ function tick(){
     el.classList.toggle("done",isDone);
     el.classList.toggle("overtime",state==="ot");
     el.classList.toggle("first",r===firstLeft);
+    el.classList.toggle("rainbow",isDone&&p.monster===0&&p.level>=3);
     const mood=isDone?"dance":state==="ot"?"tired":"work";
     if(!mon.classList.contains(mood)){mon.classList.remove("work","tired","dance");mon.classList.add(mood);}
 
@@ -728,7 +859,11 @@ function tick(){
       else{z.disabled=false;z.textContent=`⚡ Zap`;z.title=reachable?`Buzz ${p.name}'s phone`:`${p.name} hasn't turned on zaps yet`;}
       z.classList.toggle("muted",!reachable);
     }
+    if(p.roarBtn) p.roarBtn.hidden=!isDone||S.me.roared;
+    if(p.cheerBtn){const left=S.me.cheersLeft;p.cheerBtn.disabled=left<=0;
+      p.cheerBtn.textContent=left>0?`Cheer (${left})`:"No cheers left";p.cheerBtn.title=`Send ${p.name} a mushroom cheer`;}
   });
+  powerEffects(rows);
 }
 
 /* ================= zap & OT ================= */
@@ -780,7 +915,8 @@ function gotZap(d){
 
 /* ================= views & chat ================= */
 let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false;
-function resetChat(){chatMsgs=[];chatAfter=0;$("chatList").replaceChildren();}
+function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;$("chatList").replaceChildren();}
+let lastReadSent=0;
 function setView(v){
   view=v;renderChrome();updateUnread();
   clearInterval(chatTimer);chatTimer=null;
@@ -793,6 +929,7 @@ function markRead(){
   if(!S||!S.cave) return;
   const last=Math.max(chatMsgs.length?chatMsgs[chatMsgs.length-1].at:0,(S.cave.chatLatest&&S.cave.chatLatest.at)||0);
   if(last) lsSet(readKey(),String(last));
+  if(view==="chat"&&last>lastReadSent){lastReadSent=last;api("chat/read",{at:last}).catch(()=>{});}
   updateUnread();
 }
 function updateUnread(){
@@ -853,6 +990,11 @@ function renderChat(forceBottom){
     group.querySelector(".mg-body").appendChild(bub);
     lastPid=m.pid;lastAt=m.at;
   });
+  if(S.cave.seen){ // Cyclo Lv2: who has read the latest message
+    const last=chatMsgs[chatMsgs.length-1];
+    const who=members().filter(p=>p.id!==last.pid&&p.id!==S.me.id&&(S.cave.seen[p.id]||0)>=last.at).map(p=>p.name);
+    if(who.length){const sn=document.createElement("div");sn.className="seen";sn.textContent=`Seen by ${who.join(", ")}`;list.appendChild(sn);}
+  }
   if(forceBottom||nearBottom) list.scrollTop=list.scrollHeight;
 }
 $("composer").addEventListener("submit",async e=>{
@@ -979,7 +1121,7 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";usageStarted=false;lanesData=[];view="board";resetChat();
+  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   $("banner").hidden=true;renderChrome();
@@ -991,8 +1133,7 @@ async function signedOut(msg){
 function renderAcct(){
   const me=S.me;
   $("acctTitle").textContent=`Hi, ${me.name}`;
-  const m=$("acctMon");m.style.setProperty("--mc",colorVar(me.color));m.innerHTML=monSvg(me.monster);
-  $("acctMonName").textContent=MONSTERS[me.monster].name;
+  renderPower();
   renderSwatches($("acctColors"),me.color,saveColor);
   $("buzzToggle").checked=me.buzz!==false;
 }
@@ -1000,7 +1141,8 @@ $("meChip").addEventListener("click",()=>{
   if(!S){openAuth("login");return;}
   renderAcct();
   $("acctTime").value=`${pad(S.me.h)}:${pad(S.me.m)}`;$("acctPin").value="";$("acctErr").textContent="";
-  deleteArmed=false;$("deleteBtn").textContent="Delete account";
+  deleteArmed=false;$("deleteBtn").textContent="Delete account";rerollArmed=false;
+  $("cityResults").replaceChildren();$("cityInput").value="";
   $("acctSheet").hidden=false;
 });
 async function saveColor(k){
@@ -1099,9 +1241,9 @@ $("leaveBtn").addEventListener("click",async()=>{
 /* sheets close on Escape / backdrop, except the log-in sheet while signed out */
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  ["acctSheet","caveSheet","shotSheet"].forEach(id=>$(id).hidden=true);
+  ["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet"].forEach(id=>$(id).hidden=true);
 });
-["acctSheet","caveSheet","shotSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
+["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
 
 /* ================= push / zaps ================= */
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -1110,7 +1252,7 @@ const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Noti
 let swReg=null;
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("/sw.js").then(r=>{swReg=r;syncSubscription();updateBanner();}).catch(()=>{});
-  navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.type==="zap") gotZap(e.data);});
+  navigator.serviceWorker.addEventListener("message",e=>{if(!e.data) return;if(e.data.type==="zap") gotZap(e.data);else if(e.data.type==="roar") refresh();});
 }
 function b64ToBytes(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0));}
 async function currentSub(){if(!swReg||!pushSupported) return null;try{return await swReg.pushManager.getSubscription();}catch(e){return null;}}
@@ -1155,11 +1297,279 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=
 $("installBtn").addEventListener("click",async()=>{if(!installEvt) return;installEvt.prompt();await installEvt.userChoice.catch(()=>{});installEvt=null;$("installBtn").hidden=true;});
 window.addEventListener("appinstalled",()=>{$("installBtn").hidden=true;});
 
+/* ================= monster powers ================= */
+const POWERS=[
+  {key:"jelly",name:"Jiggle Party",kind:"Fun",lv:["When you clock out, everyone's board jiggles","Plus a confetti shower","Plus a rainbow trail on your card"]},
+  {key:"cyclo",name:"All-Seeing Eye",kind:"Tool",lv:["See who's in the app right now","See who has read the chat","See who left last this week"]},
+  {key:"noodle",name:"Noodle Timer",kind:"Tool",soon:true,lv:["A nudge 15 minutes before you're off","Your own reminders","A lunch reminder too"]},
+  {key:"spike",name:"Focus Shield",kind:"Tool",soon:true,lv:["Block zaps for 30 minutes","For 1 hour","For 2 hours"]},
+  {key:"bun",name:"Carrot Alarm",kind:"Fun",soon:true,lv:["Book a zap for the moment a friend is off","2 a day","Write your own message"]},
+  {key:"tako",name:"Ink Notes",kind:"Tool",lv:["Stick 1 note on the cave board","2 notes at a time","3 notes, and pin one for a week"]},
+  {key:"mush",name:"Spore Cheer",kind:"Fun",lv:["Cheer 1 friend a day; mushrooms sprout on their card","Cheer 3 times a day","Cheer 5 times a day, and your mushrooms grow big"]},
+  {key:"chomp",name:"Snack Run",kind:"Tool",soon:true,lv:["Start a drinks poll in the chat","With a countdown","Sums up who wants what"]},
+  {key:"fluff",name:"Weather Eye",kind:"Tool",lv:["The weather at your clock-out time","Plus a rain alert before you leave","Plus a 3-day forecast"]},
+  {key:"dino",name:"Roar",kind:"Fun",lv:["Roar to the whole cave when you leave","Write your own roar","Your roar comes with sound"]},
+];
+const STREAK_AT=[0,3,7,14];
+const powerOf=i=>POWERS[i]||POWERS[0];
+const svgEl=h=>{const t=document.createElement("template");t.innerHTML=h.trim();return t.content.firstChild;};
+const sgTime=ms=>{const q=sgParts(ms);return fmt12(+q.hour%24,+q.minute);};
+function wxIcon(kind){
+  const P={sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
+    cloud:'<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 18z"/>',
+    rain:'<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    storm:'<path d="M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 14z"/><path d="M12 15l-2 4h3l-2 4"/>',
+    fog:'<path d="M4 9h16M2 13h20M5 17h14"/>'};
+  return svgEl(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[kind]||P.cloud}</svg>`);
+}
+function shroom(color,big){
+  return svgEl(`<svg viewBox="0 0 24 24" aria-hidden="true"${big?' class="big"':""}><path d="M3 12a9 8 0 0 1 18 0z" style="fill:${colorVar(color)}"/><circle cx="8.5" cy="8.5" r="1.6" style="fill:#fff"/><circle cx="14.5" cy="7" r="1.3" style="fill:#fff"/><rect x="9" y="12" width="6" height="8" rx="2.5" style="fill:var(--stem);stroke:var(--stem-edge)"/></svg>`);
+}
+function confetti(n=60){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for(let i=0;i<n;i++){
+    const c=document.createElement("i");c.className="confetti";
+    c.style.left=Math.random()*100+"vw";c.style.background=colorVar(COLOR_KEYS[i%COLOR_KEYS.length]);
+    c.style.setProperty("--dx",(Math.random()*160-80)+"px");c.style.setProperty("--r",(Math.random()*900-450)+"deg");
+    c.style.setProperty("--d",(1.8+Math.random()*1.4)+"s");c.style.animationDelay=(Math.random()*.4)+"s";
+    document.body.appendChild(c);setTimeout(()=>c.remove(),3800);
+  }
+}
+function jiggle(){const l=$("lanes");l.classList.remove("jiggle");void l.offsetWidth;l.classList.add("jiggle");setTimeout(()=>l.classList.remove("jiggle"),700);}
+// Sound can only start after the viewer has touched the page once.
+let audioCtx=null;
+addEventListener("pointerdown",()=>{try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume();}catch(e){}},{passive:true});
+function playRoar(){
+  try{
+    if(!audioCtx) return;const t=audioCtx.currentTime;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter(),lfo=audioCtx.createOscillator(),lg=audioCtx.createGain();
+    o.type="sawtooth";o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(55,t+0.9);
+    lfo.frequency.value=28;lg.gain.value=30;lfo.connect(lg);lg.connect(o.frequency);
+    f.type="lowpass";f.frequency.value=900;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+0.08);g.gain.exponentialRampToValueAtTime(0.0001,t+1);
+    o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start(t);lfo.start(t);o.stop(t+1.05);lfo.stop(t+1.05);
+  }catch(e){}
+}
+// Jelly: when a Jelly in the cave clocks out while you're watching, the board parties.
+let prevLaneState={};
+function powerEffects(rows){
+  const fx=S.me.fx!==false;
+  const working=x=>x==="before"||x==="before-ot"||x==="ot", off=x=>x==="done"||x==="done-ot";
+  rows.forEach(r=>{
+    const before=prevLaneState[r.p.id];prevLaneState[r.p.id]=r.state;
+    if(!before||!fx) return;
+    if(r.p.monster===0&&r.p.level>=1&&working(before)&&off(r.state)){jiggle();if(r.p.level>=2) confetti();}
+  });
+}
+function decorate(){
+  if(!S||!S.cave) return;
+  const c=S.cave, byId=Object.fromEntries(members().map(p=>[p.id,p]));
+  lanesData.forEach(p=>{
+    const el=p.el;if(!el) return;
+    const perks=el.querySelector(".perks");perks.replaceChildren();
+    if(c.online&&c.online.includes(p.id)&&p.id!==S.me.id){
+      const d=document.createElement("span");d.className="online";d.setAttribute("role","img");d.setAttribute("aria-label",`${p.name} is in the app now`);d.title=`${p.name} is in the app now`;perks.appendChild(d);
+    }
+    const w=c.weather&&c.weather[p.id];
+    if(w&&w.at){
+      const b=document.createElement("button");b.type="button";b.className="wx";b.appendChild(wxIcon(w.at.kind));
+      const t=document.createElement("span");t.textContent=`${fmt12(p.h,p.m)} · ${w.at.temp}° · ${w.at.rain}% rain`;b.appendChild(t);
+      b.title=`Weather at ${fmt12(p.h,p.m)} in ${w.city}: ${w.at.label}`;
+      b.setAttribute("aria-label",`${b.title}, ${w.at.temp} degrees, ${w.at.rain}% chance of rain`);
+      b.addEventListener("click",()=>openWeather(p,w));perks.appendChild(b);
+    }
+    const ch=c.cheers&&c.cheers[p.id];
+    if(ch&&ch.length){
+      const sp=document.createElement("span");sp.className="shrooms";
+      const from=[...new Set(ch.map(x=>byId[x.from]?byId[x.from].name:"a friend"))].join(", ");
+      sp.title=`Cheered by ${from}`;sp.setAttribute("role","img");sp.setAttribute("aria-label",`${ch.length} ${ch.length===1?"cheer":"cheers"} from ${from}`);
+      ch.slice(0,6).forEach(x=>sp.appendChild(shroom(byId[x.from]?byId[x.from].color:"teal",x.lv>=3)));
+      if(ch.length>6){const n=document.createElement("span");n.textContent=`+${ch.length-6}`;sp.appendChild(n);}
+      perks.appendChild(sp);
+    }
+  });
+  renderExtras();
+}
+let seenRoars=null;
+function renderExtras(){
+  const box=$("extras");box.replaceChildren();
+  const c=S.cave, byId=Object.fromEntries(members().map(p=>[p.id,p])), fx=S.me.fx!==false, roars=c.roars||[];
+  const fresh=[];
+  if(seenRoars===null) seenRoars=new Set(roars.map(r=>r.pid+r.at));
+  else roars.forEach(r=>{const k=r.pid+r.at;if(!seenRoars.has(k)){seenRoars.add(k);fresh.push(r);}});
+  roars.forEach(r=>{
+    if(!fx&&r.pid!==S.me.id) return;
+    const dk=`clockout.roar.${S.day}.${r.pid}`;if(lsGet(dk)) return;
+    const p=byId[r.pid];if(!p) return;
+    const el=document.createElement("div");el.className="roar";el.style.setProperty("--mc0",p.c);
+    el.appendChild(monEl(p.monster,p.color,"dance"));
+    const t=document.createElement("div");t.innerHTML="<b></b><p></p>";
+    t.querySelector("b").textContent=`${p.name} roars`;t.querySelector("p").textContent=`"${r.text}" · ${sgTime(r.at)}`;el.appendChild(t);
+    const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this roar");x.setAttribute("data-html2canvas-ignore","");
+    x.addEventListener("click",()=>{lsSet(dk,"1");renderExtras();renderChrome();});el.appendChild(x);
+    box.appendChild(el);
+  });
+  if(fx) fresh.filter(r=>r.pid!==S.me.id).forEach(r=>{
+    if(r.sound) playRoar();
+    const sh=$("shot");sh.classList.remove("zapped");void sh.offsetWidth;sh.classList.add("zapped");setTimeout(()=>sh.classList.remove("zapped"),600);
+  });
+  if("nightOwl" in c){ // Cyclo Lv3
+    const o=document.createElement("p");o.className="owl";
+    if(c.nightOwl){
+      const p=byId[c.nightOwl.pid];o.append("Night owl this week: ");const b=document.createElement("b");b.textContent=p?p.name:"someone";o.appendChild(b);
+      o.append(` left at ${fmtSec(c.nightOwl.end)} on ${new Intl.DateTimeFormat("en-GB",{weekday:"long",timeZone:"UTC"}).format(new Date(c.nightOwl.day+"T12:00:00Z"))}.`);
+    }else o.textContent="Night owl this week: nobody has stayed late yet.";
+    box.appendChild(o);
+  }
+  const notes=c.notes||[], canAdd=S.me.power==="tako"&&S.me.level>=1&&S.me.notesLeft>0;
+  if(notes.length||canAdd){
+    const row=document.createElement("div");row.className="notes";
+    notes.forEach((n,i)=>{
+      const p=byId[n.pid], color=p?p.color:"gold";
+      const el=document.createElement("div");el.className="note";
+      el.style.setProperty("--ns",softVar(color));el.style.setProperty("--nc",colorVar(color));el.style.setProperty("--tilt",((i%2?1:-1)*1.2)+"deg");
+      if(n.pinned){const pin=document.createElement("span");pin.className="pin";pin.textContent="Pinned";el.appendChild(pin);}
+      const tx=document.createElement("div");tx.textContent=n.text;el.appendChild(tx);
+      const by=document.createElement("small");by.textContent=`from ${p?p.name:"a former member"}`;el.appendChild(by);
+      if(n.pid===S.me.id||c.owner===S.me.id){
+        const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Take this note down");x.setAttribute("data-html2canvas-ignore","");
+        x.addEventListener("click",()=>removeNote(n.id));el.appendChild(x);
+      }
+      row.appendChild(el);
+    });
+    if(canAdd){
+      const b=document.createElement("button");b.type="button";b.className="addnote";b.setAttribute("data-html2canvas-ignore","");
+      b.textContent=`+ Stick a note (${S.me.notesLeft} left)`;b.addEventListener("click",openNoteSheet);row.appendChild(b);
+    }
+    box.appendChild(row);
+  }
+  box.hidden=!box.childElementCount||view!=="board";
+}
+function checkLevelUp(){
+  const k=`clockout.lvl.${S.me.id}`, prev=Number(lsGet(k)??-1), lv=S.me.level;
+  if(prev>=0&&lv>prev){confetti();toast(`Level up! ${MONSTERS[S.me.monster].name} is now Lv${lv}: ${powerOf(S.me.monster).lv[lv-1]}.`,6000);}
+  lsSet(k,String(lv));
+}
+function renderPower(){
+  if(!S) return;
+  const me=S.me, pw=powerOf(me.monster), box=$("powerCard");box.replaceChildren();
+  const head=document.createElement("div");head.className="power-head";
+  head.appendChild(monEl(me.monster,me.color,"dance"));
+  const t=document.createElement("div");
+  const b=document.createElement("b");b.textContent=`${MONSTERS[me.monster].name} · ${pw.name}`;t.appendChild(b);
+  const sm=document.createElement("small");
+  sm.textContent=pw.soon?`${me.streak}-workday streak · this power is still being built`:(me.level?`Lv${me.level} · ${me.streak}-workday streak`:`Locked · ${me.streak}-workday streak`);
+  t.appendChild(sm);
+  if(pw.soon){const so=document.createElement("span");so.className="soon";so.textContent="Coming soon";t.appendChild(document.createElement("br"));t.appendChild(so);}
+  head.appendChild(t);box.appendChild(head);
+  if(me.next){
+    const from=STREAK_AT[me.level], need=me.next, left=need-me.streak;
+    const bar=document.createElement("div");bar.className="prog";bar.setAttribute("role","progressbar");
+    bar.setAttribute("aria-label",`Progress to Lv${me.level+1}`);bar.setAttribute("aria-valuemin",from);bar.setAttribute("aria-valuemax",need);bar.setAttribute("aria-valuenow",me.streak);
+    const i=document.createElement("i");i.style.width=Math.max(0,Math.min(100,(me.streak-from)/(need-from)*100))+"%";bar.appendChild(i);box.appendChild(bar);
+    const h=document.createElement("p");h.className="sheet-hint";
+    h.textContent=`${left} more ${left===1?"workday":"workdays"} in a row to Lv${me.level+1}. Weekends don't break your streak. Missing a workday drops one level.`;box.appendChild(h);
+  }else{const h=document.createElement("p");h.className="sheet-hint";h.textContent="Max level. Keep opening the app on workdays to stay here.";box.appendChild(h);}
+  const ul=document.createElement("ul");ul.className="lvls";
+  pw.lv.forEach((d,i)=>{const li=document.createElement("li");if(!pw.soon&&me.level>i) li.className="on";li.innerHTML="<b></b><span></span>";
+    li.querySelector("b").textContent=`Lv${i+1}`;li.querySelector("span").textContent=d;ul.appendChild(li);});
+  box.appendChild(ul);
+  $("rerollBtn").disabled=!me.canReroll;
+  $("rerollBtn").textContent=rerollArmed?"Tap again to reroll":"Reroll monster";
+  $("rerollHint").textContent=me.canReroll?"Once a month, at random. You keep your level."
+    :`Next reroll from ${new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(me.nextReroll+"T00:00:00Z"))}.`;
+  $("fxToggle").checked=me.fx!==false;
+  $("citySection").hidden=pw.key!=="fluff";
+  $("cityNow").textContent=me.city?`Fluff is watching the sky over ${me.city.name}.`:"Pick your city so Fluff can watch the sky for you.";
+}
+let rerollArmed=false;
+$("rerollBtn").addEventListener("click",async()=>{
+  if(!rerollArmed){rerollArmed=true;renderPower();return;}
+  rerollArmed=false;
+  try{
+    lastSig="";applyState(await api("me",{action:"reroll"}));renderAcct();confetti(40);
+    const pw=powerOf(S.me.monster);toast(`Say hi to ${MONSTERS[S.me.monster].name}! Power: ${pw.name}${pw.soon?" (coming soon)":""}.`,5000);
+  }catch(e){$("acctErr").textContent=e.message;renderPower();}
+});
+$("fxToggle").addEventListener("change",async e=>{
+  const on=e.target.checked;
+  try{applyState(await api("me",{action:"fx",fx:on}));toast(on?"Friends' effects are on.":"Friends' effects are off.");}
+  catch(ex){e.target.checked=!on;$("acctErr").textContent=ex.message;}
+});
+$("cityForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const q=$("cityInput").value.trim(), ul=$("cityResults");ul.replaceChildren();$("acctErr").textContent="";
+  if(q.length<2){$("acctErr").textContent="Type at least 2 letters of your city.";return;}
+  $("citySearch").disabled=true;
+  try{
+    const d=await api("geo?q="+encodeURIComponent(q));
+    if(!d.results.length){const li=document.createElement("li");li.className="sheet-hint";li.textContent="No places found. Try another spelling.";ul.appendChild(li);}
+    d.results.forEach(r=>{
+      const li=document.createElement("li"), b=document.createElement("button");b.type="button";b.innerHTML="<span></span> <small></small>";
+      b.querySelector("span").textContent=r.name;b.querySelector("small").textContent=[r.admin1,r.country].filter(Boolean).join(", ");
+      b.addEventListener("click",async()=>{
+        try{applyState(await api("me",{action:"city",name:r.name,lat:r.lat,lon:r.lon}));ul.replaceChildren();$("cityInput").value="";renderPower();toast(`Fluff is watching the sky over ${r.name}.`);}
+        catch(ex){$("acctErr").textContent=ex.message;}
+      });
+      li.appendChild(b);ul.appendChild(li);
+    });
+  }catch(ex){$("acctErr").textContent=ex.message;}
+  finally{$("citySearch").disabled=false;}
+});
+async function cheer(p,btn){
+  btn.disabled=true;
+  try{applyState(await api("cheer",{to:p.id}));toast(`Mushrooms are sprouting on ${p.name}'s card.`);}
+  catch(e){if(e.status!==401) toast(e.message);}
+  finally{tick();}
+}
+async function roar(text){
+  try{
+    applyState(await api("roar",text?{text}:{}));$("roarSheet").hidden=true;
+    if(S.me.level>=3) playRoar();confetti(30);toast("Roared! Your whole cave heard it.");
+  }catch(e){if($("roarSheet").hidden) toast(e.message);else $("roarErr").textContent=e.message;}
+}
+function onRoar(){
+  if(S.me.level>=2){$("roarText").value="";$("roarErr").textContent="";$("roarSheet").hidden=false;setTimeout(()=>$("roarText").focus(),50);}
+  else roar();
+}
+$("roarForm").addEventListener("submit",e=>{e.preventDefault();roar($("roarText").value.trim());});
+$("roarCancel").addEventListener("click",()=>{$("roarSheet").hidden=true;});
+function openNoteSheet(){
+  $("noteText").value="";$("noteErr").textContent="";$("notePin").checked=false;$("notePinWrap").hidden=!S.me.canPin;
+  $("noteSheet").hidden=false;setTimeout(()=>$("noteText").focus(),50);
+}
+$("noteForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const text=$("noteText").value.trim();if(!text){$("noteErr").textContent="Write something on the note first.";return;}
+  const b=$("noteSubmit");b.disabled=true;
+  try{applyState(await api("note",{action:"add",text,pin:$("notePin").checked}));$("noteSheet").hidden=true;toast("Note stuck on the board.");}
+  catch(ex){$("noteErr").textContent=ex.message;}
+  finally{b.disabled=false;}
+});
+$("noteCancel").addEventListener("click",()=>{$("noteSheet").hidden=true;});
+async function removeNote(id){try{applyState(await api("note",{action:"remove",id}));toast("Note taken down.");}catch(e){toast(e.message);}}
+function openWeather(p,w){
+  if(!w.daily){toast(`${w.city} at ${fmt12(p.h,p.m)}: ${w.at.label}, ${w.at.temp}°, ${w.at.rain}% chance of rain.`,5000);return;}
+  $("wxTitle").textContent=`${w.city} · next 3 days`;
+  const g=$("wxDays");g.replaceChildren();
+  w.daily.forEach(d=>{
+    const c=document.createElement("div");c.className="wx-day";c.appendChild(wxIcon(d.kind));
+    const day=document.createElement("b");day.textContent=new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",timeZone:"UTC"}).format(new Date(d.day+"T12:00:00Z"));
+    const l=document.createElement("span");l.textContent=d.label;
+    const t=document.createElement("span");t.textContent=`${d.min}° to ${d.max}°`;
+    const r=document.createElement("span");r.textContent=`${d.rain}% rain`;
+    c.append(day,l,t,r);g.appendChild(c);
+  });
+  $("wxSheet").hidden=false;
+}
+$("wxClose").addEventListener("click",()=>{$("wxSheet").hidden=true;});
+
 /* ================= crew preview ================= */
 MONSTERS.forEach((mo,i)=>{
   const d=document.createElement("div");d.className="crew-item";
   d.appendChild(monEl(i,COLOR_KEYS[(i*5)%COLOR_KEYS.length],"dance"));
   const s=document.createElement("span");s.textContent=mo.name;d.appendChild(s);
+  const pw=powerOf(i), sm=document.createElement("small");sm.textContent=pw.soon?`${pw.name} · soon`:pw.name;d.appendChild(sm);
   $("crewRow").appendChild(d);
 });
 document.querySelectorAll(".mood").forEach(b=>b.addEventListener("click",()=>{
