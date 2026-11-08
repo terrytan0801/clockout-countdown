@@ -83,15 +83,28 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
   display:inline-flex;align-items:center;gap:8px;min-height:42px}
 .chip .mini{width:26px;height:26px}
 .chip b{color:var(--ink)}
-/* phones: account, cave and screenshot sit in one row */
+/* News button: your monster sits in it and hops while there's news you haven't read */
+.newsbtn{position:relative;overflow:visible}
+.nmon{width:26px;height:26px;flex:none;display:inline-block}
+.nmon .mon{width:100%;height:100%}
+.ndot{position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px var(--bg);display:none}
+.newsbtn.fresh{border-color:var(--accent)}
+.newsbtn.fresh .ndot{display:block}
+.newsbtn.fresh .nmon{animation:hop 1.6s cubic-bezier(.3,0,.4,1) infinite;transform-origin:50% 100%}
+@keyframes hop{0%,55%,100%{transform:none}62%{transform:scale(1.15,.82)}72%{transform:translateY(-11px) scale(.92,1.1) rotate(-8deg)}82%{transform:translateY(-4px) rotate(6deg)}90%{transform:scale(1.08,.9)}}
+body.calm .newsbtn .nmon{animation:none!important}
+@media (prefers-reduced-motion:reduce){.newsbtn .nmon{animation:none!important}}
+/* phones: account, cave, screenshot and news fill one row */
 @media (max-width:560px){
-  .actions{width:100%}
-  .chip{min-width:0;max-width:calc(100% - 190px)}
+  .actions{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px}
+  .actions>*{min-width:0}
+  .chip{padding:8px 10px 8px 6px;gap:6px;font-size:12px}
+  .chip .mini{width:22px;height:22px}
   .chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .chip .acc{display:none}
-  #caveBtn{flex:none}
-  #snap{flex:none;width:42px;padding:0}
-  #snap .lbl{display:none}
+  .actions .btn{padding:10px 8px;gap:5px;font-size:12px;letter-spacing:-.02em;white-space:nowrap}
+  #caveBtn svg,#snap svg{display:none}
+  .newsbtn .nmon{width:22px;height:22px}
   .seg{max-width:none}
 }
 
@@ -422,19 +435,6 @@ body.noscroll{overflow:hidden}
 .offstage{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none}
 /* What's new: the peeking monster and the comic */
 .linkbtn{font:inherit;color:var(--ink);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
-.peek{position:fixed;right:0;top:56%;z-index:15;width:116px;height:96px;overflow:hidden;pointer-events:none}
-.peek-mon{position:absolute;right:-30px;bottom:0;width:78px;height:78px;padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;
-  transform:translateX(16px) rotate(-18deg);transform-origin:80% 90%;animation:peek 5s ease-in-out infinite}
-.peek-mon .mon{width:100%;height:100%}
-.peek-bub{position:absolute;right:42px;top:2px;font:700 11px/1 var(--f-mono);background:var(--ink);color:var(--card);padding:5px 8px;border-radius:10px 10px 2px 10px;
-  opacity:0;animation:bub 5s ease-in-out infinite;white-space:nowrap}
-@keyframes peek{0%,48%,100%{transform:translateX(16px) rotate(-18deg)}56%,86%{transform:translateX(-6px) rotate(-10deg)}64%{transform:translateX(-6px) rotate(-16deg)}72%{transform:translateX(-6px) rotate(-6deg)}}
-@keyframes bub{0%,54%,92%,100%{opacity:0;transform:translateY(4px)}60%,86%{opacity:1;transform:none}}
-.peek.bye .peek-mon{animation:none;transform:translateX(110px) rotate(10deg);transition:transform .45s ease-in}
-.peek.bye .peek-bub{display:none}
-body.calm .peek-mon,body.calm .peek-bub{animation:none}
-body.calm .peek-mon{transform:translateX(8px) rotate(-10deg)}body.calm .peek-bub{opacity:1}
-@media (prefers-reduced-motion:reduce){.peek-mon,.peek-bub{animation:none!important}.peek-mon{transform:translateX(8px) rotate(-10deg)}.peek-bub{opacity:1}}
 .news .comic{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .news .comic::-webkit-scrollbar{display:none}
 .panel{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;gap:10px}
@@ -486,9 +486,12 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
           <span id="caveBtnText">Cave</span>
         </button>
         <button class="btn ghost" id="installBtn" type="button" hidden>Install app</button>
-        <button class="btn" id="snap" type="button" aria-label="Screenshot" hidden>
+        <button class="btn" id="snap" type="button" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
           <span class="lbl">Screenshot</span>
+        </button>
+        <button class="btn ghost newsbtn" id="newsBtn" type="button" aria-label="News: what's new in Clock-out" hidden>
+          <span class="nmon" id="newsMon" aria-hidden="true"></span><span>News</span><i class="ndot" aria-hidden="true"></i>
         </button>
       </div>
     </header>
@@ -578,7 +581,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v18.0 · <button class="linkbtn" id="newsLink" type="button">What's new</button></span>
+    <span>v19.0</span>
   </div>
 </div>
 
@@ -752,11 +755,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
   </div>
 </div>
 
-<!-- What's new: a monster peeks in from the edge; tap it for a short comic -->
-<div class="peek" id="peek" hidden>
-  <span class="peek-bub" aria-hidden="true">New!</span>
-  <button class="peek-mon" id="peekBtn" type="button" aria-label="What's new in Clock-out"></button>
-</div>
+<!-- News: a short comic about what's new -->
 <div class="sheet" id="newsSheet" hidden>
   <div class="sheet-card narrow news" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
     <div class="sheet-row split"><div class="sheet-msg" id="newsTitle">What's new</div><button class="x" id="newsClose" type="button" aria-label="Close">×</button></div>
@@ -1345,7 +1344,7 @@ async function signedOut(msg){
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
-  $("banner").hidden=true;$("peek").hidden=true;$("newsSheet").hidden=true;renderChrome();
+  $("banner").hidden=true;$("newsSheet").hidden=true;renderChrome();updatePeek();
   showSplashForAuth("login");
   if(msg) toast(msg);
 }
@@ -2364,11 +2363,13 @@ function panelArt(kind){
 }
 let newsIdx=0, newsItem=null;
 function updatePeek(){
-  const pk=$("peek"), unseen=NEWS[0]&&lsGet(LS_NEWS)!==NEWS[0].id;
-  if(!S||!unseen){pk.hidden=true;return;}
-  const btn=$("peekBtn"), key=`${S.me.monster}|${S.me.color}`;
-  if(btn.dataset.k!==key){btn.dataset.k=key;btn.replaceChildren(monEl(S.me.monster,S.me.color,"dance"));}
-  pk.classList.remove("bye");pk.hidden=false;
+  const btn=$("newsBtn");
+  if(!S||!NEWS.length){btn.hidden=true;return;}
+  const unseen=lsGet(LS_NEWS)!==NEWS[0].id, mon=$("newsMon"), key=`${S.me.monster}|${S.me.color}`;
+  if(mon.dataset.k!==key){mon.dataset.k=key;mon.replaceChildren(monEl(S.me.monster,S.me.color,"dance","still"));}
+  btn.classList.toggle("fresh",unseen);
+  btn.setAttribute("aria-label",unseen?"News: something new to read":"News: what's new in Clock-out");
+  btn.hidden=false;
 }
 function openNews(item=NEWS[0]){
   if(!item) return;
@@ -2396,14 +2397,12 @@ $("comic").addEventListener("scroll",()=>{
 function closeNews(){
   $("newsSheet").hidden=true;
   if(newsItem&&newsItem===NEWS[0]&&lsGet(LS_NEWS)!==newsItem.id){
-    lsSet(LS_NEWS,newsItem.id);
-    const pk=$("peek");pk.classList.add("bye");setTimeout(()=>{pk.hidden=true;pk.classList.remove("bye");},500);
+    lsSet(LS_NEWS,newsItem.id);updatePeek();
   }
 }
 $("newsNext").addEventListener("click",()=>{if(newsIdx>=newsItem.panels.length-1) closeNews();else showPanel(newsIdx+1);});
 $("newsClose").addEventListener("click",closeNews);
-$("peekBtn").addEventListener("click",()=>openNews());
-$("newsLink").addEventListener("click",()=>openNews());
+$("newsBtn").addEventListener("click",()=>openNews());
 
 /* ================= crew preview ================= */
 MONSTERS.forEach((mo,i)=>{
