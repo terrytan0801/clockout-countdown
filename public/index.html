@@ -83,6 +83,17 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
   display:inline-flex;align-items:center;gap:8px;min-height:42px}
 .chip .mini{width:26px;height:26px}
 .chip b{color:var(--ink)}
+/* phones: account, cave and screenshot sit in one row */
+@media (max-width:560px){
+  .actions{width:100%}
+  .chip{min-width:0;max-width:calc(100% - 190px)}
+  .chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chip .acc{display:none}
+  #caveBtn{flex:none}
+  #snap{flex:none;width:42px;padding:0}
+  #snap .lbl{display:none}
+  .seg{max-width:none}
+}
 
 /* Board | Chat switch */
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--track);border-radius:12px;padding:4px;max-width:360px}
@@ -441,9 +452,9 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
           <span id="caveBtnText">Cave</span>
         </button>
         <button class="btn ghost" id="installBtn" type="button" hidden>Install app</button>
-        <button class="btn" id="snap" type="button" hidden>
+        <button class="btn" id="snap" type="button" aria-label="Screenshot" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-          Screenshot
+          <span class="lbl">Screenshot</span>
         </button>
       </div>
     </header>
@@ -533,7 +544,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v16.0</span>
+    <span>v17.0</span>
   </div>
 </div>
 
@@ -883,7 +894,7 @@ function renderChrome(){
   if(chip._sig!==csig){chip._sig=csig;chip.replaceChildren();
   if(S){
     chip.appendChild(monEl(S.me.monster,S.me.color,"dance still","mini"));
-    const t=document.createElement("span");t.innerHTML="<b></b> · account";t.querySelector("b").textContent=S.me.name;chip.appendChild(t);
+    const t=document.createElement("span");t.innerHTML="<b></b><span class=\"acc\"> · account</span>";t.querySelector("b").textContent=S.me.name;chip.appendChild(t);
   }else chip.textContent="Log in";}
   $("caveBtn").hidden=!inCave;
   if(inCave) $("caveBtnText").textContent=`Cave · ${S.cave.members.length}`;
