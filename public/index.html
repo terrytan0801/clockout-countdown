@@ -83,6 +83,9 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
   display:inline-flex;align-items:center;gap:8px;min-height:42px}
 .chip .mini{width:26px;height:26px}
 .chip b{color:var(--ink)}
+/* Screenshot: camera on top, small label under it */
+#snap{flex-direction:column;gap:3px;padding:5px 12px;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+#snap svg{width:16px;height:16px}
 /* News button: your monster sits in it and hops while there's news you haven't read */
 .newsbtn{position:relative;overflow:visible}
 .nmon{width:26px;height:26px;flex:none;display:inline-block}
@@ -103,7 +106,8 @@ body.calm .newsbtn .nmon{animation:none!important}
   .chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .chip .acc{display:none}
   .actions .btn{padding:10px 8px;gap:5px;font-size:12px;letter-spacing:-.02em;white-space:nowrap}
-  #caveBtn svg,#snap svg{display:none}
+  .actions #snap{padding:5px 9px;gap:3px;font-size:10.5px;letter-spacing:.02em}
+  #caveBtn svg{display:none}
   .newsbtn .nmon{width:22px;height:22px}
   .seg{max-width:none}
 }
@@ -581,7 +585,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v19.0</span>
+    <span>v20.0</span>
   </div>
 </div>
 
