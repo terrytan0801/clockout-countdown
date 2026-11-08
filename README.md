@@ -1,4 +1,4 @@
-# Clock-out Countdown · v20.0
+# Clock-out Countdown · v21.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -23,6 +23,7 @@ Inspired by Setlog. **Four times a day**, at random times between 9 am and 10 pm
 
 - Posting within **10 minutes** of a ring is on time. Until the next ring it still counts, marked **Late**. One clip per person per ring; a retake replaces it.
 - The camera shows the phone camera's full view (no cropping, widest zoom), so what you see is what gets filmed.
+- **Filters and tone.** Under the camera: 8 filters (Normal, Vivid, Warm, Cool, Film, Retro, Mono, Dreamy), zoom (1×, 2×, 3× or pinch, also while filming) and a sliders panel for brightness, contrast, saturation and warmth. They're applied with WebGL as you film, so they're part of the clip. Each phone remembers its last look.
 - The **Days** tab is a month calendar. Days with clips show a cover frame and how many clips there are. Tap a day to see who filmed each ring and play it.
 - A day plays **split screen**: for each ring, everyone's clips play side by side at once, under the ring time, then the next ring. Clips are shown whole, never cropped.
 - **Make video** records exactly that as one vertical (9:16) video: a title card with the cave name, date and everyone's monsters, then each ring's split screen with the original sound and no music. It's made on the phone, so keep the screen open until it's done. Then **Share to Instagram…** opens the share menu, or **Save video** keeps a copy.
