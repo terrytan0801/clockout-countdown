@@ -115,8 +115,9 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
 .lane .mon{width:78px;height:78px;flex:none;margin:-16px -6px -4px 0}
 .bar{height:10px;border-radius:999px;background:var(--track);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--c);border-radius:inherit;transition:width .8s ease}
-.lane.overtime .bar i{background:repeating-linear-gradient(45deg,var(--c) 0 8px,var(--cs) 8px 16px);background-size:22.63px 22.63px;animation:slide 1s linear infinite}
-@keyframes slide{to{background-position:22.63px 0}}
+.lane.overtime .bar i{position:relative;overflow:hidden;background:var(--cs)}
+.lane.overtime .bar i::after{content:"";position:absolute;top:0;bottom:0;left:-23px;right:0;background:repeating-linear-gradient(45deg,var(--c) 0 8px,var(--cs) 8px 16px);background-size:22.63px 22.63px;animation:slide 1s linear infinite;will-change:transform}
+@keyframes slide{to{transform:translateX(22.63px)}}
 .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:2px}
 .lbtn{font:700 13px/1 var(--f-mono);height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--c);background:transparent;color:var(--c);cursor:pointer;white-space:nowrap;
   display:inline-flex;align-items:center;gap:6px}
@@ -299,10 +300,9 @@ body.booting{overflow:hidden}
 .shrooms{display:inline-flex;align-items:flex-end;gap:1px}
 .shrooms svg{width:16px;height:16px}.shrooms svg.big{width:23px;height:23px}
 .shrooms>span{font:700 11px var(--f-mono);color:var(--muted);margin-left:3px}
-@property --rb{syntax:'<angle>';inherits:false;initial-value:0deg}
-.lane.rainbow{border:2px solid transparent;padding:13px 15px;background:linear-gradient(var(--card),var(--card)) padding-box,conic-gradient(from var(--rb),#ff6b3d,#ffd23f,#0fa37f,#2a8fd6,#7a5cff,#e0458b,#ff6b3d) border-box;animation:rb 4s linear infinite}
-@keyframes rb{to{--rb:360deg}}
+.lane.rainbow{border:2px solid transparent;padding:13px 15px;background:linear-gradient(var(--card),var(--card)) padding-box,conic-gradient(from 200deg,#ff6b3d,#ffd23f,#0fa37f,#2a8fd6,#7a5cff,#e0458b,#ff6b3d) border-box}
 .extras{display:flex;flex-direction:column;gap:10px}
+.extras>.xs{display:flex;flex-direction:column;gap:10px}.extras>.xs:empty{display:none}
 .roar{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--mc0);border-radius:14px;padding:6px 8px 6px 12px}
 .roar .mon{width:54px;height:54px;flex:none}
 .roar b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;line-height:1.2}
@@ -345,7 +345,10 @@ body.booting{overflow:hidden}
 .wx-day svg{width:28px;height:28px}
 .wx-day b{font-family:var(--f-mono)}
 @media (prefers-reduced-motion:reduce){.lane.rainbow,#lanes.jiggle .lane,.confetti{animation:none!important}.confetti{display:none}}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none}.lane.overtime .bar i,.lane.zapped,.lane.zapped::after,#shot.zapped{animation:none!important}}
+/* monsters off screen (or on a hidden tab) hold still; Calm mode stops the decorative motion */
+.mon.offscreen,.mon.offscreen *{animation-play-state:paused!important}
+body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle .lane{animation:none!important}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}.lane.overtime .bar i::after,.lane.zapped,.lane.zapped::after,#shot.zapped{animation:none!important}}
 </style>
 </head>
 <body class="booting">
@@ -365,7 +368,7 @@ body.booting{overflow:hidden}
       <div class="htext">
         <span class="eyebrow" id="eyebrow">Punch clock · UTC+8</span>
         <h1 id="title">Clock-out Countdown</h1>
-        <div class="now"><span id="now">Now <b>--:--:--</b></span><span class="offline" id="offline" hidden>Offline · retrying</span></div>
+        <div class="now"><span id="now">Now <b id="nowT">--:--:--</b></span><span class="offline" id="offline" hidden>Offline · retrying</span></div>
       </div>
       <div class="actions" data-html2canvas-ignore>
         <button class="chip" id="meChip" type="button">Log in</button>
@@ -447,7 +450,7 @@ body.booting{overflow:hidden}
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>v13.0</span>
+    <span>v14.0</span>
   </div>
 </div>
 
@@ -517,6 +520,10 @@ body.booting{overflow:hidden}
     <label class="switch" for="fxToggle">
       <span>Show friends' effects<small>Jelly parties, Dino roars and their alerts. Turn off for a calmer board.</small></span>
       <input id="fxToggle" name="fxToggle" type="checkbox" role="switch">
+    </label>
+    <label class="switch" for="calmToggle">
+      <span>Calm mode<small>Monsters stand still on this phone. Smoother on older phones and easier on the battery.</small></span>
+      <input id="calmToggle" name="calmToggle" type="checkbox" role="switch">
     </label>
     <form id="acctPinForm" class="inline-form" novalidate>
       <label for="acctPin">New passcode
@@ -655,10 +662,23 @@ const ssSet=(k,v)=>{try{v==null?sessionStorage.removeItem(k):sessionStorage.setI
 const colorVar=k=>`var(--c-${COLOR_KEYS.includes(k)?k:"orange"})`;
 const softVar=k=>`var(--c-${COLOR_KEYS.includes(k)?k:"orange"}-soft)`;
 const monSvg=i=>MONSTERS[((i%MONSTERS.length)+MONSTERS.length)%MONSTERS.length].svg;
+// Monsters that are off screen (scrolled away, in a hidden view) pause their dance.
+const monIO="IntersectionObserver" in window?new IntersectionObserver(es=>es.forEach(e=>{
+  e.target.classList.toggle("offscreen",!e.isIntersecting);
+  if(!e.target.isConnected) monIO.unobserve(e.target);
+}),{rootMargin:"120px 0px"}):null;
 function monEl(i,color,mood,extra=""){
   const d=document.createElement("div");d.className=`mon ${mood} ${extra}`.trim();
-  d.style.setProperty("--mc",colorVar(color));d.innerHTML=monSvg(i);return d;
+  d.style.setProperty("--mc",colorVar(color));d.innerHTML=monSvg(i);
+  if(monIO&&!/\bstill\b/.test(extra)) monIO.observe(d);
+  return d;
 }
+// Write to the page only when something actually changed, so nothing redraws for no reason.
+const setT=(el,t)=>{if(el._h!==undefined||el.textContent!==t){el._h=undefined;el.textContent=t;}};
+const setH=(el,h)=>{if(el._h!==h){el._h=h;el.innerHTML=h;}};
+// Calm mode (this phone only): monsters stand still.
+const LS_CALM="clockout.calm";
+document.body.classList.toggle("calm",lsGet(LS_CALM)==="1");
 function sgParts(ms){
   return new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Singapore",hour12:false,weekday:"short",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})
     .formatToParts(new Date(ms)).reduce((o,x)=>(o[x.type]=x.value,o),{});
@@ -726,18 +746,19 @@ function renderChrome(){
   $("title").textContent=inCave?S.cave.name:"Clock-out Countdown";
   $("eyebrow").textContent=inCave?"Clock-out Countdown · UTC+8":"Punch clock · UTC+8";
   document.title=inCave?`${S.cave.name} · Clock-out`:"Clock-out Countdown";
-  const chip=$("meChip");chip.replaceChildren();
+  const chip=$("meChip"), csig=S?JSON.stringify([S.me.monster,S.me.color,S.me.name]):"";
+  if(chip._sig!==csig){chip._sig=csig;chip.replaceChildren();
   if(S){
     chip.appendChild(monEl(S.me.monster,S.me.color,"dance still","mini"));
     const t=document.createElement("span");t.innerHTML="<b></b> · account";t.querySelector("b").textContent=S.me.name;chip.appendChild(t);
-  }else chip.textContent="Log in";
+  }else chip.textContent="Log in";}
   $("caveBtn").hidden=!inCave;
   if(inCave) $("caveBtnText").textContent=`Cave · ${S.cave.members.length}`;
   $("seg").hidden=!inCave;
   $("tabBoard").setAttribute("aria-selected",String(view==="board"));
   $("tabChat").setAttribute("aria-selected",String(view==="chat"));
   $("lanes").hidden=!inCave||view!=="board";
-  $("extras").hidden=!inCave||view!=="board"||!$("extras").childElementCount;
+  $("extras").hidden=!inCave||view!=="board"||!extrasFull();
   $("chatView").hidden=!inCave||view!=="chat";
   $("snap").hidden=!inCave||view!=="board";
   $("crew").hidden=inCave&&view==="chat";
@@ -807,7 +828,7 @@ function buildLanes(){
 
 function tick(){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s;
-  $("now").innerHTML=`Now <b>${pad(n.h)}:${pad(n.m)}:${pad(n.s)}</b>`;
+  $("nowT").textContent=`${pad(n.h)}:${pad(n.m)}:${pad(n.s)}`;
   if(!S||!S.cave) return;
   if(n.day!==S.day){S.day=n.day;refresh();}
   const seed=+n.day.slice(8);
@@ -828,24 +849,24 @@ function tick(){
     if(!mon.classList.contains(mood)){mon.classList.remove("work","tired","dance");mon.classList.add(mood);}
 
     if(state==="weekend"){
-      big.textContent="Weekend!";sub.textContent=`No work today · ${pick(HAPPY_SUB)}`;tag.textContent="Weekend";bar.style.width="100%";
+      setT(big,"Weekend!");setT(sub,`No work today · ${pick(HAPPY_SUB)}`);setT(tag,"Weekend");bar.style.width="100%";
     }else if(state.startsWith("before")){
-      big.innerHTML=`<span class="t">Time −</span> ${Math.ceil(left/60)} mins`;
+      setH(big,`<span class="t">Time −</span> ${Math.ceil(left/60)} mins`);
       sub.textContent=`${hms(left)} · ${left<=1800?pick(QUIPS_NEAR):Math.floor(pct)+"% done"}`;
-      tag.textContent=state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working");
+      setT(tag,state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working"));
       bar.style.width=pct.toFixed(1)+"%";
     }else if(state==="ot"){
       const over=nowSec-offSec;
-      big.innerHTML=`<span class="t">Time +</span> ${Math.floor(over/60)} mins`;
-      sub.textContent=`${hms(over)} overtime · ${pick(QUIPS_OT)}`;tag.textContent="Overtime";bar.style.width="100%";
+      setH(big,`<span class="t">Time +</span> ${Math.floor(over/60)} mins`);
+      sub.textContent=`${hms(over)} overtime · ${pick(QUIPS_OT)}`;setT(tag,"Overtime");bar.style.width="100%";
     }else if(state==="done-ot"){
       const over=Math.max(0,o.end-offSec);
-      big.textContent=pick(OT_BIG);
-      sub.textContent=`Out at ${fmtSec(o.end)} after ${Math.round(over/60)} mins OT · ${pick(HAPPY_SUB)}`;tag.textContent="Off";bar.style.width="100%";
+      setT(big,pick(OT_BIG));
+      setT(sub,`Out at ${fmtSec(o.end)} after ${Math.round(over/60)} mins OT · ${pick(HAPPY_SUB)}`);setT(tag,"Off");bar.style.width="100%";
     }else{
-      big.textContent=pick(HAPPY_BIG);sub.textContent=`Off since ${fmt12(p.h,p.m)} · ${pick(HAPPY_SUB)}`;tag.textContent="Off";bar.style.width="100%";
+      setT(big,pick(HAPPY_BIG));setT(sub,`Off since ${fmt12(p.h,p.m)} · ${pick(HAPPY_SUB)}`);setT(tag,"Off");bar.style.width="100%";
     }
-    el.dataset.state=state;
+    if(el.dataset.state!==state) el.dataset.state=state;
 
     if(p.otBtn){
       const labels={before:"+ OT","before-ot":"Cancel OT",ot:"Clock out",done:"+ OT","done-ot":"Resume OT"};
@@ -1192,8 +1213,11 @@ function renderCaveSheet(){
   $("newCode").hidden=!owner;
   $("shareInvite").hidden=!navigator.share;
   $("leaveBtn").textContent=leaveArmed?"Tap again to leave":"Leave cave";
-  const list=$("memberList");list.replaceChildren();
-  members().forEach(p=>{
+  const list=$("memberList"), ms=members();
+  const sig=JSON.stringify([S.me.id,c.owner,kickArmed,ms.map(p=>[p.id,p.name,p.color,p.monster,p.h,p.m,moodOf(p)])]);
+  if(list._sig===sig) return;
+  list._sig=sig;list.replaceChildren();
+  ms.forEach(p=>{
     const li=document.createElement("li");li.style.setProperty("--mc0",p.c);
     li.appendChild(monEl(p.monster,p.color,moodOf(p),"still avatar"));
     const n=document.createElement("span");n.className="mname";n.textContent=p.name+(p.id===S.me.id?" (you)":"");li.appendChild(n);
@@ -1289,7 +1313,7 @@ async function updateBanner(){
     if(Notification.permission==="granted"&&sub&&S.cave.reachable.includes(S.me.id)){banner.hidden=true;return;}
     msg=`⚡ Turn on zaps so your cave can buzz your phone.`;showBtn=true;
   }
-  text.innerHTML=msg;btn.hidden=!showBtn;banner.hidden=false;
+  setH(text,msg);btn.hidden=!showBtn;banner.hidden=false;
 }
 
 let installEvt=null;
@@ -1366,11 +1390,14 @@ function decorate(){
   const c=S.cave, byId=Object.fromEntries(members().map(p=>[p.id,p]));
   lanesData.forEach(p=>{
     const el=p.el;if(!el) return;
-    const perks=el.querySelector(".perks");perks.replaceChildren();
-    if(c.online&&c.online.includes(p.id)&&p.id!==S.me.id){
+    const perks=el.querySelector(".perks");
+    const w=c.weather&&c.weather[p.id], ch=c.cheers&&c.cheers[p.id], on=!!(c.online&&c.online.includes(p.id)&&p.id!==S.me.id);
+    const sig=JSON.stringify([on,w&&w.at?[w.city,w.at]:0,(ch||[]).map(x=>[x.from,x.lv,byId[x.from]&&byId[x.from].name,byId[x.from]&&byId[x.from].color])]);
+    if(perks._sig===sig) return;
+    perks._sig=sig;perks.replaceChildren();
+    if(on){
       const d=document.createElement("span");d.className="online";d.setAttribute("role","img");d.setAttribute("aria-label",`${p.name} is in the app now`);d.title=`${p.name} is in the app now`;perks.appendChild(d);
     }
-    const w=c.weather&&c.weather[p.id];
     if(w&&w.at){
       const b=document.createElement("button");b.type="button";b.className="wx";b.appendChild(wxIcon(w.at.kind));
       const t=document.createElement("span");t.textContent=`${fmt12(p.h,p.m)} · ${w.at.temp}° · ${w.at.rain}% rain`;b.appendChild(t);
@@ -1378,7 +1405,6 @@ function decorate(){
       b.setAttribute("aria-label",`${b.title}, ${w.at.temp} degrees, ${w.at.rain}% chance of rain`);
       b.addEventListener("click",()=>openWeather(p,w));perks.appendChild(b);
     }
-    const ch=c.cheers&&c.cheers[p.id];
     if(ch&&ch.length){
       const sp=document.createElement("span");sp.className="shrooms";
       const from=[...new Set(ch.map(x=>byId[x.from]?byId[x.from].name:"a friend"))].join(", ");
@@ -1391,59 +1417,97 @@ function decorate(){
   renderExtras();
 }
 let seenRoars=null;
+// The board above the lanes has three parts. Each is redrawn only when its own data changes,
+// and roar banners that are already showing stay put, so their monsters keep dancing.
+function extrasParts(){
+  const box=$("extras");
+  if(!box._parts){
+    box.replaceChildren();
+    box._parts=["roars","owl","notes"].map(k=>{const d=document.createElement("div");d.className="xs";d.dataset.part=k;box.appendChild(d);return d;});
+  }
+  return box._parts;
+}
+const extrasFull=()=>extrasParts().some(d=>d.childElementCount);
+function makeRoar(r,p){
+  const el=document.createElement("div");el.className="roar";el.style.setProperty("--mc0",p.c);
+  el.appendChild(monEl(p.monster,p.color,"dance"));
+  const t=document.createElement("div");t.innerHTML="<b></b><p></p>";
+  t.querySelector("b").textContent=`${p.name} roars`;t.querySelector("p").textContent=`"${r.text}" · ${sgTime(r.at)}`;el.appendChild(t);
+  const dk=`clockout.roar.${S.day}.${r.pid}`;
+  const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this roar");x.setAttribute("data-html2canvas-ignore","");
+  x.addEventListener("click",()=>{lsSet(dk,"1");renderExtras();renderChrome();});el.appendChild(x);
+  return el;
+}
 function renderExtras(){
-  const box=$("extras");box.replaceChildren();
+  const box=$("extras"), [roarBox,owlBox,notesBox]=extrasParts();
   const c=S.cave, byId=Object.fromEntries(members().map(p=>[p.id,p])), fx=S.me.fx!==false, roars=c.roars||[];
   const fresh=[];
   if(seenRoars===null) seenRoars=new Set(roars.map(r=>r.pid+r.at));
   else roars.forEach(r=>{const k=r.pid+r.at;if(!seenRoars.has(k)){seenRoars.add(k);fresh.push(r);}});
+
+  // roars: remove the ones that went away, add new ones, leave the rest alone
+  const want=new Map();
   roars.forEach(r=>{
     if(!fx&&r.pid!==S.me.id) return;
-    const dk=`clockout.roar.${S.day}.${r.pid}`;if(lsGet(dk)) return;
+    if(lsGet(`clockout.roar.${S.day}.${r.pid}`)) return;
     const p=byId[r.pid];if(!p) return;
-    const el=document.createElement("div");el.className="roar";el.style.setProperty("--mc0",p.c);
-    el.appendChild(monEl(p.monster,p.color,"dance"));
-    const t=document.createElement("div");t.innerHTML="<b></b><p></p>";
-    t.querySelector("b").textContent=`${p.name} roars`;t.querySelector("p").textContent=`"${r.text}" · ${sgTime(r.at)}`;el.appendChild(t);
-    const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this roar");x.setAttribute("data-html2canvas-ignore","");
-    x.addEventListener("click",()=>{lsSet(dk,"1");renderExtras();renderChrome();});el.appendChild(x);
-    box.appendChild(el);
+    want.set(JSON.stringify([r.pid,r.at,r.text,p.name,p.color,p.monster]),{r,p});
+  });
+  [...roarBox.children].forEach(el=>{if(!want.has(el._k)) el.remove();});
+  let prev=null;
+  want.forEach(({r,p},k)=>{
+    let el=[...roarBox.children].find(x=>x._k===k);
+    if(!el){el=makeRoar(r,p);el._k=k;roarBox.insertBefore(el,prev?prev.nextSibling:roarBox.firstChild);}
+    prev=el;
   });
   if(fx) fresh.filter(r=>r.pid!==S.me.id).forEach(r=>{
     if(r.sound) playRoar();
     const sh=$("shot");sh.classList.remove("zapped");void sh.offsetWidth;sh.classList.add("zapped");setTimeout(()=>sh.classList.remove("zapped"),600);
   });
-  if("nightOwl" in c){ // Cyclo Lv3
-    const o=document.createElement("p");o.className="owl";
-    if(c.nightOwl){
-      const p=byId[c.nightOwl.pid];o.append("Night owl this week: ");const b=document.createElement("b");b.textContent=p?p.name:"someone";o.appendChild(b);
-      o.append(` left at ${fmtSec(c.nightOwl.end)} on ${new Intl.DateTimeFormat("en-GB",{weekday:"long",timeZone:"UTC"}).format(new Date(c.nightOwl.day+"T12:00:00Z"))}.`);
-    }else o.textContent="Night owl this week: nobody has stayed late yet.";
-    box.appendChild(o);
-  }
-  const notes=c.notes||[], canAdd=S.me.power==="tako"&&S.me.level>=1&&S.me.notesLeft>0;
-  if(notes.length||canAdd){
-    const row=document.createElement("div");row.className="notes";
-    notes.forEach((n,i)=>{
-      const p=byId[n.pid], color=p?p.color:"gold";
-      const el=document.createElement("div");el.className="note";
-      el.style.setProperty("--ns",softVar(color));el.style.setProperty("--nc",colorVar(color));el.style.setProperty("--tilt",((i%2?1:-1)*1.2)+"deg");
-      if(n.pinned){const pin=document.createElement("span");pin.className="pin";pin.textContent="Pinned";el.appendChild(pin);}
-      const tx=document.createElement("div");tx.textContent=n.text;el.appendChild(tx);
-      const by=document.createElement("small");by.textContent=`from ${p?p.name:"a former member"}`;el.appendChild(by);
-      if(n.pid===S.me.id||c.owner===S.me.id){
-        const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Take this note down");x.setAttribute("data-html2canvas-ignore","");
-        x.addEventListener("click",()=>removeNote(n.id));el.appendChild(x);
-      }
-      row.appendChild(el);
-    });
-    if(canAdd){
-      const b=document.createElement("button");b.type="button";b.className="addnote";b.setAttribute("data-html2canvas-ignore","");
-      b.textContent=`+ Stick a note (${S.me.notesLeft} left)`;b.addEventListener("click",openNoteSheet);row.appendChild(b);
+
+  // night owl (Cyclo Lv3)
+  const owl="nightOwl" in c?(c.nightOwl?[c.nightOwl,byId[c.nightOwl.pid]?byId[c.nightOwl.pid].name:"someone"]:[null]):0;
+  const owlSig=JSON.stringify(owl);
+  if(owlBox._sig!==owlSig){
+    owlBox._sig=owlSig;owlBox.replaceChildren();
+    if(owl){
+      const o=document.createElement("p");o.className="owl";
+      if(c.nightOwl){
+        o.append("Night owl this week: ");const b=document.createElement("b");b.textContent=owl[1];o.appendChild(b);
+        o.append(` left at ${fmtSec(c.nightOwl.end)} on ${new Intl.DateTimeFormat("en-GB",{weekday:"long",timeZone:"UTC"}).format(new Date(c.nightOwl.day+"T12:00:00Z"))}.`);
+      }else o.textContent="Night owl this week: nobody has stayed late yet.";
+      owlBox.appendChild(o);
     }
-    box.appendChild(row);
   }
-  box.hidden=!box.childElementCount||view!=="board";
+
+  // Tako notes
+  const notes=c.notes||[], canAdd=S.me.power==="tako"&&S.me.level>=1&&S.me.notesLeft>0;
+  const notesSig=JSON.stringify([notes.map(n=>[n,byId[n.pid]?[byId[n.pid].name,byId[n.pid].color]:0]),canAdd?S.me.notesLeft:0,S.me.id,c.owner]);
+  if(notesBox._sig!==notesSig){
+    notesBox._sig=notesSig;notesBox.replaceChildren();
+    if(notes.length||canAdd){
+      const row=document.createElement("div");row.className="notes";
+      notes.forEach((n,i)=>{
+        const p=byId[n.pid], color=p?p.color:"gold";
+        const el=document.createElement("div");el.className="note";
+        el.style.setProperty("--ns",softVar(color));el.style.setProperty("--nc",colorVar(color));el.style.setProperty("--tilt",((i%2?1:-1)*1.2)+"deg");
+        if(n.pinned){const pin=document.createElement("span");pin.className="pin";pin.textContent="Pinned";el.appendChild(pin);}
+        const tx=document.createElement("div");tx.textContent=n.text;el.appendChild(tx);
+        const by=document.createElement("small");by.textContent=`from ${p?p.name:"a former member"}`;el.appendChild(by);
+        if(n.pid===S.me.id||c.owner===S.me.id){
+          const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Take this note down");x.setAttribute("data-html2canvas-ignore","");
+          x.addEventListener("click",()=>removeNote(n.id));el.appendChild(x);
+        }
+        row.appendChild(el);
+      });
+      if(canAdd){
+        const b=document.createElement("button");b.type="button";b.className="addnote";b.setAttribute("data-html2canvas-ignore","");
+        b.textContent=`+ Stick a note (${S.me.notesLeft} left)`;b.addEventListener("click",openNoteSheet);row.appendChild(b);
+      }
+      notesBox.appendChild(row);
+    }
+  }
+  box.hidden=!extrasFull()||view!=="board";
 }
 function checkLevelUp(){
   const k=`clockout.lvl.${S.me.id}`, prev=Number(lsGet(k)??-1), lv=S.me.level;
@@ -1452,7 +1516,11 @@ function checkLevelUp(){
 }
 function renderPower(){
   if(!S) return;
-  const me=S.me, pw=powerOf(me.monster), box=$("powerCard");box.replaceChildren();
+  const me=S.me, pw=powerOf(me.monster), box=$("powerCard");
+  const sig=JSON.stringify([me.monster,me.color,me.level,me.streak,me.next,me.canReroll,me.nextReroll,me.fx,me.city,rerollArmed]);
+  $("calmToggle").checked=document.body.classList.contains("calm");
+  if(box._sig===sig) return;
+  box._sig=sig;box.replaceChildren();
   const head=document.createElement("div");head.className="power-head";
   head.appendChild(monEl(me.monster,me.color,"dance"));
   const t=document.createElement("div");
@@ -1490,6 +1558,10 @@ $("rerollBtn").addEventListener("click",async()=>{
     lastSig="";applyState(await api("me",{action:"reroll"}));renderAcct();confetti(40);
     const pw=powerOf(S.me.monster);toast(`Say hi to ${MONSTERS[S.me.monster].name}! Power: ${pw.name}${pw.soon?" (coming soon)":""}.`,5000);
   }catch(e){$("acctErr").textContent=e.message;renderPower();}
+});
+$("calmToggle").addEventListener("change",e=>{
+  const on=e.target.checked;document.body.classList.toggle("calm",on);lsSet(LS_CALM,on?"1":null);
+  toast(on?"Calm mode is on. Monsters stand still on this phone.":"Calm mode is off. Let's dance.");
 });
 $("fxToggle").addEventListener("change",async e=>{
   const on=e.target.checked;
@@ -1665,8 +1737,8 @@ $("retryBtn").addEventListener("click",()=>{clearTimeout(bootRetry);bootLoad();}
 renderChrome();
 if(token) bootLoad();
 else setTimeout(()=>showSplashForAuth("join"),1200);
-setInterval(tick,1000);
-setInterval(refresh,15000);
+setInterval(()=>{if(document.visibilityState==="visible") tick();},1000);
+setInterval(()=>{if(document.visibilityState==="visible") refresh();},15000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){ping(true);refresh();syncSubscription();if(view==="chat") loadChat();}});
 </script>
 </body>
