@@ -1,5 +1,5 @@
 // Clock-out Countdown service worker: receives zaps (push) and keeps the app installable.
-const VERSION = "v14.0";
+const VERSION = "v15.0";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
@@ -35,7 +35,7 @@ self.addEventListener("push", (e) => {
   e.waitUntil((async () => {
     await self.registration.showNotification(title, opts);
     const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    wins.forEach((w) => w.postMessage({ type: d.kind === "roar" ? "roar" : "zap", title, body: opts.body, buzz }));
+    wins.forEach((w) => w.postMessage({ type: d.kind === "roar" || d.kind === "ring" ? d.kind : "zap", title, body: opts.body, buzz }));
   })());
 });
 

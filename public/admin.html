@@ -347,6 +347,7 @@ function renderTiles(){
     ["Zaps",num(t.zaps),`sent in ${D.days} days`],
     ["Messages",num(t.messages),`sent in ${D.days} days · ${num(t.caves)} ${t.caves===1?"cave":"caves"}`],
   ];
+  if(D.clips) items.push(["Calendar clips",num(D.clips.count),`${(D.clips.bytes/1e6).toFixed(1)} MB of video stored`]);
   items.forEach(([k,v,s])=>{
     const el=document.createElement("div");el.className="tile";
     el.innerHTML=`<span class="k"></span><span class="v"></span><span class="s"></span>`;

@@ -23,7 +23,7 @@ http.createServer(async (req, res) => {
   if (url.pathname.startsWith("/api/")) {
     const chunks = []; for await (const c of req) chunks.push(c);
     const r = await handle(new Request(url, { method: req.method, headers: req.headers, body: chunks.length ? Buffer.concat(chunks) : undefined }));
-    res.writeHead(r.status, Object.fromEntries(r.headers)); res.end(await r.text()); return;
+    res.writeHead(r.status, Object.fromEntries(r.headers)); res.end(Buffer.from(await r.arrayBuffer())); return;
   }
   const path = url.pathname === "/" ? "index.html" : url.pathname === "/admin" ? "admin.html" : url.pathname;
   const p = normalize(join(root, path));

@@ -85,7 +85,7 @@ h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);l
 .chip b{color:var(--ink)}
 
 /* Board | Chat switch */
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--track);border-radius:12px;padding:4px;max-width:360px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--track);border-radius:12px;padding:4px;max-width:360px}
 .seg button{font:700 14px/1 var(--f-mono);border:0;border-radius:9px;padding:11px;background:transparent;color:var(--muted);cursor:pointer;position:relative}
 .seg button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .unread{position:absolute;top:7px;right:calc(50% - 34px);width:9px;height:9px;border-radius:50%;background:var(--danger)}
@@ -345,6 +345,70 @@ body.booting{overflow:hidden}
 .wx-day svg{width:28px;height:28px}
 .wx-day b{font-family:var(--f-mono)}
 @media (prefers-reduced-motion:reduce){.lane.rainbow,#lanes.jiggle .lane,.confetti{animation:none!important}.confetti{display:none}}
+/* Cave Calendar (v15): the ring bar, the calendar, the camera and the day player */
+.ringbar{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 14px}
+.ringbar.hot{border:2px solid var(--accent);box-shadow:0 0 0 4px var(--c-orange-soft)}
+.ring-ic{width:26px;height:26px;flex:none;color:var(--muted)}
+.ringbar.hot .ring-ic{color:var(--accent)}
+.ring-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.ring-tx b{font-family:var(--f-display);font-weight:400;font-size:18px;line-height:1.2}
+.ring-tx span{font:500 13px/1.35 var(--f-mono);color:var(--muted)}
+.ringbar.hot .btn{background:var(--accent);color:#fff}
+.days{display:flex;flex-direction:column;gap:10px}
+.days-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.days-head h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0;text-align:center}
+.icon-btn{width:44px;height:44px;flex:none;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 22px/1 var(--f-mono);cursor:pointer}
+.icon-btn[disabled]{opacity:.35;cursor:default}
+.dow,.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dow span{font:700 11px var(--f-mono);color:var(--muted);text-align:center;text-transform:uppercase}
+.calday{position:relative;aspect-ratio:9/14;border-radius:10px;border:1px solid var(--line);background-color:var(--card);background-position:center;background-size:cover;background-repeat:no-repeat;padding:0;cursor:pointer;overflow:hidden;color:var(--ink);min-width:0}
+.calday .n{position:absolute;top:4px;left:6px;font:700 12px var(--f-mono)}
+.calday.has .n{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.calday .k{position:absolute;bottom:4px;right:4px;font:700 10px/1 var(--f-mono);background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:3px 6px}
+.calday.today{outline:2px solid var(--accent);outline-offset:1px}
+.calday.empty{background-color:var(--track);border-color:transparent}
+.calday[disabled]{cursor:default}
+.calday.future{opacity:.4}
+.calday.blank{visibility:hidden}
+body.noscroll{overflow:hidden}
+.cam{position:fixed;inset:0;z-index:40;background:#000;color:#fff;display:flex;flex-direction:column}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam video.mirror{transform:scaleX(-1)}
+.cam-top{position:relative;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:max(14px,env(safe-area-inset-top,0px)) 14px 24px;background:linear-gradient(rgba(0,0,0,.55),transparent)}
+.cam-top span{font:700 14px/1.3 var(--f-mono);text-align:center;flex:1;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.cam-x{width:44px;height:44px;flex:none;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font:700 24px/1 var(--f-body);cursor:pointer;display:grid;place-items:center}
+.cam-x svg{width:22px;height:22px}
+.cam-bottom{position:relative;margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 16px max(28px,env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.rec{width:84px;height:84px;border-radius:50%;border:0;background:transparent;padding:0;cursor:pointer;position:relative}
+.rec svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.rec .recdot{position:absolute;inset:14px;border-radius:50%;background:#ff3b30;transition:inset .2s,border-radius .2s}
+.rec.on .recdot{inset:28px;border-radius:8px}
+.rec[disabled]{opacity:.4}
+.cam-err{margin:0;font:600 14px/1.4 var(--f-body);color:#ffd5d5;text-align:center;max-width:420px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.cam-err:empty{display:none}
+.cam-after{display:flex;gap:10px}
+.btn.light{color:#fff;border-color:rgba(255,255,255,.55);background:rgba(0,0,0,.25)}
+.player{position:relative;aspect-ratio:9/16;width:min(100%,calc(58vh*9/16));margin:0 auto;border-radius:14px;overflow:hidden;background:#000 center/cover no-repeat}
+.player video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.psegs{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:3px}
+.psegs i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.4);overflow:hidden}
+.psegs i b{display:block;height:100%;width:0;background:#fff}
+.pwho{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;color:#fff;padding:28px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.55));text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.pwho .mon{width:40px;height:40px;flex:none}
+.pwho b{font-family:var(--f-display);font-weight:400;font-size:18px;display:block;line-height:1.2}
+.pwho small{display:block;font:600 12px var(--f-mono)}
+.pplay{position:absolute;inset:0;border:0;background:rgba(0,0,0,.28);color:#fff;font-size:46px;cursor:pointer}
+.pplay[disabled]{cursor:wait;opacity:.6}
+.late{font:700 10px/1 var(--f-mono);background:var(--c-amber);color:#fff;border-radius:999px;padding:3px 6px;margin-left:6px;vertical-align:1px;text-shadow:none}
+.dpeople{display:flex;flex-wrap:wrap;gap:6px}
+.dp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 3px;font:700 12px var(--f-mono)}
+.dp .mon{width:26px;height:26px}
+.dp.miss{opacity:.65;border-style:dashed;font-weight:500}
+.makebox{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:12px;padding:10px 12px}
+.makebox .mon{width:52px;height:52px}
+.makemid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.makemid small{font-size:12px;color:var(--muted)}
+.offstage{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none}
 /* monsters off screen (or on a hidden tab) hold still; Calm mode stops the decorative motion */
 .mon.offscreen,.mon.offscreen *{animation-play-state:paused!important}
 body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle .lane{animation:none!important}
@@ -387,11 +451,18 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <div class="seg" id="seg" role="tablist" aria-label="View" hidden data-html2canvas-ignore>
       <button id="tabBoard" role="tab" type="button" aria-selected="true">Board</button>
       <button id="tabChat" role="tab" type="button" aria-selected="false">Chat<span class="unread" id="unread" hidden></span></button>
+      <button id="tabDays" role="tab" type="button" aria-selected="false">Days<span class="unread" id="daysDot" hidden></span></button>
     </div>
 
     <div class="banner" id="banner" hidden data-html2canvas-ignore>
       <p id="bannerText"></p>
       <button class="btn" id="bannerBtn" type="button" hidden>Turn on zaps</button>
+    </div>
+
+    <div class="ringbar" id="ringBar" hidden data-html2canvas-ignore>
+      <svg class="ring-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.2 1.6M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>
+      <div class="ring-tx"><b id="ringTitle"></b><span id="ringSub"></span></div>
+      <button class="btn" id="ringBtn" type="button">Film 5s</button>
     </div>
 
     <section class="extras" id="extras" hidden aria-label="Cave board"></section>
@@ -433,6 +504,17 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     </form>
   </section>
 
+  <section class="days" id="daysView" hidden aria-label="Cave calendar">
+    <div class="days-head">
+      <button class="icon-btn" id="mPrev" type="button" aria-label="Previous month">‹</button>
+      <h2 id="mTitle">Days</h2>
+      <button class="icon-btn" id="mNext" type="button" aria-label="Next month">›</button>
+    </div>
+    <div class="dow" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div class="cal" id="calGrid"></div>
+    <p class="sheet-hint" id="daysHint"></p>
+  </section>
+
   <section class="crew" id="crew" aria-labelledby="crewTitle">
     <div class="crew-head">
       <h2 id="crewTitle">The monster crew</h2>
@@ -450,7 +532,8 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>v14.0</span>
+    <span>Once a day, at a random time, everyone's phone rings. Film 5 seconds of what you're doing; it all lands in <b>Days</b>.</span>
+    <span>v15.0</span>
   </div>
 </div>
 
@@ -624,6 +707,54 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
   </div>
 </div>
 
+<!-- Cave Calendar: camera -->
+<div class="cam" id="camSheet" hidden role="dialog" aria-modal="true" aria-label="Film your clip">
+  <video id="camVideo" playsinline muted autoplay></video>
+  <video id="camReview" playsinline loop hidden></video>
+  <div class="cam-top">
+    <button class="cam-x" id="camClose" type="button" aria-label="Close the camera">×</button>
+    <span id="camHint">Show your cave what you're doing</span>
+    <button class="cam-x" id="camFlip" type="button" aria-label="Switch camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><path d="M9 13a3 3 0 0 1 5.2-2"/><path d="M15 13a3 3 0 0 1-5.2 2"/><path d="M14.5 9.5v1.7h-1.7M9.5 16.5v-1.7h1.7"/></svg></button>
+  </div>
+  <div class="cam-bottom">
+    <p class="cam-err" id="camErr" role="alert"></p>
+    <button class="rec" id="camRec" type="button" aria-label="Start filming">
+      <svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="38" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="6"/><circle id="recArc" cx="42" cy="42" r="38" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"/></svg>
+      <span class="recdot"></span>
+    </button>
+    <div class="cam-after" id="camAfter" hidden>
+      <button class="btn ghost light" id="camRetake" type="button">Retake</button>
+      <button class="btn" id="camPost" type="button">Post to the cave</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="camFile" accept="video/*" capture="user" hidden>
+
+<!-- Cave Calendar: one day -->
+<div class="sheet" id="daySheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+    <div class="sheet-row split"><div class="sheet-msg" id="dayTitle">Today</div><button class="x" id="dayClose" type="button" aria-label="Close">×</button></div>
+    <p class="sheet-hint" id="daySub"></p>
+    <div class="player" id="player">
+      <video id="pv" playsinline preload="auto"></video>
+      <div class="psegs" id="pSegs"></div>
+      <div class="pwho" id="pWho"></div>
+      <button class="pplay" id="pPlay" type="button" aria-label="Play the day">▶</button>
+    </div>
+    <div class="dpeople" id="dayPeople"></div>
+    <div class="makebox" id="makeBox" hidden>
+      <div id="makeMon"></div>
+      <div class="makemid"><b id="makeText">Making your video…</b><div class="prog"><i id="makeBar" style="width:0%"></i></div><small>Keep this screen open until it's done.</small></div>
+    </div>
+    <p class="err" id="dayErr" role="alert"></p>
+    <div class="sheet-row" id="shareRow" hidden>
+      <a class="btn ghost" id="saveVid" download>Save video</a>
+      <button class="btn" id="shareVid" type="button">Share to Instagram…</button>
+    </div>
+    <div class="sheet-row"><button class="btn ghost" id="redoClip" type="button" hidden>Retake mine</button><button class="btn" id="makeVid" type="button">Make video</button></div>
+  </div>
+</div>
+
 <!-- screenshot preview -->
 <div class="sheet" id="shotSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="shotMsg">
@@ -693,6 +824,7 @@ function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;
 (function(){
   const q=new URLSearchParams(location.search), c=q.get("join");
   if(c){ssSet(SS_JOIN,c.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6));history.replaceState(null,"","/");}
+  if(q.get("film")){ssSet("clockout.film","1");history.replaceState(null,"","/");}
 })();
 
 async function api(path,body,method){
@@ -715,13 +847,15 @@ function applyState(d){
   const prevCave=S&&S.cave&&S.cave.id;
   S=d;offset=d.now-Date.now();
   $("offline").hidden=true;
-  if(!S.cave&&view==="chat") view="board";
+  if(!S.cave&&view!=="board") view="board";
   if((S.cave&&S.cave.id)!==prevCave){resetChat();prevLaneState={};seenRoars=null;}
   if(S.cave){
     const sig=JSON.stringify([S.cave.id,S.cave.members,S.me.id,S.me.power,S.me.level]);
     if(sig!==lastSig){lastSig=sig;buildLanes();}
   }else{lastSig="";lanesData=[];$("lanes").replaceChildren();}
-  renderChrome();tick();updateBanner();updateUnread();
+  renderChrome();tick();updateBanner();updateUnread();updateRing();updateDaysDot();
+  if(S.cave){const cs=JSON.stringify(S.cave.clipsToday);if(cs!==lastClipSig){const had=lastClipSig;lastClipSig=cs;if(had&&view==="days") loadDays();}}
+  if(ssGet("clockout.film")&&S.cave){ssSet("clockout.film",null);if(view!=="board") setView("board");scrollTo(0,0);}
   if(S.cave) decorate();
   checkLevelUp();
   if(!$("acctSheet").hidden) renderPower();
@@ -760,8 +894,10 @@ function renderChrome(){
   $("lanes").hidden=!inCave||view!=="board";
   $("extras").hidden=!inCave||view!=="board"||!extrasFull();
   $("chatView").hidden=!inCave||view!=="chat";
+  $("daysView").hidden=!inCave||view!=="days";
+  $("tabDays").setAttribute("aria-selected",String(view==="days"));
   $("snap").hidden=!inCave||view!=="board";
-  $("crew").hidden=inCave&&view==="chat";
+  $("crew").hidden=inCave&&view!=="board";
   const lobby=$("lobby");lobby.hidden=!S||inCave;
   if(S&&!inCave){
     const lm=$("lobbyMon");lm.style.setProperty("--mc",colorVar(S.me.color));
@@ -831,6 +967,7 @@ function tick(){
   $("nowT").textContent=`${pad(n.h)}:${pad(n.m)}:${pad(n.s)}`;
   if(!S||!S.cave) return;
   if(n.day!==S.day){S.day=n.day;refresh();}
+  if(S.cave&&S.cave.ring) updateRing();
   const seed=+n.day.slice(8);
   const rows=lanesData.map(p=>({p,...laneState(p,n,nowSec)}));
   const firstLeft=rows.filter(r=>r.state.startsWith("before")).sort((a,b)=>a.offSec-b.offSec)[0];
@@ -939,12 +1076,14 @@ let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false;
 function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;$("chatList").replaceChildren();}
 let lastReadSent=0;
 function setView(v){
-  view=v;renderChrome();updateUnread();
+  view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
+  if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
   clearInterval(chatTimer);chatTimer=null;
   if(v==="chat"){loadChat(true);chatTimer=setInterval(()=>{if(document.visibilityState==="visible") loadChat();},3000);setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);}
 }
 $("tabBoard").addEventListener("click",()=>setView("board"));
 $("tabChat").addEventListener("click",()=>setView("chat"));
+$("tabDays").addEventListener("click",()=>setView("days"));
 const readKey=()=>`clockout.read.${S.cave.id}`;
 function markRead(){
   if(!S||!S.cave) return;
@@ -1145,6 +1284,7 @@ async function signedOut(msg){
   token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
+  closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
   $("banner").hidden=true;renderChrome();
   showSplashForAuth("login");
   if(msg) toast(msg);
@@ -1276,7 +1416,7 @@ const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Noti
 let swReg=null;
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("/sw.js").then(r=>{swReg=r;syncSubscription();updateBanner();}).catch(()=>{});
-  navigator.serviceWorker.addEventListener("message",e=>{if(!e.data) return;if(e.data.type==="zap") gotZap(e.data);else if(e.data.type==="roar") refresh();});
+  navigator.serviceWorker.addEventListener("message",e=>{if(!e.data) return;if(e.data.type==="zap") gotZap(e.data);else if(e.data.type==="roar") refresh();else if(e.data.type==="ring"){refresh();toast("Film time! Show your cave what you're doing.",5000);}});
 }
 function b64ToBytes(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0));}
 async function currentSub(){if(!swReg||!pushSupported) return null;try{return await swReg.pushManager.getSubscription();}catch(e){return null;}}
@@ -1635,6 +1775,431 @@ function openWeather(p,w){
   $("wxSheet").hidden=false;
 }
 $("wxClose").addEventListener("click",()=>{$("wxSheet").hidden=true;});
+
+/* ================= Cave Calendar (v15) ================= */
+// Once a day the cave's phones ring at a random time. Everyone films 5-7 seconds; the clips fill a calendar,
+// and any day can be played back or turned into one video to save or post.
+const CLIP_MIN=5, CLIP_MAX=7, CLIP_MAX_BYTES=2_900_000, RING_LEN=238.8;
+const fmtLong=day=>new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(day+"T12:00:00Z"));
+const fmtLonger=day=>new Intl.DateTimeFormat("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(day+"T12:00:00Z"));
+const cssColor=k=>getComputedStyle(document.documentElement).getPropertyValue(`--c-${COLOR_KEYS.includes(k)?k:"orange"}`).trim()||"#ff6b3d";
+function pickType(){
+  if(!window.MediaRecorder||!MediaRecorder.isTypeSupported) return "";
+  return ["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4;codecs=avc1,mp4a","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find(t=>{try{return MediaRecorder.isTypeSupported(t);}catch(e){return false;}})||"";
+}
+// Clips need the log-in token, so they are fetched and handed to <video> as blob URLs (cached for the visit).
+const blobCache=new Map(), urlCache=new Map();
+function authBlob(path){
+  if(!blobCache.has(path)){
+    const p=fetch("/api/"+path,{headers:{authorization:"Bearer "+token}}).then(r=>{if(!r.ok) throw new Error("That clip couldn't be loaded.");return r.blob();});
+    blobCache.set(path,p);p.catch(()=>blobCache.delete(path));
+  }
+  return blobCache.get(path);
+}
+function authURL(path){
+  if(!urlCache.has(path)){const p=authBlob(path).then(b=>URL.createObjectURL(b));urlCache.set(path,p);p.catch(()=>urlCache.delete(path));}
+  return urlCache.get(path);
+}
+const clipPath=(day,c,kind="clip")=>`${kind}/${S.cave.id}/${day}/${c.pid}?v=${c.at}`;
+
+/* ---- the ring bar on the board ---- */
+function updateRing(){
+  const bar=$("ringBar"), r=S&&S.cave&&S.cave.ring;
+  if(!r||view!=="board"){bar.hidden=true;return;}
+  const t=clockNow(), n=S.cave.clipsToday.length, total=S.cave.members.length, mine=S.me.clip, hot=!mine&&t<r.until;
+  let title,sub,btn;
+  if(mine){title="You're in today's vlog";sub=`${n} of ${total} filmed · rang at ${sgTime(r.at)}`;btn="Watch";}
+  else if(hot){title="Film time!";sub=`${mmss(r.until-t)} left · ${n} of ${total} filmed`;btn="Film 5s";}
+  else{title="You missed the ring";sub=`It rang at ${sgTime(r.at)}. You can still post today, marked late.`;btn="Film late";}
+  setT($("ringTitle"),title);setT($("ringSub"),sub);setT($("ringBtn"),btn);
+  bar.classList.toggle("hot",hot);bar.hidden=false;
+}
+$("ringBtn").addEventListener("click",()=>{if(S&&S.me.clip) openDay(S.day);else openCam();});
+const daysSeenKey=()=>`clockout.daysSeen.${S.cave.id}`;
+function updateDaysDot(){
+  const d=$("daysDot");if(!S||!S.cave){d.hidden=true;return;}
+  const latest=Math.max(0,...S.cave.clipsToday.filter(c=>c.pid!==S.me.id).map(c=>c.at));
+  d.hidden=view==="days"||!(latest>Number(lsGet(daysSeenKey())||0));
+}
+function markDaysSeen(){
+  if(!S||!S.cave) return;
+  const latest=Math.max(0,...S.cave.clipsToday.map(c=>c.at));
+  if(latest) lsSet(daysSeenKey(),String(latest));
+  updateDaysDot();
+}
+
+/* ---- the calendar ---- */
+let calMonth=null, calData=null, lastClipSig="";
+const addMonth=(m,k)=>{const [y,mo]=m.split("-").map(Number);return new Date(Date.UTC(y,mo-1+k,1)).toISOString().slice(0,7);};
+async function loadDays(m){
+  if(!S||!S.cave) return;
+  const now=S.day.slice(0,7);
+  calMonth=m||calMonth||now;if(calMonth>now) calMonth=now;
+  try{const d=await api("days?month="+calMonth);if(d.month===calMonth){calData=d;renderCal();}}
+  catch(e){$("daysHint").textContent=e.message;}
+}
+function renderCal(){
+  const [y,mo]=calMonth.split("-").map(Number), today=S.day;
+  $("mTitle").textContent=new Intl.DateTimeFormat("en-GB",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(y,mo-1,1)));
+  $("mNext").disabled=calMonth>=today.slice(0,7);
+  const grid=$("calGrid");grid.replaceChildren();
+  const first=(new Date(Date.UTC(y,mo-1,1)).getUTCDay()+6)%7, n=new Date(Date.UTC(y,mo,0)).getUTCDate();
+  for(let i=0;i<first;i++){const b=document.createElement("span");b.className="calday blank";grid.appendChild(b);}
+  for(let d=1;d<=n;d++){
+    const day=`${calMonth}-${pad(d)}`, info=calData.days[day], b=document.createElement("button");
+    b.type="button";b.className="calday";
+    const num=document.createElement("span");num.className="n";num.textContent=d;b.appendChild(num);
+    if(day===today) b.classList.add("today");
+    if(info&&info.clips.length){
+      b.classList.add("has");
+      const k=document.createElement("span");k.className="k";k.textContent=info.clips.length;b.appendChild(k);
+      b.style.backgroundColor=cssColor(info.clips[0].color);
+      const cover=info.clips.find(c=>c.thumb);
+      if(cover) authURL(clipPath(day,cover,"thumb")).then(u=>{b.style.backgroundImage=`url("${u}")`;}).catch(()=>{});
+      b.setAttribute("aria-label",`${fmtLong(day)}: ${info.clips.length} ${info.clips.length===1?"clip":"clips"}`);
+      b.addEventListener("click",()=>openDay(day));
+    }else{
+      b.classList.add("empty");b.setAttribute("aria-label",`${fmtLong(day)}: no clips`);
+      if(day>today){b.classList.add("future");b.disabled=true;}
+      else if(day===today&&S.cave.ring) b.addEventListener("click",openCam);
+      else b.disabled=true;
+    }
+    grid.appendChild(b);
+  }
+  const total=Object.values(calData.days).reduce((a,x)=>a+x.clips.length,0);
+  $("daysHint").textContent=total?`${total} ${total===1?"clip":"clips"} this month. Tap a day to watch it, or make it into one video.`
+    :"No clips this month yet. Once a day, at a random time, everyone's phone rings. Film 5 seconds of what you're doing.";
+}
+$("mPrev").addEventListener("click",()=>loadDays(addMonth(calMonth,-1)));
+$("mNext").addEventListener("click",()=>loadDays(addMonth(calMonth,1)));
+
+/* ---- the camera ---- */
+const cam={stream:null,facing:"user",rec:null,chunks:[],blob:null,thumb:null,dur:0,t0:0,raf:0,url:null};
+const camSupported=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
+function drawCover(g,v,W,H){
+  const vw=v.videoWidth,vh=v.videoHeight;if(!vw||!vh) return false;
+  const k=Math.max(W/vw,H/vh), w=vw*k, h=vh*k;g.drawImage(v,(W-w)/2,(H-h)/2,w,h);return true;
+}
+function openCam(){
+  if(!S||!S.cave||!S.cave.ring){toast("Wait for your cave's ring, then film.");return;}
+  if(!camSupported()){$("camFile").click();return;}
+  camReset();$("camErr").textContent="";$("camHint").textContent="Show your cave what you're doing";
+  $("camSheet").hidden=false;document.body.classList.add("noscroll");
+  camStart();
+}
+async function camStart(){
+  camStopStream();$("camRec").disabled=true;
+  const want={video:{facingMode:cam.facing,width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30,max:30}},audio:true};
+  try{cam.stream=await navigator.mediaDevices.getUserMedia(want);}
+  catch(e){
+    try{cam.stream=await navigator.mediaDevices.getUserMedia({...want,audio:false});}
+    catch(e2){$("camErr").textContent="The camera is blocked. Allow the camera for this app in your phone's settings, then try again.";return;}
+  }
+  if($("camSheet").hidden){camStopStream();return;}
+  const v=$("camVideo");v.srcObject=cam.stream;v.classList.toggle("mirror",cam.facing==="user");v.play().catch(()=>{});
+  $("camRec").disabled=false;
+}
+function camStopStream(){if(cam.stream){cam.stream.getTracks().forEach(t=>t.stop());cam.stream=null;}$("camVideo").srcObject=null;}
+function setRecRing(f){$("recArc").style.strokeDashoffset=String(RING_LEN*(1-f));}
+function camReset(){
+  cancelAnimationFrame(cam.raf);cam.blob=null;cam.thumb=null;cam.dur=0;
+  if(cam.url){URL.revokeObjectURL(cam.url);cam.url=null;}
+  const r=$("camReview");r.pause();r.removeAttribute("src");r.load();r.hidden=true;
+  $("camVideo").hidden=false;$("camAfter").hidden=true;$("camRec").hidden=false;$("camRec").classList.remove("on");
+  $("camRec").setAttribute("aria-label","Start filming");$("camFlip").hidden=false;setRecRing(0);
+}
+function closeCam(){
+  if(cam.rec&&cam.rec.state!=="inactive"){cam.rec.onstop=null;try{cam.rec.stop();}catch(e){}}
+  camStopStream();camReset();$("camSheet").hidden=true;document.body.classList.remove("noscroll");
+}
+function startRec(){
+  if(!cam.stream) return;
+  const type=pickType();
+  try{cam.rec=new MediaRecorder(cam.stream,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_400_000,audioBitsPerSecond:64_000});}
+  catch(e){try{cam.rec=new MediaRecorder(cam.stream);}catch(e2){$("camErr").textContent="This phone can't record here. Try Safari on iPhone or Chrome on Android.";return;}}
+  cam.chunks=[];cam.thumb=null;$("camErr").textContent="";
+  cam.rec.ondataavailable=e=>{if(e.data&&e.data.size) cam.chunks.push(e.data);};
+  cam.rec.onstop=finishRec;
+  cam.rec.start(250);cam.t0=performance.now();
+  $("camRec").classList.add("on");$("camRec").setAttribute("aria-label","Stop filming");$("camFlip").hidden=true;
+  let grabbed=false;
+  const loop=()=>{
+    const el=(performance.now()-cam.t0)/1000;setRecRing(Math.min(1,el/CLIP_MAX));
+    setT($("camHint"),el<CLIP_MIN?`Filming… ${Math.ceil(CLIP_MIN-el)}`:"Tap to stop, or keep going to 7");
+    if(!grabbed&&el>1.2){grabbed=true;grabThumb();}
+    if(el>=CLIP_MAX){if(cam.rec.state!=="inactive") cam.rec.stop();return;}
+    cam.raf=requestAnimationFrame(loop);
+  };
+  cam.raf=requestAnimationFrame(loop);
+}
+function grabThumb(){
+  const c=document.createElement("canvas");c.width=360;c.height=640;
+  if(drawCover(c.getContext("2d"),$("camVideo"),360,640)) c.toBlob(b=>{cam.thumb=b;},"image/jpeg",0.72);
+}
+function finishRec(){
+  cancelAnimationFrame(cam.raf);
+  cam.dur=Math.min(CLIP_MAX,(performance.now()-cam.t0)/1000);
+  const type=((cam.rec&&cam.rec.mimeType)||pickType()||"video/mp4").split(";")[0];
+  cam.blob=new Blob(cam.chunks,{type});
+  $("camRec").classList.remove("on");$("camRec").hidden=true;$("camAfter").hidden=false;
+  if(cam.blob.size>CLIP_MAX_BYTES){$("camErr").textContent="That clip came out too big to send. Try again, a little shorter.";$("camPost").hidden=true;}
+  else $("camPost").hidden=false;
+  cam.url=URL.createObjectURL(cam.blob);
+  const r=$("camReview");r.src=cam.url;r.hidden=false;$("camVideo").hidden=true;
+  r.play().catch(()=>{r.muted=true;r.play().catch(()=>{});});
+  $("camHint").textContent=`${cam.dur.toFixed(1)} seconds. Happy with it?`;
+}
+$("camRec").addEventListener("click",()=>{
+  if(!cam.rec||cam.rec.state==="inactive") return startRec();
+  if((performance.now()-cam.t0)/1000<CLIP_MIN) return; // the countdown already says how long is left
+  cam.rec.stop();
+});
+$("camClose").addEventListener("click",closeCam);
+$("camFlip").addEventListener("click",()=>{cam.facing=cam.facing==="user"?"environment":"user";camStart();});
+$("camRetake").addEventListener("click",()=>{camReset();$("camErr").textContent="";$("camHint").textContent="Show your cave what you're doing";});
+async function postClip(blob,thumb,dur,btn){
+  const fd=new FormData();
+  fd.append("video",blob,"clip."+(blob.type.includes("webm")?"webm":blob.type.includes("quicktime")?"mov":"mp4"));
+  if(thumb) fd.append("thumb",thumb,"thumb.jpg");
+  fd.append("dur",dur.toFixed(2));
+  if(btn){btn.disabled=true;btn.textContent="Posting…";}
+  try{
+    const r=await fetch("/api/clip",{method:"POST",headers:{authorization:"Bearer "+token},body:fd});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){signedOut("Please log in again.");return false;}
+    if(!r.ok) throw new Error(d.error||"Couldn't post. Try again.");
+    applyState(d);confetti(36);
+    toast(d.me.clip&&d.me.clip.late?"Posted, marked late. You're in today's vlog.":"Posted! You're in today's vlog.");
+    if(view==="days") loadDays(S.day.slice(0,7));
+    return true;
+  }catch(e){
+    if($("camSheet").hidden) toast(e.message);else $("camErr").textContent=e.message;
+    return false;
+  }finally{if(btn){btn.disabled=false;btn.textContent="Post to the cave";}}
+}
+$("camPost").addEventListener("click",async()=>{if(cam.blob&&await postClip(cam.blob,cam.thumb,cam.dur,$("camPost"))) closeCam();});
+// Phones without in-app recording use their own camera app instead.
+$("camFile").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f) return;
+  if(f.size>CLIP_MAX_BYTES){toast("That video is too big to send. Keep it to about 5 seconds.",4500);return;}
+  const dur=await new Promise(res=>{const v=document.createElement("video");v.preload="metadata";v.onloadedmetadata=()=>{res(v.duration);URL.revokeObjectURL(v.src);};v.onerror=()=>res(NaN);v.src=URL.createObjectURL(f);});
+  if(!(dur>=4.5&&dur<=8)){toast("Clips are 5 to 7 seconds. Film a shorter one.",4500);return;}
+  postClip(f,null,dur);
+});
+
+/* ---- one day: player, people, make a video ---- */
+let dayCtx=null, making=null;
+const pv=$("pv");
+async function openDay(day){
+  if(!S||!S.cave) return;
+  let d;
+  try{d=await api("days?month="+day.slice(0,7));}catch(e){toast(e.message);return;}
+  if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
+  const info=d.days[day];
+  if(!info||!info.clips.length){toast("No clips that day yet.");return;}
+  stopPlayer();cancelMake();
+  dayCtx={day,clips:info.clips,ring:info.ring,idx:0,urls:[],out:null};
+  $("dayTitle").textContent=day===S.day?"Today":fmtLong(day);
+  $("daySub").textContent=`Rang at ${sgTime(info.ring)} · ${info.clips.length} ${info.clips.length===1?"clip":"clips"}`;
+  const people=$("dayPeople");people.replaceChildren();
+  info.clips.forEach(c=>{
+    const s=document.createElement("span");s.className="dp";s.appendChild(monEl(c.monster,c.color,"dance","still"));
+    s.append(`${c.name} · ${sgTime(c.at)}`);if(c.late){const l=document.createElement("span");l.className="late";l.textContent="Late";s.appendChild(l);}
+    people.appendChild(s);
+  });
+  if(day===S.day){
+    const posted=new Set(info.clips.map(c=>c.pid));
+    members().filter(p=>!posted.has(p.id)).forEach(p=>{
+      const s=document.createElement("span");s.className="dp miss";s.appendChild(monEl(p.monster,p.color,"work","still"));
+      s.append(`${p.name} hasn't filmed`);people.appendChild(s);
+    });
+  }
+  const segs=$("pSegs");segs.replaceChildren();info.clips.forEach(()=>{const i=document.createElement("i");i.appendChild(document.createElement("b"));segs.appendChild(i);});
+  showWho(0);$("player").style.backgroundImage="";
+  const cover=info.clips.find(c=>c.thumb);
+  if(cover) authURL(clipPath(day,cover,"thumb")).then(u=>{if(dayCtx&&dayCtx.day===day) $("player").style.backgroundImage=`url("${u}")`;}).catch(()=>{});
+  $("pPlay").hidden=false;$("pPlay").textContent="▶";$("pPlay").disabled=true;
+  $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=false;$("makeVid").textContent="Make video";
+  $("redoClip").hidden=!(day===S.day&&S.me.clip&&S.cave.ring);
+  $("daySheet").hidden=false;
+  if(day===S.day) markDaysSeen();
+  // Load every clip first, so Play starts straight away (iPhone only plays sound from a direct tap).
+  const urls=await Promise.all(info.clips.map(c=>authURL(clipPath(day,c)).catch(()=>null)));
+  if(!dayCtx||dayCtx.day!==day) return;
+  dayCtx.urls=urls;$("pPlay").disabled=false;
+  if(!urls.some(Boolean)) $("dayErr").textContent="These clips couldn't be loaded. Check your connection and try again.";
+}
+function showWho(i){
+  const c=dayCtx.clips[i], w=$("pWho");w.replaceChildren();if(!c) return;
+  w.appendChild(monEl(c.monster,c.color,"dance","still"));
+  const t=document.createElement("div"), b=document.createElement("b");b.textContent=c.name;t.appendChild(b);
+  const sm=document.createElement("small");sm.textContent=sgTime(c.at);
+  if(c.late){const l=document.createElement("span");l.className="late";l.textContent="Late";sm.appendChild(l);}
+  t.appendChild(sm);w.appendChild(t);
+}
+function playAt(i){
+  if(!dayCtx) return;
+  const segs=[...$("pSegs").children];
+  if(i>=dayCtx.clips.length){dayCtx.idx=0;$("pPlay").hidden=false;$("pPlay").textContent="↻";$("pPlay").setAttribute("aria-label","Play the day again");return;}
+  dayCtx.idx=i;
+  segs.forEach((s,j)=>{s.firstChild.style.width=j<i?"100%":"0%";});
+  const u=dayCtx.urls[i];if(!u) return playAt(i+1);
+  showWho(i);$("pPlay").hidden=true;
+  pv.src=u;
+  const p=pv.play();
+  if(p) p.catch(()=>{pv.muted=true;pv.play().catch(()=>{$("pPlay").hidden=false;});});
+}
+pv.addEventListener("timeupdate",()=>{
+  if(!dayCtx) return;const c=dayCtx.clips[dayCtx.idx], s=$("pSegs").children[dayCtx.idx];
+  if(c&&s) s.firstChild.style.width=Math.min(100,pv.currentTime/(isFinite(pv.duration)&&pv.duration>0?pv.duration:c.dur||6)*100)+"%";
+});
+pv.addEventListener("ended",()=>{if(dayCtx) playAt(dayCtx.idx+1);});
+pv.addEventListener("click",()=>{if(dayCtx&&!pv.paused) playAt(dayCtx.idx+1);});
+$("pPlay").addEventListener("click",()=>{if(dayCtx) playAt(dayCtx.idx||0);});
+function stopPlayer(){pv.pause();pv.removeAttribute("src");pv.load();}
+function closeDay(){stopPlayer();cancelMake();if(dayCtx&&dayCtx.saveUrl) URL.revokeObjectURL(dayCtx.saveUrl);dayCtx=null;$("daySheet").hidden=true;}
+$("dayClose").addEventListener("click",closeDay);
+$("redoClip").addEventListener("click",()=>{closeDay();openCam();});
+
+// Turn a monster into a picture for the video: copy each part's computed colours into the SVG.
+const monImgCache=new Map();
+function monImage(i,color){
+  const key=i+"|"+color;
+  if(!monImgCache.has(key)){
+    const p=new Promise((res,rej)=>{
+      const host=monEl(i,color,"dance","still");host.style.cssText+=";position:fixed;left:-9999px;top:0;width:100px;height:100px";
+      document.body.appendChild(host);
+      const svg=host.querySelector("svg"), clone=svg.cloneNode(true), src=[svg,...svg.querySelectorAll("*")], dst=[clone,...clone.querySelectorAll("*")];
+      const props=["fill","stroke","stroke-width","stroke-linecap","stroke-linejoin","opacity","display","visibility","font-family","font-size","font-weight"];
+      src.forEach((el,j)=>{const cs=getComputedStyle(el);let st=props.map(k=>`${k}:${cs.getPropertyValue(k)}`).join(";");
+        if(cs.transform&&cs.transform!=="none") st+=`;transform:${cs.transform};transform-origin:${cs.transformOrigin};transform-box:${cs.transformBox||"view-box"}`;
+        dst[j].setAttribute("style",st);});
+      host.remove();
+      clone.setAttribute("xmlns","http://www.w3.org/2000/svg");clone.setAttribute("width","200");clone.setAttribute("height","200");
+      const img=new Image();img.onload=()=>res(img);img.onerror=()=>rej(new Error("monster"));
+      img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(new XMLSerializer().serializeToString(clone));
+    });
+    monImgCache.set(key,p);p.catch(()=>monImgCache.delete(key));
+  }
+  return monImgCache.get(key);
+}
+function wrapText(g,text,maxW){
+  const words=text.split(" "), lines=[];let line="";
+  words.forEach(w=>{const t=line?line+" "+w:w;if(g.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
+  if(line) lines.push(line);return lines;
+}
+function drawIntro(g,W,H,ctx,mons,f){
+  g.fillStyle="#18231d";g.fillRect(0,0,W,H);
+  g.globalAlpha=Math.min(1,f*3);g.textAlign="center";g.fillStyle="#ff6b3d";
+  g.font="700 26px 'JetBrains Mono', monospace";g.fillText("CLOCK-OUT · CAVE CALENDAR",W/2,330);
+  g.fillStyle="#ffffff";g.font="64px Bungee, sans-serif";
+  wrapText(g,S.cave.name,W-120).slice(0,3).forEach((l,i)=>g.fillText(l,W/2,430+i*76));
+  g.fillStyle="#cfdcd4";g.font="600 32px 'JetBrains Mono', monospace";
+  g.fillText(fmtLonger(ctx.day),W/2,700);g.fillText(`Rang at ${sgTime(ctx.ring)}`,W/2,748);
+  const n=ctx.clips.length, size=Math.min(130,(W-80)/Math.min(n,5)), cols=Math.min(n,5);
+  ctx.clips.forEach((c,i)=>{
+    const row=Math.floor(i/cols), col=i%cols, inRow=Math.min(cols,n-row*cols), x0=(W-inRow*size)/2+col*size, y=820+row*(size+44);
+    const bob=Math.sin(f*Math.PI*4+i)*6;
+    if(mons[i]) g.drawImage(mons[i],x0+8,y+bob,size-16,size-16);
+    g.fillStyle=cssColor(c.color);g.font="700 22px 'JetBrains Mono', monospace";g.fillText(c.name.slice(0,10),x0+size/2,y+size+12);
+  });
+  g.globalAlpha=1;g.textAlign="left";
+}
+function drawClip(g,W,H,v,c,mon,ctx){
+  g.fillStyle="#000";g.fillRect(0,0,W,H);drawCover(g,v,W,H);
+  let gr=g.createLinearGradient(0,H-360,0,H);gr.addColorStop(0,"rgba(0,0,0,0)");gr.addColorStop(1,"rgba(0,0,0,.65)");g.fillStyle=gr;g.fillRect(0,H-360,W,360);
+  gr=g.createLinearGradient(0,0,0,160);gr.addColorStop(0,"rgba(0,0,0,.45)");gr.addColorStop(1,"rgba(0,0,0,0)");g.fillStyle=gr;g.fillRect(0,0,W,160);
+  g.shadowColor="rgba(0,0,0,.6)";g.shadowBlur=8;
+  g.fillStyle="#ffffff";g.font="700 24px 'JetBrains Mono', monospace";g.fillText(`${S.cave.name} · ${fmtLong(ctx.day)}`.toUpperCase(),36,70);
+  if(mon) g.drawImage(mon,28,H-196,130,130);
+  g.font="52px Bungee, sans-serif";g.fillStyle="#ffffff";g.fillText(c.name,170,H-118);
+  g.font="700 30px 'JetBrains Mono', monospace";g.fillStyle=cssColor(c.color);
+  const t=sgTime(c.at);g.fillText(t,172,H-74);
+  if(c.late){const x=172+g.measureText(t).width+16;g.shadowBlur=0;g.fillStyle="#c2701b";g.fillRect(x,H-102,92,36);g.fillStyle="#fff";g.font="700 22px 'JetBrains Mono', monospace";g.fillText("LATE",x+18,H-76);}
+  g.shadowBlur=0;
+}
+function frames(ms,draw,job,done){
+  return new Promise(res=>{const st=performance.now();(function f(){
+    if(job.cancel) return res();const el=performance.now()-st;draw(Math.min(el,ms));
+    if(el>=ms||(done&&done())) return res();requestAnimationFrame(f);})();});
+}
+async function renderVlog(ctx,ac,job,onPct){
+  const W=720,H=1280,cv=document.createElement("canvas");cv.width=W;cv.height=H;const g=cv.getContext("2d");
+  if(!cv.captureStream) throw new Error("This browser can't make videos. Try Safari on iPhone or Chrome.");
+  await Promise.all([document.fonts.load("52px Bungee"),document.fonts.load("700 28px 'JetBrains Mono'")]).catch(()=>{});
+  const idx=ctx.clips.map((c,i)=>i).filter(i=>ctx.urls[i]);
+  if(!idx.length) throw new Error("These clips couldn't be loaded.");
+  const clips=idx.map(i=>ctx.clips[i]), urls=idx.map(i=>ctx.urls[i]);
+  const blobs=await Promise.all(clips.map(c=>authBlob(clipPath(ctx.day,c))));
+  const bufs=ac?await Promise.all(blobs.map(b=>b.arrayBuffer().then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null))):[];
+  const mons=await Promise.all(clips.map(c=>monImage(c.monster,c.color).catch(()=>null)));
+  const stream=cv.captureStream(30);let dest=null;
+  if(ac&&bufs.some(Boolean)){dest=ac.createMediaStreamDestination();dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));}
+  const type=pickType();
+  let rec;
+  try{rec=new MediaRecorder(stream,{...(type?{mimeType:type}:{}),videoBitsPerSecond:5_000_000});}
+  catch(e){stream.getAudioTracks().forEach(t=>{stream.removeTrack(t);t.stop();});dest=null;rec=new MediaRecorder(stream,{videoBitsPerSecond:5_000_000});}
+  const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size) chunks.push(e.data);};
+  const stopped=new Promise(r=>{rec.onstop=r;});
+  const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.className="offstage";document.body.appendChild(v);
+  const total=1.6+clips.reduce((a,c)=>a+(c.dur||6),0);let done=0;
+  const ictx={...ctx,clips};
+  try{
+    drawIntro(g,W,H,ictx,mons,0);rec.start(500);
+    await frames(1600,el=>{drawIntro(g,W,H,ictx,mons,el/1600);onPct(el/1000/total);},job);done=1.6;
+    for(let i=0;i<clips.length&&!job.cancel;i++){
+      const c=clips[i];v.src=urls[i];
+      await new Promise((res,rej)=>{v.onloadeddata=res;v.onerror=()=>rej(new Error("A clip couldn't be loaded."));v.load();});
+      await v.play();
+      let src=null;if(dest&&bufs[i]){src=ac.createBufferSource();src.buffer=bufs[i];src.connect(dest);src.start();}
+      await frames((c.dur||7)*1000+900,el=>{drawClip(g,W,H,v,c,mons[i],ctx);onPct((done+el/1000)/total);},job,()=>v.ended);
+      if(src) try{src.stop();}catch(e){}
+      v.pause();done+=c.dur||6;
+    }
+  }finally{
+    if(rec.state!=="inactive") rec.stop();
+    await stopped;v.remove();stream.getTracks().forEach(t=>t.stop());
+  }
+  if(job.cancel) return null;
+  return new Blob(chunks,{type:(rec.mimeType||type||"video/webm").split(";")[0]});
+}
+function cancelMake(){if(making) making.cancel=true;}
+async function makeVideo(){
+  if(!dayCtx||making) return;
+  if(!window.MediaRecorder){$("dayErr").textContent="This browser can't make videos. Try Safari on iPhone or Chrome.";return;}
+  let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
+  stopPlayer();$("pPlay").hidden=false;$("pPlay").textContent="▶";$("pPlay").disabled=true;$("redoClip").hidden=true;
+  const job={cancel:false,left:false};making=job;
+  const onHide=()=>{if(document.visibilityState==="hidden"){job.left=true;job.cancel=true;}};
+  document.addEventListener("visibilitychange",onHide);
+  $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=true;$("makeBox").hidden=false;
+  const mm=$("makeMon");mm.replaceChildren(monEl(S.me.monster,S.me.color,"work"));
+  $("makeBar").style.width="0%";$("makeText").textContent="Making your video…";
+  const ctx=dayCtx;
+  try{
+    const blob=await renderVlog(ctx,ac,job,f=>{$("makeBar").style.width=Math.min(100,f*100).toFixed(1)+"%";});
+    if(!blob||dayCtx!==ctx) return;
+    const ext=blob.type.includes("mp4")?"mp4":"webm", slug=S.cave.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"cave";
+    ctx.file=new File([blob],`${slug}-${ctx.day}.${ext}`,{type:blob.type});
+    if(ctx.saveUrl) URL.revokeObjectURL(ctx.saveUrl);
+    ctx.saveUrl=URL.createObjectURL(blob);
+    const a=$("saveVid");a.href=ctx.saveUrl;a.download=ctx.file.name;
+    let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[ctx.file]}));}catch(e){}
+    $("shareVid").hidden=!canShare;$("shareRow").hidden=false;$("makeVid").textContent="Make it again";
+    toast(canShare?"Your video is ready. Tap Share to post it.":"Your video is ready. Save it, then post it from your photos.",4500);
+  }catch(e){if(!job.cancel) $("dayErr").textContent=e.message||"Couldn't make the video. Try again.";}
+  finally{
+    document.removeEventListener("visibilitychange",onHide);
+    if(job.left) $("dayErr").textContent="The video stopped because you left the app. Tap Make video to try again.";
+    making=null;$("makeBox").hidden=true;$("makeVid").hidden=false;$("pPlay").disabled=false;if(ac) ac.close().catch(()=>{});
+  }
+}
+$("makeVid").addEventListener("click",makeVideo);
+$("shareVid").addEventListener("click",async()=>{
+  if(!dayCtx||!dayCtx.file) return;
+  try{await navigator.share({files:[dayCtx.file],title:`${S.cave.name} · ${fmtLong(dayCtx.day)}`});}
+  catch(e){if(e&&e.name!=="AbortError") toast("Sharing didn't work. Tap Save video, then post it from your photos.",4500);}
+});
 
 /* ================= crew preview ================= */
 MONSTERS.forEach((mo,i)=>{

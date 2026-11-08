@@ -1,4 +1,4 @@
-# Clock-out Countdown · v14.0
+# Clock-out Countdown · v15.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -10,6 +10,16 @@ A phone app (PWA) where friends live together in a **cave** and count down to cl
 - **Cave chat.** Messages show the sender's monster (in its current mood) and colour. No push for chat; a red dot shows unread messages.
 - **Loading screen.** The app stays on a loading screen until your login is checked. Each visit plays a different monster scene (tag, a meeting, the night shift, a race to the exit). Signed out, the log-in card sits on top of the scene and you only go in after logging in.
 - **Accounts.** Join with a unique name, clock-out time, colour and a passcode (4+ characters). 5 wrong passcodes lock that name for 10 minutes.
+
+## Cave Calendar (Days)
+
+Once a day, at a random time between 10 am and 9 pm (Singapore time), every phone in the cave rings at the same moment, weekends too. Everyone films 5–7 seconds of what they're doing, right in the app.
+
+- Posting within **10 minutes** of the ring is on time. Later that day it still counts, marked **Late**. One clip per person per day; a retake replaces it.
+- The **Days** tab is a month calendar. Days with clips show a cover frame and how many people filmed. Tap a day to play everyone's clips in order, with name, monster and time.
+- **Make video** turns a day into one vertical (9:16) video: a title card with the cave name, date and everyone's monsters, then each clip with its original sound and no music. It's made on the phone itself, so keep the screen open until it's done (about as long as the video). Then **Share to Instagram…** opens the share menu, or **Save video** keeps a copy.
+- Clips are kept. Only people in the cave can watch them. Deleting an account deletes that person's clips, and a cave's clips go when the last person leaves. The admin page shows how many clips are stored and how much space they use.
+- Clips are recorded small (about 1–2 MB) so uploads stay under the function's request limit. The ring is sent by a scheduled function every 5 minutes (`netlify/functions/film-ring.mjs`), and the ring time is worked out from the cave and the date, so nothing extra is stored.
 
 ## Monster powers
 
@@ -75,7 +85,9 @@ netlify/lib/handler.mjs     API: accounts, caves, chat, overtime, zaps, v8 migra
 netlify/lib/stats.mjs       usage stats and the admin report
 netlify/lib/powers.mjs      streaks, levels, weather helpers for the monster powers
 netlify/functions/rain-alert.mjs  scheduled every 15 min: Fluff rain alerts
+netlify/functions/film-ring.mjs   scheduled every 5 min: the daily Cave Calendar ring
+netlify/lib/clips.mjs       ring time and clip limits for the Cave Calendar
 public/admin.html           admin page (/admin)
-test/api.test.mjs, test/powers.test.mjs   npm test: API and power checks against an in-memory store
-test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs (SEED=1 adds demo data)
+test/api.test.mjs, test/powers.test.mjs, test/clips.test.mjs   npm test: API, power and calendar checks against an in-memory store
+test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs (SEED=1 adds demo data; SEED_CLIPS=<folder> adds calendar clips)
 ```

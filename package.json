@@ -1,11 +1,11 @@
 {
   "name": "clockout-countdown",
-  "version": "14.0.0",
+  "version": "15.0.0",
   "private": true,
   "type": "module",
   "description": "Clock-out countdown app: caves of friends, overtime, dancing monsters, zaps and chat.",
   "scripts": {
-    "test": "node test/api.test.mjs && node test/powers.test.mjs"
+    "test": "node test/api.test.mjs && node test/powers.test.mjs && node test/clips.test.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",

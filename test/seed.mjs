@@ -2,7 +2,9 @@
 // Everyone's passcode is 1234. One person per live power, at different levels.
 import { scryptSync } from "node:crypto";
 import { sgDayOf } from "../netlify/lib/stats.mjs";
-import { M, sgSeconds } from "../netlify/lib/powers.mjs";
+import { M, sgSeconds, addDays } from "../netlify/lib/powers.mjs";
+import { ringAt } from "../netlify/lib/clips.mjs";
+import { readFile } from "node:fs/promises";
 
 export async function seed(store, now = Date.now()) {
   const salt = "seed", hash = scryptSync("1234", salt, 32).toString("hex");
@@ -57,6 +59,24 @@ export async function seed(store, now = Date.now()) {
     await store.setJSON(`chat/${cave.id}/${id}`, { id, pid, name, color, monster, text, at });
   }
   for (const pid of ["p-terry", "p-qitai", "p-winnie"]) await store.setJSON(`read/${cave.id}/${pid}`, { at: now });
+  // SEED_CLIPS=<folder with clip-1..6.mp4 and thumb-1..6.jpg>: fills the Cave Calendar for the past days.
+  if (process.env.SEED_CLIPS) {
+    const dir = process.env.SEED_CLIPS, vids = [], thumbs = [];
+    for (let i = 1; i <= 6; i++) { vids.push(await readFile(`${dir}/clip-${i}.mp4`)); thumbs.push(await readFile(`${dir}/thumb-${i}.jpg`)); }
+    for (let d = 1; d <= 12; d++) {
+      const day = addDays(today, -d), ring = ringAt(cave.id, day);
+      for (let j = 0; j < ppl.length; j++) {
+        if ((d * 7 + j * 3) % 5 === 0) continue; // a few people miss a few days
+        const [id, name, color, monster] = ppl[j], at = ring + (j * 90 + d * 13) * 1000 + ((d + j) % 4 === 0 ? 20 * 60e3 : 0);
+        const v = vids[(j + d) % 6];
+        await store.set(`clip/${cave.id}/${day}/${id}`, v.buffer.slice(v.byteOffset, v.byteOffset + v.length), { metadata: { type: "video/mp4" } });
+        const t = thumbs[(j + d) % 6];
+        await store.set(`thumb/${cave.id}/${day}/${id}`, t.buffer.slice(t.byteOffset, t.byteOffset + t.length), { metadata: { type: "image/jpeg" } });
+        await store.setJSON(`clipmeta/${cave.id}/${day}/${id}`, { pid: id, name, color, monster, at, late: at > ring + 10 * 60e3, dur: 6, type: "video/mp4", size: v.length, thumb: true });
+        await store.setJSON(`myclip/${id}/${cave.id}/${day}_${v.length}`, 0);
+      }
+    }
+  }
   console.log("seeded demo data; Lily clocks out at", `${Math.floor(lilyOff / 60) % 24}:${String(lilyOff % 60).padStart(2, "0")}`);
 }
 
