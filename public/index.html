@@ -420,6 +420,40 @@ body.noscroll{overflow:hidden}
 .makemid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .makemid small{font-size:12px;color:var(--muted)}
 .offstage{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none}
+/* What's new: the peeking monster and the comic */
+.linkbtn{font:inherit;color:var(--ink);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+.peek{position:fixed;right:0;top:56%;z-index:15;width:116px;height:96px;overflow:hidden;pointer-events:none}
+.peek-mon{position:absolute;right:-30px;bottom:0;width:78px;height:78px;padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;
+  transform:translateX(16px) rotate(-18deg);transform-origin:80% 90%;animation:peek 5s ease-in-out infinite}
+.peek-mon .mon{width:100%;height:100%}
+.peek-bub{position:absolute;right:42px;top:2px;font:700 11px/1 var(--f-mono);background:var(--ink);color:var(--card);padding:5px 8px;border-radius:10px 10px 2px 10px;
+  opacity:0;animation:bub 5s ease-in-out infinite;white-space:nowrap}
+@keyframes peek{0%,48%,100%{transform:translateX(16px) rotate(-18deg)}56%,86%{transform:translateX(-6px) rotate(-10deg)}64%{transform:translateX(-6px) rotate(-16deg)}72%{transform:translateX(-6px) rotate(-6deg)}}
+@keyframes bub{0%,54%,92%,100%{opacity:0;transform:translateY(4px)}60%,86%{opacity:1;transform:none}}
+.peek.bye .peek-mon{animation:none;transform:translateX(110px) rotate(10deg);transition:transform .45s ease-in}
+.peek.bye .peek-bub{display:none}
+body.calm .peek-mon,body.calm .peek-bub{animation:none}
+body.calm .peek-mon{transform:translateX(8px) rotate(-10deg)}body.calm .peek-bub{opacity:1}
+@media (prefers-reduced-motion:reduce){.peek-mon,.peek-bub{animation:none!important}.peek-mon{transform:translateX(8px) rotate(-10deg)}.peek-bub{opacity:1}}
+.news .comic{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.news .comic::-webkit-scrollbar{display:none}
+.panel{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;gap:10px}
+.panel-art{position:relative;height:160px;border:2.5px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden;display:flex;align-items:center;justify-content:center;gap:6px}
+.panel-art .mon{width:92px;height:92px}
+.panel-art .burst{position:absolute;font:400 22px/1 var(--f-display);color:var(--accent);transform:rotate(-8deg);letter-spacing:.02em}
+.panel-art .prop{width:54px;height:54px;color:var(--ink)}
+.panel-art .shake{animation:shake .5s ease-in-out infinite}
+.panel-art .tiles{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:132px}
+.panel-art .tiles span{aspect-ratio:3/4;border-radius:7px;background:var(--tc);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.panel-art .tiles .mon{width:54px;height:54px}
+.panel-art .recl{position:absolute;top:12px;left:14px;font:700 12px/1 var(--f-mono);color:var(--danger);display:flex;align-items:center;gap:5px}
+.panel-art .recl i{width:9px;height:9px;border-radius:50%;background:var(--danger);animation:dot 1s ease-in-out infinite}
+.panel-cap{margin:0;font-size:15px;line-height:1.45}
+.panel-cap b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;margin-bottom:2px}
+.cdots{display:flex;gap:6px}
+.cdots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.cdots i.on{background:var(--ink)}
+body.calm .panel-art *{animation:none!important}
 /* monsters off screen (or on a hidden tab) hold still; Calm mode stops the decorative motion */
 .mon.offscreen,.mon.offscreen *{animation-play-state:paused!important}
 body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle .lane{animation:none!important}
@@ -544,7 +578,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v17.0</span>
+    <span>v18.0 · <button class="linkbtn" id="newsLink" type="button">What's new</button></span>
   </div>
 </div>
 
@@ -718,6 +752,22 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
   </div>
 </div>
 
+<!-- What's new: a monster peeks in from the edge; tap it for a short comic -->
+<div class="peek" id="peek" hidden>
+  <span class="peek-bub" aria-hidden="true">New!</span>
+  <button class="peek-mon" id="peekBtn" type="button" aria-label="What's new in Clock-out"></button>
+</div>
+<div class="sheet" id="newsSheet" hidden>
+  <div class="sheet-card narrow news" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
+    <div class="sheet-row split"><div class="sheet-msg" id="newsTitle">What's new</div><button class="x" id="newsClose" type="button" aria-label="Close">×</button></div>
+    <div class="comic" id="comic"></div>
+    <div class="sheet-row split">
+      <div class="cdots" id="cdots" aria-hidden="true"></div>
+      <button class="btn" id="newsNext" type="button">Next</button>
+    </div>
+  </div>
+</div>
+
 <!-- Cave Calendar: camera -->
 <div class="cam" id="camSheet" hidden role="dialog" aria-modal="true" aria-label="Film your clip">
   <video id="camVideo" playsinline muted autoplay></video>
@@ -863,7 +913,7 @@ function applyState(d){
     const sig=JSON.stringify([S.cave.id,S.cave.members,S.me.id,S.me.power,S.me.level]);
     if(sig!==lastSig){lastSig=sig;buildLanes();}
   }else{lastSig="";lanesData=[];$("lanes").replaceChildren();}
-  renderChrome();tick();updateBanner();updateUnread();updateRing();updateDaysDot();
+  renderChrome();tick();updateBanner();updateUnread();updateRing();updateDaysDot();updatePeek();
   if(S.cave){const cs=JSON.stringify(S.cave.clipsToday);if(cs!==lastClipSig){const had=lastClipSig;lastClipSig=cs;if(had&&view==="days") loadDays();}}
   if(ssGet("clockout.film")&&S.cave){ssSet("clockout.film",null);if(view!=="board") setView("board");scrollTo(0,0);}
   if(S.cave) decorate();
@@ -1295,7 +1345,7 @@ async function signedOut(msg){
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
-  $("banner").hidden=true;renderChrome();
+  $("banner").hidden=true;$("peek").hidden=true;$("newsSheet").hidden=true;renderChrome();
   showSplashForAuth("login");
   if(msg) toast(msg);
 }
@@ -2272,6 +2322,88 @@ $("shareVid").addEventListener("click",async()=>{
   try{await navigator.share({files:[dayCtx.file],title:`${S.cave.name} · ${fmtLong(dayCtx.day)}`});}
   catch(e){if(e&&e.name!=="AbortError") toast("Sharing didn't work. Tap Save video, then post it from your photos.",4500);}
 });
+
+/* ================= what's new ================= */
+// Newest first. A monster peeks in from the edge until the newest entry has been read.
+const NEWS=[
+  {id:"v16-calendar",title:"New: Cave Calendar",panels:[
+    {art:"ring",title:"Ring ring!",text:"Four times a day, at random times, everyone in your cave gets the same ring."},
+    {art:"film",title:"Film 2 to 4 seconds",text:"Show what you're doing right now. Within 10 minutes is on time; later is marked Late."},
+    {art:"grid",title:"Side by side",text:"Open Days. Each ring plays everyone's clips together, then the next ring."},
+    {art:"share",title:"Your day, one video",text:"Tap Make video, then save it or share it to Instagram. Add your own music there."},
+  ]},
+];
+const LS_NEWS="clockout.news";
+const ICONS={
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.2 1.6M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><circle cx="12" cy="11" r="3"/><path d="M10.5 18.5h3"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
+};
+function propEl(name,cls="prop"){const d=document.createElement("span");d.className=cls;d.innerHTML=ICONS[name];d.firstChild.setAttribute("aria-hidden","true");d.firstChild.style.width="100%";d.firstChild.style.height="100%";return d;}
+function panelArt(kind){
+  const box=document.createElement("div");box.className="panel-art";box.setAttribute("aria-hidden","true");
+  const me=S?S.me:{monster:0,color:"orange"};
+  const crew=(S&&S.cave?S.cave.members:[]).filter(p=>!S||p.id!==S.me.id).slice(0,3);
+  while(crew.length<3) crew.push({monster:[3,5,8][crew.length],color:["teal","violet","gold"][crew.length]});
+  if(kind==="ring"){
+    box.appendChild(monEl(me.monster,me.color,"work"));
+    const c=propEl("clock","prop shake");c.style.color="var(--accent)";box.appendChild(c);
+    const b=document.createElement("span");b.className="burst";b.textContent="RING!";b.style.top="18px";b.style.right="22px";box.appendChild(b);
+  }else if(kind==="film"){
+    const r=document.createElement("span");r.className="recl";r.innerHTML="<i></i>REC 0:03";box.appendChild(r);
+    box.appendChild(monEl(me.monster,me.color,"dance"));box.appendChild(propEl("phone"));
+  }else if(kind==="grid"){
+    const t=document.createElement("div");t.className="tiles";
+    [{monster:me.monster,color:me.color},...crew].forEach(p=>{const s=document.createElement("span");s.style.setProperty("--tc",softVar(p.color));s.appendChild(monEl(p.monster,p.color,"dance"));t.appendChild(s);});
+    box.appendChild(t);
+  }else{
+    box.appendChild(monEl(me.monster,me.color,"dance"));box.appendChild(propEl("share"));
+    const b=document.createElement("span");b.className="burst";b.textContent="TA-DA!";b.style.top="16px";b.style.left="20px";box.appendChild(b);
+  }
+  return box;
+}
+let newsIdx=0, newsItem=null;
+function updatePeek(){
+  const pk=$("peek"), unseen=NEWS[0]&&lsGet(LS_NEWS)!==NEWS[0].id;
+  if(!S||!unseen){pk.hidden=true;return;}
+  const btn=$("peekBtn"), key=`${S.me.monster}|${S.me.color}`;
+  if(btn.dataset.k!==key){btn.dataset.k=key;btn.replaceChildren(monEl(S.me.monster,S.me.color,"dance"));}
+  pk.classList.remove("bye");pk.hidden=false;
+}
+function openNews(item=NEWS[0]){
+  if(!item) return;
+  newsItem=item;newsIdx=0;
+  $("newsTitle").textContent=item.title;
+  const comic=$("comic"), dots=$("cdots");comic.replaceChildren();dots.replaceChildren();
+  item.panels.forEach((pn,i)=>{
+    const d=document.createElement("div");d.className="panel";d.setAttribute("role","group");d.setAttribute("aria-label",`${i+1} of ${item.panels.length}`);
+    d.appendChild(panelArt(pn.art));
+    const cap=document.createElement("p");cap.className="panel-cap";const b=document.createElement("b");b.textContent=pn.title;cap.appendChild(b);cap.append(pn.text);d.appendChild(cap);
+    comic.appendChild(d);dots.appendChild(document.createElement("i"));
+  });
+  $("newsSheet").hidden=false;comic.scrollLeft=0;showPanel(0,false);
+}
+function showPanel(i,smooth=true){
+  const comic=$("comic"), n=newsItem.panels.length;newsIdx=Math.max(0,Math.min(n-1,i));
+  comic.scrollTo({left:newsIdx*(comic.clientWidth+12),behavior:smooth?"smooth":"auto"});
+  [...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===newsIdx));
+  $("newsNext").textContent=newsIdx===n-1?"Got it":"Next";
+}
+$("comic").addEventListener("scroll",()=>{
+  const c=$("comic"), i=Math.round(c.scrollLeft/(c.clientWidth+12));
+  if(i!==newsIdx&&newsItem){newsIdx=i;[...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===i));$("newsNext").textContent=i===newsItem.panels.length-1?"Got it":"Next";}
+},{passive:true});
+function closeNews(){
+  $("newsSheet").hidden=true;
+  if(newsItem&&newsItem===NEWS[0]&&lsGet(LS_NEWS)!==newsItem.id){
+    lsSet(LS_NEWS,newsItem.id);
+    const pk=$("peek");pk.classList.add("bye");setTimeout(()=>{pk.hidden=true;pk.classList.remove("bye");},500);
+  }
+}
+$("newsNext").addEventListener("click",()=>{if(newsIdx>=newsItem.panels.length-1) closeNews();else showPanel(newsIdx+1);});
+$("newsClose").addEventListener("click",closeNews);
+$("peekBtn").addEventListener("click",()=>openNews());
+$("newsLink").addEventListener("click",()=>openNews());
 
 /* ================= crew preview ================= */
 MONSTERS.forEach((mo,i)=>{
