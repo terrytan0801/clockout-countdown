@@ -478,6 +478,29 @@ body.noscroll{overflow:hidden}
 .panel-art .recl i{width:9px;height:9px;border-radius:50%;background:var(--danger);animation:dot 1s ease-in-out infinite}
 .panel-cap{margin:0;font-size:15px;line-height:1.45}
 .panel-cap b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;margin-bottom:2px}
+.news-top{flex-wrap:nowrap}
+.news-top .sheet-msg{flex:1;min-width:0}
+.nback{font:700 13px var(--f-mono);text-decoration:none;flex:none}
+.newslist{display:flex;flex-direction:column;gap:10px}
+.nitem{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.nitem.latest{border:2px solid var(--accent)}
+.nhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nver{font:700 12px/1 var(--f-mono);background:var(--ink);color:var(--card);border-radius:999px;padding:4px 8px}
+.ndate{font:500 12px var(--f-mono);color:var(--muted)}
+.nnew{font:700 11px/1 var(--f-mono);background:var(--danger);color:#fff;border-radius:999px;padding:4px 7px;margin-left:auto}
+.ntitle{font-family:var(--f-display);font-weight:400;font-size:17px;line-height:1.25}
+.nitem ul{margin:0;padding-left:18px;font-size:14px;line-height:1.45;display:flex;flex-direction:column;gap:2px}
+.ncomic{align-self:flex-start;min-height:38px;padding:8px 12px;font-size:13px;margin-top:2px}
+.ncomicview{display:flex;flex-direction:column;gap:10px}
+.ncomicview .sheet-hint{font-family:var(--f-mono);margin-top:-4px}
+.streakrow{display:flex;gap:5px}
+.streakrow span{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 11px var(--f-mono);background:var(--track);color:var(--muted)}
+.streakrow span.on{background:var(--c-teal);color:#fff}
+.cbubs{display:flex;flex-direction:column;gap:6px;width:82%}
+.cbub{display:flex;align-items:center;gap:6px}
+.cbub.r{flex-direction:row-reverse}
+.cbub .mon{width:46px!important;height:46px!important;flex:none}
+.cbub span{background:var(--bc);border-radius:12px;padding:7px 10px;font-size:13px}
 .cdots{display:flex;gap:6px}
 .cdots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .cdots i.on{background:var(--ink)}
@@ -609,7 +632,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v21.0</span>
+    <span>v22.0</span>
   </div>
 </div>
 
@@ -786,11 +809,19 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 <!-- News: a short comic about what's new -->
 <div class="sheet" id="newsSheet" hidden>
   <div class="sheet-card narrow news" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
-    <div class="sheet-row split"><div class="sheet-msg" id="newsTitle">What's new</div><button class="x" id="newsClose" type="button" aria-label="Close">×</button></div>
-    <div class="comic" id="comic"></div>
-    <div class="sheet-row split">
-      <div class="cdots" id="cdots" aria-hidden="true"></div>
-      <button class="btn" id="newsNext" type="button">Next</button>
+    <div class="sheet-row split news-top">
+      <button class="linkbtn nback" id="newsBack" type="button" hidden>‹ All updates</button>
+      <div class="sheet-msg" id="newsTitle">News</div>
+      <button class="x" id="newsClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="newslist" id="newsList"></div>
+    <div class="ncomicview" id="newsComicView" hidden>
+      <p class="sheet-hint" id="newsMeta"></p>
+      <div class="comic" id="comic"></div>
+      <div class="sheet-row split">
+        <div class="cdots" id="cdots" aria-hidden="true"></div>
+        <button class="btn" id="newsNext" type="button">Next</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2483,58 +2514,123 @@ $("shareVid").addEventListener("click",async()=>{
   catch(e){if(e&&e.name!=="AbortError") toast("Sharing didn't work. Tap Save video, then post it from your photos.",4500);}
 });
 
-/* ================= what's new ================= */
-// Newest first. A monster peeks in from the edge until the newest entry has been read.
+/* ================= news: every update, newest first ================= */
+// Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
+// Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v21-camera",title:"New: camera filters",panels:[
+  {id:"v22-history",v:"v22.0",at:"2026-11-08T18:36",title:"Every update, in News",changes:[
+    "News now lists every update, newest first, with its version, date and time.",
+    "Updates with a comic have a Watch the comic button. Back takes you to the list."],panels:[
+    {art:"news",title:"Never miss an update",text:"Tap News any time to see what changed and when. Your monster hops when there's something new."}]},
+  {id:"v21-camera",v:"v21.0",at:"2026-11-08T18:24",title:"Camera filters, zoom and tone",changes:[
+    "8 filters under the camera: Normal, Vivid, Warm, Cool, Film, Retro, Mono, Dreamy.",
+    "Zoom 1×, 2× or 3×, or pinch the picture. Works while you film too.",
+    "Sliders for brightness, contrast, saturation and warmth.",
+    "The look is part of the clip, and your phone remembers it."],panels:[
     {art:"filters",title:"Pick a look",text:"Swipe the filters under the camera: Vivid, Warm, Cool, Film, Retro, Mono, Dreamy."},
     {art:"zoom",title:"Zoom in",text:"Tap 1×, 2× or 3×, or pinch the picture. You can zoom while you film."},
-    {art:"adjust",title:"Fine-tune it",text:"The sliders button sets brightness, contrast, saturation and warmth. Your phone remembers your look."},
-  ]},
-  {id:"v16-calendar",title:"New: Cave Calendar",panels:[
+    {art:"adjust",title:"Fine-tune it",text:"The sliders button sets brightness, contrast, saturation and warmth. Your phone remembers your look."}]},
+  {id:"v20",v:"v20.0",at:"2026-11-08T17:53",title:"A clearer Screenshot button",changes:[
+    "A camera icon over a small SCREENSHOT label, so it doesn't look like the photo camera."]},
+  {id:"v19",v:"v19.0",at:"2026-11-08T17:49",title:"The News button",changes:[
+    "News sits next to Screenshot. Every update is here, with its date and comic.",
+    "Your monster hops in the button while there's something you haven't read.",
+    "On phones, the four buttons at the top share one row."],panels:[
+    {art:"news",title:"Something new?",text:"When your monster hops in the News button and a red dot shows, there's an update to read."}]},
+  {id:"v18",v:"v18.0",at:"2026-11-08T17:37",title:"What's new comics",changes:[
+    "Short comics explain new features. (A monster peeked in from the screen edge; the News button replaced it in v19.0.)"]},
+  {id:"v17",v:"v17.0",at:"2026-11-08T17:35",title:"Tidier top bar on phones",changes:[
+    "Account, Cave and Screenshot in one row.","Board / Chat / Days spans the full width, like the cards."]},
+  {id:"v16-calendar",v:"v16.0",at:"2026-11-08T17:33",title:"Cave Calendar, Setlog style",changes:[
+    "Four rings a day, at random times between 9 am and 10 pm, at least an hour apart.",
+    "Clips are 2 to 4 seconds, one per person per ring.",
+    "A day plays as a split screen per ring: everyone side by side.",
+    "The camera shows its full, uncropped view."],panels:[
     {art:"ring",title:"Ring ring!",text:"Four times a day, at random times, everyone in your cave gets the same ring."},
     {art:"film",title:"Film 2 to 4 seconds",text:"Show what you're doing right now. Within 10 minutes is on time; later is marked Late."},
     {art:"grid",title:"Side by side",text:"Open Days. Each ring plays everyone's clips together, then the next ring."},
-    {art:"share",title:"Your day, one video",text:"Tap Make video, then save it or share it to Instagram. Add your own music there."},
-  ]},
+    {art:"share",title:"Your day, one video",text:"Tap Make video, then save it or share it to Instagram. Add your own music there."}]},
+  {id:"v15",v:"v15.0",at:"2026-11-08T16:15",title:"Cave Calendar",changes:[
+    "Your cave's phones ring once a day; everyone films a short clip.",
+    "The new Days tab keeps every day's clips on a calendar.",
+    "Make video turns a day into one video to save or share."]},
+  {id:"v14",v:"v14.0",at:"2026-11-08T14:46",title:"Smoother on iPhone, and Calm mode",changes:[
+    "No more flashing: the board only redraws what changed.","Monsters pause when they're off screen.",
+    "Calm mode in your account makes monsters stand still on your phone."],panels:[
+    {art:"smooth",title:"No more flashing",text:"Roar banners, notes and card tags stay put, so monsters keep dancing instead of restarting."},
+    {art:"calm",title:"Calm mode",text:"Turn it on in your account and your monsters stand still. Easier on older phones and the battery."}]},
+  {id:"v13",v:"v13.0",at:"2026-11-08T13:29",title:"Monster powers",changes:[
+    "Every monster has a power: Jelly parties, Cyclo's eye, Tako notes, Mush cheers, Fluff weather, Dino roars.",
+    "Open the app on workdays to level up: Lv1 at 3 days, Lv2 at 7, Lv3 at 14. Missing a day drops one level.",
+    "Reroll your monster once a month and keep your level."],panels:[
+    {art:"powers",title:"Every monster has a power",text:"See yours in your account. Some are tools, some are just for fun."},
+    {art:"streak",title:"Level up",text:"Open the app on workdays. 3 in a row is Lv1, 7 is Lv2, 14 is Lv3. Weekends never break it."}]},
+  {id:"v12",v:"v12.0",at:"2026-11-07T14:24",title:"Behind the scenes: admin logo",changes:["The admin page got its own Staff Badge logo."]},
+  {id:"v11",v:"v11.0",at:"2026-11-07T14:01",title:"Usage stats",changes:[
+    "The app counts opens and time in the app, never what your messages say.","Deleting your account deletes your stats."]},
+  {id:"v10",v:"v10.0",at:"2026-11-07T11:23",title:"Loading screen",changes:[
+    "Monster scenes play while your login is checked: tag, a meeting, the night shift, the exit rush.","You only go in once you're logged in."]},
+  {id:"v9",v:"v9.0",at:"2026-11-07T11:09",title:"Caves and cave chat",changes:[
+    "Caves: your own group of friends, joined with an invite link or code.",
+    "Cave chat shows each person's monster and colour.","Pick your own colour. 10 monsters to get.",
+    "Choose whether zaps buzz your phone."],panels:[
+    {art:"cave",title:"Your cave",text:"Start a cave, send the invite link, and your friends move in."},
+    {art:"chat",title:"Cave chat",text:"Chat with your cave. Every message shows the sender's monster."}]},
+  {id:"v8",v:"v8.0",at:"2026-11-06T16:55",title:"Your own login",changes:["Everyone joins on their own phone with a name and passcode."]},
+  {id:"v7",v:"v7.0",at:"2026-11-06T16:37",title:"A phone app, with zaps",changes:[
+    "Add Clock-out to your home screen.","Zap a friend to buzz their phone, once every 10 minutes.",
+    "Overtime: Time + XX mins until you clock out.","Monsters work, wilt on overtime and dance when you're off."],panels:[
+    {art:"zap",title:"Zap!",text:"Tap Zap on a friend's card and their phone buzzes. Once every 10 minutes."},
+    {art:"ot",title:"Overtime",text:"Staying late? Tap + OT. Your card counts up until you tap Clock out."}]},
+  {id:"v1",v:"v1.0–6.0",at:"2026-11-06T11:19",title:"The first countdown",changes:[
+    "Time − XX mins to everyone's clock-out.","Monsters dance when you're off, with happy lines instead of 0 mins.",
+    "A Screenshot button to share the board."]},
 ];
 const LS_NEWS="clockout.news";
+const newsWhen=at=>{const d=new Date(at+":00+08:00");
+  return new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Singapore"}).format(d)+" · "+sgTime(d.getTime());};
 const ICONS={
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.2 1.6M5 4.5 2.8 6.6M19 4.5l2.2 2.1"/></svg>',
   phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><circle cx="12" cy="11" r="3"/><path d="M10.5 18.5h3"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
+  sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+  cave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20c0-8 4-14 9-14s9 6 9 14"/><path d="M9 20c0-3 1.3-5 3-5s3 2 3 5"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
 };
 function propEl(name,cls="prop"){const d=document.createElement("span");d.className=cls;d.innerHTML=ICONS[name];d.firstChild.setAttribute("aria-hidden","true");d.firstChild.style.width="100%";d.firstChild.style.height="100%";return d;}
+function burstEl(text,pos){const b=document.createElement("span");b.className="burst";b.textContent=text;Object.assign(b.style,pos);return b;}
 function panelArt(kind){
   const box=document.createElement("div");box.className="panel-art";box.setAttribute("aria-hidden","true");
   const me=S?S.me:{monster:0,color:"orange"};
   const crew=(S&&S.cave?S.cave.members:[]).filter(p=>!S||p.id!==S.me.id).slice(0,3);
   while(crew.length<3) crew.push({monster:[3,5,8][crew.length],color:["teal","violet","gold"][crew.length]});
-  if(kind==="ring"){
-    box.appendChild(monEl(me.monster,me.color,"work"));
-    const c=propEl("clock","prop shake");c.style.color="var(--accent)";box.appendChild(c);
-    const b=document.createElement("span");b.className="burst";b.textContent="RING!";b.style.top="18px";b.style.right="22px";box.appendChild(b);
-  }else if(kind==="film"){
-    const r=document.createElement("span");r.className="recl";r.innerHTML="<i></i>REC 0:03";box.appendChild(r);
-    box.appendChild(monEl(me.monster,me.color,"dance"));box.appendChild(propEl("phone"));
-  }else if(kind==="grid"){
-    const t=document.createElement("div");t.className="tiles";
-    [{monster:me.monster,color:me.color},...crew].forEach(p=>{const s=document.createElement("span");s.style.setProperty("--tc",softVar(p.color));s.appendChild(monEl(p.monster,p.color,"dance"));t.appendChild(s);});
-    box.appendChild(t);
-  }else if(kind==="filters"){
-    const t=document.createElement("div");t.className="tiles three";
-    ["sepia(.8) saturate(.9)","none","grayscale(1) contrast(1.2)"].forEach(f=>{const s=document.createElement("span");s.style.setProperty("--tc",softVar(me.color));s.style.filter=f;s.appendChild(monEl(me.monster,me.color,"dance"));t.appendChild(s);});
-    box.appendChild(t);
-  }else if(kind==="zoom"){
-    const m=monEl(me.monster,me.color,"dance");m.style.transform="scale(1.35)";box.appendChild(m);
-    const b=document.createElement("span");b.className="burst";b.textContent="2×";b.style.top="16px";b.style.right="26px";box.appendChild(b);
-  }else if(kind==="adjust"){
-    box.appendChild(monEl(me.monster,me.color,"dance"));
-    const sl=document.createElement("span");sl.className="prop";sl.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
-    sl.firstChild.style.width="100%";sl.firstChild.style.height="100%";box.appendChild(sl);
-  }else{
-    box.appendChild(monEl(me.monster,me.color,"dance"));box.appendChild(propEl("share"));
-    const b=document.createElement("span");b.className="burst";b.textContent="TA-DA!";b.style.top="16px";b.style.left="20px";box.appendChild(b);
+  const add=(...els)=>els.forEach(e=>box.appendChild(e));
+  const tiles=(people,cls="tiles",filters)=>{const t=document.createElement("div");t.className=cls;
+    people.forEach((p,i)=>{const s=document.createElement("span");s.style.setProperty("--tc",softVar(p.color));if(filters) s.style.filter=filters[i];s.appendChild(monEl(p.monster,p.color,"dance"));t.appendChild(s);});return t;};
+  const small=(p,mood="dance")=>{const m=monEl(p.monster,p.color,mood);m.style.width=m.style.height="70px";return m;};
+  switch(kind){
+    case "ring":{const c=propEl("clock","prop shake");c.style.color="var(--accent)";add(monEl(me.monster,me.color,"work"),c,burstEl("RING!",{top:"18px",right:"22px"}));break;}
+    case "film":{const r=document.createElement("span");r.className="recl";r.innerHTML="<i></i>REC 0:03";add(r,monEl(me.monster,me.color,"dance"),propEl("phone"));break;}
+    case "grid":add(tiles([{monster:me.monster,color:me.color},...crew]));break;
+    case "filters":add(tiles([me,me,me],"tiles three",["sepia(.8) saturate(.9)","none","grayscale(1) contrast(1.2)"]));break;
+    case "zoom":{const m=monEl(me.monster,me.color,"dance");m.style.transform="scale(1.35)";add(m,burstEl("2×",{top:"16px",right:"26px"}));break;}
+    case "adjust":add(monEl(me.monster,me.color,"dance"),propEl("sliders"));break;
+    case "news":{const b=document.createElement("span");b.className="btn ghost newsbtn fresh";b.style.pointerEvents="none";
+      const n=document.createElement("span");n.className="nmon";n.appendChild(monEl(me.monster,me.color,"dance","still"));b.append(n,"News");
+      const d=document.createElement("i");d.className="ndot";b.appendChild(d);add(b);break;}
+    case "smooth":add(small(crew[0]),small(me),small(crew[1]),burstEl("SMOOTH",{top:"16px",left:"18px"}));break;
+    case "calm":{const m=monEl(me.monster,me.color,"dance","still");const z=propEl("moon");z.style.color="var(--c-violet)";add(m,z,burstEl("SHH…",{top:"16px",right:"24px"}));break;}
+    case "powers":{const b=document.createElement("span");b.className="lvl l3";b.textContent="Lv3";b.style.cssText="position:absolute;top:16px;right:20px;font-size:14px";add(monEl(me.monster,me.color,"dance"),b,burstEl("POWER!",{top:"16px",left:"18px"}));break;}
+    case "streak":{const row=document.createElement("div");row.className="streakrow";
+      ["M","T","W","T","F"].forEach((d,i)=>{const s=document.createElement("span");s.textContent=d;if(i<4) s.className="on";row.appendChild(s);});
+      add(small(me),row);break;}
+    case "cave":{const c=propEl("cave","prop");c.style.cssText="width:120px;height:120px;position:absolute;opacity:.35";add(c,small(me),small(crew[0]),small(crew[1]));break;}
+    case "chat":{const mk=(p,txt,right)=>{const w=document.createElement("div");w.className="cbub"+(right?" r":"");w.appendChild(small(p));const t=document.createElement("span");t.textContent=txt;t.style.setProperty("--bc",softVar(p.color));w.appendChild(t);return w;};
+      const col=document.createElement("div");col.className="cbubs";col.append(mk(crew[0],"Leaving at 5!",false),mk(me,"Same 🙌",true));add(col);break;}
+    case "zap":{const z=propEl("bolt","prop shake");z.style.color="var(--zap)";add(small(me),z,small(crew[0],"work"),burstEl("BZZT!",{top:"14px",right:"22px"}));break;}
+    case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
+    default:add(monEl(me.monster,me.color,"dance"),propEl("share"),burstEl("TA-DA!",{top:"16px",left:"20px"}));
   }
   return box;
 }
@@ -2545,13 +2641,35 @@ function updatePeek(){
   const unseen=lsGet(LS_NEWS)!==NEWS[0].id, mon=$("newsMon"), key=`${S.me.monster}|${S.me.color}`;
   if(mon.dataset.k!==key){mon.dataset.k=key;mon.replaceChildren(monEl(S.me.monster,S.me.color,"dance","still"));}
   btn.classList.toggle("fresh",unseen);
-  btn.setAttribute("aria-label",unseen?"News: something new to read":"News: what's new in Clock-out");
+  btn.setAttribute("aria-label",unseen?"News: something new to read":"News: every update to Clock-out");
   btn.hidden=false;
 }
-function openNews(item=NEWS[0]){
-  if(!item) return;
+// The list of every update. The newest one is marked New until the list has been opened once.
+function openNews(){
+  const fresh=lsGet(LS_NEWS)!==NEWS[0].id, list=$("newsList");list.replaceChildren();
+  NEWS.forEach((n,i)=>{
+    const a=document.createElement("article");a.className="nitem"+(i===0?" latest":"");
+    const h=document.createElement("div");h.className="nhead";
+    const v=document.createElement("span");v.className="nver";v.textContent=n.v;h.appendChild(v);
+    const d=document.createElement("time");d.className="ndate";d.dateTime=n.at+"+08:00";d.textContent=newsWhen(n.at);h.appendChild(d);
+    if(i===0&&fresh){const nw=document.createElement("span");nw.className="nnew";nw.textContent="New";h.appendChild(nw);}
+    a.appendChild(h);
+    const t=document.createElement("b");t.className="ntitle";t.textContent=n.title;a.appendChild(t);
+    const ul=document.createElement("ul");n.changes.forEach(c=>{const li=document.createElement("li");li.textContent=c;ul.appendChild(li);});a.appendChild(ul);
+    if(n.panels){const b=document.createElement("button");b.type="button";b.className="btn ghost ncomic";
+      b.textContent=`▶ Watch the comic · ${n.panels.length} ${n.panels.length===1?"panel":"panels"}`;b.addEventListener("click",()=>openComic(n));a.appendChild(b);}
+    list.appendChild(a);
+  });
+  showNewsList();$("newsSheet").hidden=false;list.scrollTop=0;
+  if(fresh){lsSet(LS_NEWS,NEWS[0].id);updatePeek();}
+}
+function showNewsList(){
+  $("newsTitle").textContent="News";$("newsBack").hidden=true;$("newsList").hidden=false;$("newsComicView").hidden=true;newsItem=null;
+}
+function openComic(item){
   newsItem=item;newsIdx=0;
-  $("newsTitle").textContent=item.title;
+  $("newsTitle").textContent=item.title;$("newsBack").hidden=false;$("newsList").hidden=true;$("newsComicView").hidden=false;
+  $("newsMeta").textContent=`${item.v} · ${newsWhen(item.at)}`;
   const comic=$("comic"), dots=$("cdots");comic.replaceChildren();dots.replaceChildren();
   item.panels.forEach((pn,i)=>{
     const d=document.createElement("div");d.className="panel";d.setAttribute("role","group");d.setAttribute("aria-label",`${i+1} of ${item.panels.length}`);
@@ -2559,27 +2677,23 @@ function openNews(item=NEWS[0]){
     const cap=document.createElement("p");cap.className="panel-cap";const b=document.createElement("b");b.textContent=pn.title;cap.appendChild(b);cap.append(pn.text);d.appendChild(cap);
     comic.appendChild(d);dots.appendChild(document.createElement("i"));
   });
-  $("newsSheet").hidden=false;comic.scrollLeft=0;showPanel(0,false);
+  comic.scrollLeft=0;showPanel(0,false);
 }
 function showPanel(i,smooth=true){
   const comic=$("comic"), n=newsItem.panels.length;newsIdx=Math.max(0,Math.min(n-1,i));
   comic.scrollTo({left:newsIdx*(comic.clientWidth+12),behavior:smooth?"smooth":"auto"});
   [...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===newsIdx));
-  $("newsNext").textContent=newsIdx===n-1?"Got it":"Next";
+  $("newsNext").textContent=newsIdx===n-1?"Done":"Next";
 }
 $("comic").addEventListener("scroll",()=>{
   const c=$("comic"), i=Math.round(c.scrollLeft/(c.clientWidth+12));
-  if(i!==newsIdx&&newsItem){newsIdx=i;[...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===i));$("newsNext").textContent=i===newsItem.panels.length-1?"Got it":"Next";}
+  if(i!==newsIdx&&newsItem){newsIdx=i;[...$("cdots").children].forEach((d,j)=>d.classList.toggle("on",j===i));$("newsNext").textContent=i===newsItem.panels.length-1?"Done":"Next";}
 },{passive:true});
-function closeNews(){
-  $("newsSheet").hidden=true;
-  if(newsItem&&newsItem===NEWS[0]&&lsGet(LS_NEWS)!==newsItem.id){
-    lsSet(LS_NEWS,newsItem.id);updatePeek();
-  }
-}
-$("newsNext").addEventListener("click",()=>{if(newsIdx>=newsItem.panels.length-1) closeNews();else showPanel(newsIdx+1);});
+function closeNews(){$("newsSheet").hidden=true;showNewsList();}
+$("newsNext").addEventListener("click",()=>{if(newsIdx>=newsItem.panels.length-1) showNewsList();else showPanel(newsIdx+1);});
+$("newsBack").addEventListener("click",showNewsList);
 $("newsClose").addEventListener("click",closeNews);
-$("newsBtn").addEventListener("click",()=>openNews());
+$("newsBtn").addEventListener("click",openNews);
 
 /* ================= crew preview ================= */
 MONSTERS.forEach((mo,i)=>{
