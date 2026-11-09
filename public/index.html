@@ -651,7 +651,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v24.0</span>
+    <span>v25.0</span>
   </div>
 </div>
 
@@ -2429,40 +2429,51 @@ function noise(ac){
   for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
   return noiseBuf;
 }
+// "Sunny Desk": 88 BPM, bright chords (Cmaj7 · Am7 · Dm7 · G7), a marimba melody that comes in after the beat,
+// a short break, then the melody again. No vinyl crackle or rain. The arrangement fits the length of the day's video.
 function startLofi(ac,out,dur){
-  const t0=ac.currentTime+.05, beat=60/76, bar=beat*4, end=t0+dur;
-  const master=ac.createGain(), tape=ac.createBiquadFilter();
-  tape.type="lowpass";tape.frequency.value=3200;tape.Q.value=.4;
-  master.gain.setValueAtTime(0,t0);master.gain.linearRampToValueAtTime(.6,t0+1.2);
+  const beat=60/88, bar=beat*4, t0=ac.currentTime+.05, nb=noise(ac), hz=m=>440*Math.pow(2,(m-69)/12);
+  const N=Math.max(4,Math.ceil(dur/bar)+1), end=t0+N*bar, swing=.04;
+  const PROG=[[48,52,55,59],[57,60,64,67],[50,53,57,60],[55,59,62,65]];
+  const MEL=[[[0,76,.5],[.75,79,.5],[1.5,76,.5],[2.5,74,.5],[3,72,.5],[3.5,74,.5]],[[0,76,.5],[.75,72,.5],[1.5,69,1],[3,67,.5],[3.5,69,.5]],
+    [[0,69,.5],[.75,72,.5],[1.5,74,.5],[2,77,1],[3,76,.5],[3.5,74,.5]],[[0,74,.5],[.5,71,.5],[1,67,1],[2.5,77,.5],[3,76,.5],[3.5,74,.5]]];
+  const MEL2=[MEL[0],MEL[1],MEL[2],[[0,71,.5],[.5,74,.5],[1,79,1.5],[3,77,.5],[3.5,74,.5]]];
+  // beat from bar 2 (bar 1 for short videos), melody a bit later, a 2-bar break in long ones
+  const beatFrom=N>=8?2:1, melFrom=N>=10?4:N>=6?2:N, breakAt=N>=14?N-8:-99;
+  const master=ac.createGain(), tape=ac.createBiquadFilter();tape.type="lowpass";tape.frequency.value=3400;tape.Q.value=.4;
+  master.gain.setValueAtTime(0,t0);master.gain.linearRampToValueAtTime(.62,t0+Math.min(bar*.75,2));
   master.connect(tape);tape.connect(out);
-  const hz=m=>440*Math.pow(2,(m-69)/12), nb=noise(ac);
-  // keys: soft electric-piano chords with a slow tape wobble
-  const keys=ac.createGain();keys.gain.value=.19;const kf=ac.createBiquadFilter();kf.type="lowpass";kf.frequency.value=1500;keys.connect(kf);kf.connect(master);
-  const lfo=ac.createOscillator(), wob=ac.createGain();lfo.frequency.value=.55;wob.gain.value=7;lfo.connect(wob);lfo.start(t0);lfo.stop(end+1);
-  const env=(g,t,peak,len)=>{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+.02);g.gain.exponentialRampToValueAtTime(peak*.3+1e-4,t+.5);
-    g.gain.setValueAtTime(peak*.3+1e-4,Math.max(t+.5,t+len-.2));g.gain.exponentialRampToValueAtTime(1e-4,t+len);};
-  const tone=(m,t,len,peak,type,dest,det=0)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=hz(m);o.detune.value=det;wob.connect(o.detune);
-    env(g,t,peak,len);o.connect(g);g.connect(dest);o.start(t);o.stop(t+len+.05);};
-  const bass=ac.createGain();bass.gain.value=.35;const bf=ac.createBiquadFilter();bf.type="lowpass";bf.frequency.value=260;bass.connect(bf);bf.connect(master);
-  const hit=(t,{f=0,type="lowpass",q=1,peak=.3,len=.15,dest=master})=>{const s=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();
-    s.buffer=nb;flt.type=type;flt.frequency.value=f;flt.Q.value=q;g.gain.setValueAtTime(peak,t);g.gain.exponentialRampToValueAtTime(1e-4,t+len);
-    s.connect(flt);flt.connect(g);g.connect(dest);s.start(t,Math.random()*1.5);s.stop(t+len+.02);};
+  const lfo=ac.createOscillator(), wob=ac.createGain();lfo.frequency.value=.5;wob.gain.value=6;lfo.connect(wob);lfo.start(t0);lfo.stop(end+1);
+  const bus=(gain,f)=>{const g=ac.createGain();g.gain.value=gain;const l=ac.createBiquadFilter();l.type="lowpass";l.frequency.value=f;g.connect(l);l.connect(master);return g;};
+  const keys=bus(.17,1500), bass=bus(.34,260), lead=bus(.2,2600), drums=bus(1,8000);
+  const env=(g,t,peak,a,len,sus=.3)=>{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(peak*sus+1e-4,t+a+.45);
+    g.gain.setValueAtTime(peak*sus+1e-4,Math.max(t+a+.45,t+len-.18));g.gain.exponentialRampToValueAtTime(1e-4,t+len);};
+  const osc=(type,f,t,len,dest,{peak=1,a=.02,sus=.3,det=0,wobble=true}={})=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;o.detune.value=det;
+    if(wobble) wob.connect(o.detune);env(g,t,peak,a,len,sus);o.connect(g);g.connect(dest);o.start(t);o.stop(t+len+.05);return o;};
+  const hit=(t,{f=0,type="lowpass",q=1,peak=.3,len=.15})=>{const s=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nb;flt.type=type;flt.frequency.value=f;flt.Q.value=q;
+    g.gain.setValueAtTime(peak,t);g.gain.exponentialRampToValueAtTime(1e-4,t+len);s.connect(flt);flt.connect(g);g.connect(drums);s.start(t,Math.random()*1.5);s.stop(t+len+.02);};
   const kick=t=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(115,t);o.frequency.exponentialRampToValueAtTime(42,t+.14);
-    g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(1e-4,t+.38);o.connect(g);g.connect(master);o.start(t);o.stop(t+.4);};
-  // Fmaj7 · Em7 · Dm7 · Cmaj7, one bar each
-  const prog=[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]];
-  for(let b=0,t=t0;t<end;b++,t+=bar){
-    const ch=prog[b%4];
-    ch.forEach((m,i)=>{tone(m,t+i*.012,bar*.95,1,"sine",keys,i*3);tone(m+12,t+i*.012,bar*.6,.25,"triangle",keys,-4);});
-    tone(ch[0]-12,t,beat*1.8,1,"sine",bass);tone(ch[0]-12,t+beat*2.5,beat*1.2,.8,"sine",bass);
-    [0,2.5].forEach(k=>kick(t+k*beat));
-    [1,3].forEach(k=>hit(t+k*beat,{f:1800,type:"bandpass",q:.7,peak:.22,len:.18}));
-    for(let e=0;e<8;e++) hit(t+e*beat/2+(e%2?beat*.08:0),{f:7000,type:"highpass",peak:e%2?.035:.05,len:.05});
+    g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(1e-4,t+.38);o.connect(g);g.connect(drums);o.start(t);o.stop(t+.4);};
+  const marimba=(m,t,len)=>{
+    osc("sine",hz(m),t,Math.max(.5,len),lead,{peak:1,a:.004,sus:.05,wobble:false});
+    osc("sine",hz(m)*4,t,.18,lead,{peak:.25,a:.002,sus:.01,wobble:false});
+    osc("sine",hz(m)*2,t+.01,.35,lead,{peak:.18,a:.004,sus:.05,wobble:false});
+  };
+  for(let b=0;b<N;b++){
+    const t=t0+b*bar, ch=PROG[b%4], inBreak=b>=breakAt&&b<breakAt+2;
+    ch.forEach((m,i)=>{osc("sine",hz(m),t+i*.013,bar*.96,keys,{det:i*3});osc("triangle",hz(m+12),t+i*.013,bar*.55,keys,{peak:.22,det:-4});});
+    if(b>=beatFrom){osc("sine",hz(ch[0]-12),t,beat*1.8,bass);osc("sine",hz(ch[0]-12),t+beat*2.5,beat*1.2,bass,{peak:.8});}
+    if(b>=beatFrom){
+      if(!inBreak) [0,1.5,2.5].forEach(k=>kick(t+k*beat));
+      [1,3].forEach(k=>hit(t+k*beat,{f:1800,type:"bandpass",q:.7,peak:.22,len:.18}));
+      for(let e=0;e<8;e++) hit(t+e*beat/2+(e%2?beat*swing*2:0),{f:7000,type:"highpass",peak:e%2?.035:.05,len:.05});
+    }
+    if(b>=melFrom&&!inBreak){
+      const k=b-melFrom, phrase=(Math.floor(k/4)%2?MEL2:MEL)[k%4];
+      phrase.forEach(([o,m,l])=>marimba(m,t+o*beat+(o%1?beat*swing:0),l*beat));
+    }
+    if(b===breakAt){marimba(MEL[0][0][1]-12,t+beat,beat);marimba(MEL[0][1][1]-12,t+beat*2.5,beat*1.5);}
   }
-  // vinyl hiss and a few pops
-  const hiss=ac.createBufferSource(),hf=ac.createBiquadFilter(),hg=ac.createGain();hiss.buffer=nb;hiss.loop=true;hf.type="bandpass";hf.frequency.value=3000;hf.Q.value=.3;hg.gain.value=.012;
-  hiss.connect(hf);hf.connect(hg);hg.connect(master);hiss.start(t0);hiss.stop(end+1);
-  for(let t=t0;t<end;t+=.09) if(Math.random()<.12) hit(t,{f:2500,type:"highpass",peak:.05+Math.random()*.05,len:.006});
   return {
     fadeOut(sec=.7){const t=ac.currentTime;try{master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(0,t+sec);}catch(e){}
       return new Promise(r=>setTimeout(()=>{try{master.disconnect();}catch(e){}r();},sec*1000+30));},
