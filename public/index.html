@@ -224,6 +224,7 @@ form{display:flex;flex-direction:column;gap:12px}
 label{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
 input{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
 input[type=time]{font-family:var(--f-mono)}
+select{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;margin-top:6px}
 .inline-form{flex-direction:row;align-items:flex-end;gap:8px}
 .inline-form label{flex:1;min-width:0}
 .err{color:var(--danger);font-size:13px;min-height:1em}
@@ -646,11 +647,11 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
   </section>
 
   <div class="foot">
-    <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends off.</span>
+    <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends and public holidays off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v23.0</span>
+    <span>v24.0</span>
   </div>
 </div>
 
@@ -713,6 +714,18 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       </label>
       <button class="btn" id="acctTimeSave" type="submit">Save</button>
     </form>
+    <label for="regionSel">Public holidays
+      <select id="regionSel" name="regionSel">
+        <option value="sg">Singapore</option>
+        <option value="my">Malaysia (Kuala Lumpur)</option>
+        <option value="none">None</option>
+      </select>
+    </label>
+    <p class="sheet-hint" id="holidayNow" hidden></p>
+    <label class="switch" for="dayoffToggle" id="dayoffRow">
+      <span>Taking today off<small>Your card shows Day off for the rest of today, and it won't break your streak.</small></span>
+      <input id="dayoffToggle" name="dayoffToggle" type="checkbox" role="switch">
+    </label>
     <label class="switch" for="buzzToggle">
       <span>Let friends buzz my phone<small>When someone zaps you, your phone vibrates. Turn off to get quiet zaps.</small></span>
       <input id="buzzToggle" name="buzzToggle" type="checkbox" role="switch">
@@ -899,6 +912,10 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       <a class="btn ghost" id="saveVid" download>Save video</a>
       <button class="btn" id="shareVid" type="button">Share to Instagram…</button>
     </div>
+    <label class="switch" for="lofiToggle">
+      <span>Lofi music<small>A soft lofi beat under everyone's sound, in the player and the video.</small></span>
+      <input id="lofiToggle" name="lofiToggle" type="checkbox" role="switch">
+    </label>
     <div class="sheet-row"><button class="btn ghost" id="redoClip" type="button" hidden>Retake mine</button><button class="btn" id="makeVid" type="button">Make video</button></div>
   </div>
 </div>
@@ -1058,6 +1075,7 @@ function renderChrome(){
 function laneState(p,n,nowSec){
   const offSec=p.h*3600+p.m*60, o=(S&&S.cave&&S.cave.ot[p.id])||{on:false,end:null};
   if(n.wd==="Sat"||n.wd==="Sun") return {state:"weekend",offSec,o};
+  if(p.off) return {state:"off",offSec,o};
   if(nowSec<offSec) return {state:o.on?"before-ot":"before",offSec,o};
   if(o.on&&o.end==null) return {state:"ot",offSec,o};
   if(o.on) return {state:"done-ot",offSec,o};
@@ -1125,7 +1143,7 @@ function tick(){
     const pick=a=>a[(idx+seed)%a.length];
     const big=el.querySelector(".big"),sub=el.querySelector(".sub"),tag=el.querySelector(".tag"),bar=el.querySelector(".bar i"),mon=el.querySelector(".mon");
     const left=offSec-nowSec, span=Math.max(1,offSec-START), pct=Math.min(100,Math.max(0,(nowSec-START)/span*100));
-    const isDone=state==="done"||state==="done-ot"||state==="weekend";
+    const isDone=state==="done"||state==="done-ot"||state==="weekend"||state==="off";
     el.classList.toggle("done",isDone);
     el.classList.toggle("overtime",state==="ot");
     el.classList.toggle("first",r===firstLeft);
@@ -1135,6 +1153,9 @@ function tick(){
 
     if(state==="weekend"){
       setT(big,"Weekend!");setT(sub,`No work today · ${pick(HAPPY_SUB)}`);setT(tag,"Weekend");bar.style.width="100%";
+    }else if(state==="off"){
+      const leave=p.off.kind==="leave";
+      setT(big,leave?"Day off!":"Holiday!");setT(sub,`${leave?"Taking today off":p.off.name} · ${pick(HAPPY_SUB)}`);setT(tag,leave?"Day off":"Holiday");bar.style.width="100%";
     }else if(state.startsWith("before")){
       setH(big,`<span class="t">Time −</span> ${Math.ceil(left/60)} mins`);
       sub.textContent=`${hms(left)} · ${left<=1800?pick(QUIPS_NEAR):Math.floor(pct)+"% done"}`;
@@ -1155,8 +1176,8 @@ function tick(){
 
     if(p.otBtn){
       const labels={before:"+ OT","before-ot":"Cancel OT",ot:"Clock out",done:"+ OT","done-ot":"Resume OT"};
-      p.otBtn.hidden=state==="weekend";
-      if(state!=="weekend"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
+      p.otBtn.hidden=state==="weekend"||state==="off";
+      if(state!=="weekend"&&state!=="off"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
     }
     if(p.zapBtn){
       const z=p.zapBtn, ts=S.cave.zaps[p.id], wait=ts?S.cooldownMs-(clockNow()-ts):0;
@@ -1176,6 +1197,7 @@ function tick(){
 function zapMessage(p){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, {state,offSec}=laneState(p,n,nowSec);
   if(state==="weekend") return "It's the weekend. Stop thinking about work!";
+  if(state==="off") return p.off.kind==="leave"?"You're off today. No work talk!":`It's ${p.off.name}. Enjoy the holiday!`;
   if(state.startsWith("before")){const m=Math.ceil((offSec-nowSec)/60);return m<=30?`Only ${m} mins left. Start packing up!`:`${m} mins to go. Hang in there!`;}
   if(state==="ot") return `${Math.floor((nowSec-offSec)/60)} mins of OT already. Go home!`;
   return "You're off! Go enjoy your evening.";
@@ -1445,6 +1467,11 @@ function renderAcct(){
   renderPower();
   renderSwatches($("acctColors"),me.color,saveColor);
   $("buzzToggle").checked=me.buzz!==false;
+  $("regionSel").value=me.region||"sg";
+  const mine=S.cave?members().find(m=>m.id===me.id):null, off=(mine&&mine.off)||me.off;
+  const holiday=off&&off.kind==="holiday";
+  $("holidayNow").hidden=!holiday;if(holiday) $("holidayNow").textContent=`Today is ${off.name}, so you're off. Enjoy!`;
+  $("dayoffRow").hidden=holiday;$("dayoffToggle").checked=!!(off&&off.kind==="leave");
 }
 $("meChip").addEventListener("click",()=>{
   if(!S){openAuth("login");return;}
@@ -1465,6 +1492,16 @@ $("buzzToggle").addEventListener("change",async e=>{
   catch(ex){e.target.checked=!on;$("acctErr").textContent=ex.message;}
 });
 $("acctClose").addEventListener("click",()=>{$("acctSheet").hidden=true;});
+$("regionSel").addEventListener("change",async e=>{
+  const v=e.target.value;
+  try{applyState(await api("me",{action:"region",region:v}));renderAcct();toast(v==="none"?"No public holidays for you.":`Using ${e.target.selectedOptions[0].textContent} public holidays.`);}
+  catch(ex){$("acctErr").textContent=ex.message;renderAcct();}
+});
+$("dayoffToggle").addEventListener("change",async e=>{
+  const on=e.target.checked;
+  try{applyState(await api("me",{action:"dayoff",on}));renderAcct();toast(on?"Enjoy your day off!":"Back on the clock today.");}
+  catch(ex){e.target.checked=!on;$("acctErr").textContent=ex.message;}
+});
 $("acctTimeForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const t=$("acctTime").value;if(!/^\d{2}:\d{2}$/.test(t)){$("acctErr").textContent="Pick a clock-out time.";return;}
@@ -1824,7 +1861,7 @@ function renderPower(){
     bar.setAttribute("aria-label",`Progress to Lv${me.level+1}`);bar.setAttribute("aria-valuemin",from);bar.setAttribute("aria-valuemax",need);bar.setAttribute("aria-valuenow",me.streak);
     const i=document.createElement("i");i.style.width=Math.max(0,Math.min(100,(me.streak-from)/(need-from)*100))+"%";bar.appendChild(i);box.appendChild(bar);
     const h=document.createElement("p");h.className="sheet-hint";
-    h.textContent=`${left} more ${left===1?"workday":"workdays"} in a row to Lv${me.level+1}. Weekends don't break your streak. Missing a workday drops one level.`;box.appendChild(h);
+    h.textContent=`${left} more ${left===1?"workday":"workdays"} in a row to Lv${me.level+1}. Weekends, public holidays and days off don't break your streak. Missing a workday drops one level.`;box.appendChild(h);
   }else{const h=document.createElement("p");h.className="sheet-hint";h.textContent="Max level. Keep opening the app on workdays to stay here.";box.appendChild(h);}
   const ul=document.createElement("ul");ul.className="lvls";
   pw.lv.forEach((d,i)=>{const li=document.createElement("li");if(!pw.soon&&me.level>i) li.className="on";li.innerHTML="<b></b><span></span>";
@@ -2382,11 +2419,64 @@ async function dayAssets(ctx){
   return mons;
 }
 // Plays a day onto a canvas (2d context g, drawing in 720x1280). With audio, each ring's clips sound together.
+/* ---- lofi: a soft beat made on the phone (Web Audio), so there's no music file and nothing to license ---- */
+const LS_LOFI="clockout.lofi";
+const lofiOn=()=>lsGet(LS_LOFI)!=="0";
+let noiseBuf=null;
+function noise(ac){
+  if(noiseBuf&&noiseBuf.sampleRate===ac.sampleRate) return noiseBuf;
+  noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);const d=noiseBuf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  return noiseBuf;
+}
+function startLofi(ac,out,dur){
+  const t0=ac.currentTime+.05, beat=60/76, bar=beat*4, end=t0+dur;
+  const master=ac.createGain(), tape=ac.createBiquadFilter();
+  tape.type="lowpass";tape.frequency.value=3200;tape.Q.value=.4;
+  master.gain.setValueAtTime(0,t0);master.gain.linearRampToValueAtTime(.6,t0+1.2);
+  master.connect(tape);tape.connect(out);
+  const hz=m=>440*Math.pow(2,(m-69)/12), nb=noise(ac);
+  // keys: soft electric-piano chords with a slow tape wobble
+  const keys=ac.createGain();keys.gain.value=.19;const kf=ac.createBiquadFilter();kf.type="lowpass";kf.frequency.value=1500;keys.connect(kf);kf.connect(master);
+  const lfo=ac.createOscillator(), wob=ac.createGain();lfo.frequency.value=.55;wob.gain.value=7;lfo.connect(wob);lfo.start(t0);lfo.stop(end+1);
+  const env=(g,t,peak,len)=>{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+.02);g.gain.exponentialRampToValueAtTime(peak*.3+1e-4,t+.5);
+    g.gain.setValueAtTime(peak*.3+1e-4,Math.max(t+.5,t+len-.2));g.gain.exponentialRampToValueAtTime(1e-4,t+len);};
+  const tone=(m,t,len,peak,type,dest,det=0)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=hz(m);o.detune.value=det;wob.connect(o.detune);
+    env(g,t,peak,len);o.connect(g);g.connect(dest);o.start(t);o.stop(t+len+.05);};
+  const bass=ac.createGain();bass.gain.value=.35;const bf=ac.createBiquadFilter();bf.type="lowpass";bf.frequency.value=260;bass.connect(bf);bf.connect(master);
+  const hit=(t,{f=0,type="lowpass",q=1,peak=.3,len=.15,dest=master})=>{const s=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();
+    s.buffer=nb;flt.type=type;flt.frequency.value=f;flt.Q.value=q;g.gain.setValueAtTime(peak,t);g.gain.exponentialRampToValueAtTime(1e-4,t+len);
+    s.connect(flt);flt.connect(g);g.connect(dest);s.start(t,Math.random()*1.5);s.stop(t+len+.02);};
+  const kick=t=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(115,t);o.frequency.exponentialRampToValueAtTime(42,t+.14);
+    g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(1e-4,t+.38);o.connect(g);g.connect(master);o.start(t);o.stop(t+.4);};
+  // Fmaj7 · Em7 · Dm7 · Cmaj7, one bar each
+  const prog=[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]];
+  for(let b=0,t=t0;t<end;b++,t+=bar){
+    const ch=prog[b%4];
+    ch.forEach((m,i)=>{tone(m,t+i*.012,bar*.95,1,"sine",keys,i*3);tone(m+12,t+i*.012,bar*.6,.25,"triangle",keys,-4);});
+    tone(ch[0]-12,t,beat*1.8,1,"sine",bass);tone(ch[0]-12,t+beat*2.5,beat*1.2,.8,"sine",bass);
+    [0,2.5].forEach(k=>kick(t+k*beat));
+    [1,3].forEach(k=>hit(t+k*beat,{f:1800,type:"bandpass",q:.7,peak:.22,len:.18}));
+    for(let e=0;e<8;e++) hit(t+e*beat/2+(e%2?beat*.08:0),{f:7000,type:"highpass",peak:e%2?.035:.05,len:.05});
+  }
+  // vinyl hiss and a few pops
+  const hiss=ac.createBufferSource(),hf=ac.createBiquadFilter(),hg=ac.createGain();hiss.buffer=nb;hiss.loop=true;hf.type="bandpass";hf.frequency.value=3000;hf.Q.value=.3;hg.gain.value=.012;
+  hiss.connect(hf);hf.connect(hg);hg.connect(master);hiss.start(t0);hiss.stop(end+1);
+  for(let t=t0;t<end;t+=.09) if(Math.random()<.12) hit(t,{f:2500,type:"highpass",peak:.05+Math.random()*.05,len:.006});
+  return {
+    fadeOut(sec=.7){const t=ac.currentTime;try{master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(0,t+sec);}catch(e){}
+      return new Promise(r=>setTimeout(()=>{try{master.disconnect();}catch(e){}r();},sec*1000+30));},
+  };
+}
 async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
   await Promise.all([document.fonts.load("46px Bungee"),document.fonts.load("700 22px 'JetBrains Mono'")]).catch(()=>{});
   const mons=await dayAssets(ctx);
   const segOf=gp=>Math.min(CLIP_MAX+.3,Math.max(...gp.clips.map(c=>c.dur||3)))+.25;
   const total=1.4+ctx.groups.reduce((a,gp)=>a+segOf(gp),0);let done=0;
+  // lofi under everything; everyone's own sound plays softer on top
+  let music=null;
+  if(ac&&out&&lofiOn()){try{music=startLofi(ac,out,total+1);}catch(e){music=null;}}
+  try{
   await frames(1400,el=>{drawIntro(g,ctx,mons,el/1400);onPct&&onPct(el/1000/total);},job);done=1.4;
   for(let gi=0;gi<ctx.groups.length&&!job.cancel;gi++){
     const gp=ctx.groups[gi];onRing&&onRing(gi);
@@ -2396,7 +2486,7 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
     let srcs=[];
     if(ac&&out){
       const bufs=await Promise.all(gp.clips.map(c=>authBlob(clipPath(ctx.day,c)).then(b=>b.arrayBuffer()).then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null)));
-      const gain=ac.createGain();gain.gain.value=1/Math.sqrt(Math.max(1,bufs.filter(Boolean).length));gain.connect(out);
+      const gain=ac.createGain();gain.gain.value=(music?.45:1)/Math.sqrt(Math.max(1,bufs.filter(Boolean).length));gain.connect(out);
       srcs=bufs.map(b=>{if(!b) return null;const s=ac.createBufferSource();s.buffer=b;s.connect(gain);return s;});
     }
     await Promise.all(vids.map(v=>v&&v.play().catch(()=>{})));
@@ -2407,6 +2497,7 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
     vids.forEach(v=>{if(v){v.pause();v.remove();}});
     done+=segOf(gp);
   }
+  }finally{if(music) await music.fadeOut(job.cancel?.25:.8);}
 }
 
 /* ---- one day: the player, who filmed each ring, make a video ---- */
@@ -2439,6 +2530,7 @@ async function openDay(day){
   $("pPlay").hidden=false;$("pPlay").textContent="▶";$("pPlay").disabled=false;$("pPlay").setAttribute("aria-label","Play the day");
   $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=false;$("makeVid").textContent="Make video";
   $("redoClip").hidden=!(day===S.day&&S.me.clip&&S.cave.ring);
+  $("lofiToggle").checked=lofiOn();
   $("daySheet").hidden=false;
   if(day===S.day) markDaysSeen();
   // a still title card until Play, and fetch the clips in the background so playback starts quickly
@@ -2522,6 +2614,7 @@ async function makeVideo(){
   }
 }
 $("makeVid").addEventListener("click",makeVideo);
+$("lofiToggle").addEventListener("change",e=>{lsSet(LS_LOFI,e.target.checked?"1":"0");});
 $("shareVid").addEventListener("click",async()=>{
   if(!dayCtx||!dayCtx.file) return;
   try{await navigator.share({files:[dayCtx.file],title:`${S.cave.name} · ${fmtLong(dayCtx.day)}`});}
@@ -2532,6 +2625,13 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v24-holidays",v:"v24.0",at:"2026-11-09T10:05",title:"Holidays and lofi music",changes:[
+    "Public holidays: pick Singapore or Malaysia in your account; holidays show as Holiday and never break your streak.",
+    "Taking today off in your account shows Day off on your card.",
+    "Day videos now have a soft lofi beat, with everyone's own sound on top."],panels:[
+    {art:"holiday",title:"Holiday!",text:"On a public holiday your card says Holiday instead of counting down. Pick Singapore or Malaysia in your account."},
+    {art:"dayoff",title:"Day off",text:"Taking leave? Turn on Taking today off in your account. Your streak is safe."},
+    {art:"lofi",title:"Lofi vlog",text:"Days play with a soft lofi beat, and Make video keeps it. Everyone's own sound stays on top, a little quieter."}]},
   {id:"v22-history",v:"v22.0",at:"2026-11-08T18:36",title:"Every update, in News",changes:[
     "News now lists every update, newest first, with its version, date and time.",
     "Updates with a comic have a Watch the comic button. Back takes you to the list."],panels:[
@@ -2578,7 +2678,7 @@ const NEWS=[
     "Open the app on workdays to level up: Lv1 at 3 days, Lv2 at 7, Lv3 at 14. Missing a day drops one level.",
     "Reroll your monster once a month and keep your level."],panels:[
     {art:"powers",title:"Monster powers",text:"See yours in your account. Some are tools, some are just for fun."},
-    {art:"streak",title:"Level up",text:"Open the app on workdays. 3 in a row is Lv1, 7 is Lv2, 14 is Lv3. Weekends never break it."}]},
+    {art:"streak",title:"Level up",text:"Open the app on workdays. 3 in a row is Lv1, 7 is Lv2, 14 is Lv3. Weekends and holidays never break it."}]},
   {id:"v12",v:"v12.0",at:"2026-11-07T14:24",title:"Behind the scenes: admin logo",changes:["The admin page got its own Staff Badge logo."]},
   {id:"v11",v:"v11.0",at:"2026-11-07T14:01",title:"Usage stats",changes:[
     "The app counts opens and time in the app, never what your messages say.","Deleting your account deletes your stats."]},
@@ -2610,6 +2710,9 @@ const ICONS={
   sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
   bolt:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
   cave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20c0-8 4-14 9-14s9 6 9 14"/><path d="M9 20c0-3 1.3-5 3-5s3 2 3 5"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>',
+  note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>',
   moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
 };
 function propEl(name,cls="prop"){const d=document.createElement("span");d.className=cls;d.innerHTML=ICONS[name];d.firstChild.setAttribute("aria-hidden","true");d.firstChild.style.width="100%";d.firstChild.style.height="100%";return d;}
@@ -2643,6 +2746,9 @@ function panelArt(kind){
     case "chat":{const mk=(p,txt,right)=>{const w=document.createElement("div");w.className="cbub"+(right?" r":"");w.appendChild(small(p));const t=document.createElement("span");t.textContent=txt;t.style.setProperty("--bc",softVar(p.color));w.appendChild(t);return w;};
       const col=document.createElement("div");col.className="cbubs";col.append(mk(crew[0],"Leaving at 5!",false),mk(me,"Same 🙌",true));add(col);break;}
     case "zap":{const z=propEl("bolt","prop shake");z.style.color="var(--zap)";add(small(me),z,small(crew[0],"work"),burstEl("BZZT!",{top:"14px",right:"22px"}));break;}
+    case "holiday":{const sun=propEl("sun","prop");sun.style.color="var(--zap)";add(monEl(me.monster,me.color,"dance"),sun,burstEl("HOLIDAY!",{top:"14px",left:"16px"}));break;}
+    case "dayoff":{const c=propEl("cal","prop");c.style.color="var(--c-teal)";add(monEl(me.monster,me.color,"dance"),c,burstEl("OFF",{top:"14px",right:"22px"}));break;}
+    case "lofi":{const n=propEl("note","prop shake");n.style.color="var(--c-violet)";add(monEl(me.monster,me.color,"dance"),n,burstEl("♪ lofi",{top:"14px",left:"18px"}));break;}
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     default:add(monEl(me.monster,me.color,"dance"),propEl("share"),burstEl("TA-DA!",{top:"16px",left:"20px"}));
   }

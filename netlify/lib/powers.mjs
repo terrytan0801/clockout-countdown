@@ -27,30 +27,31 @@ const toUTC = (day) => { const [y, m, d] = day.split("-").map(Number); return Da
 const fromUTC = (ms) => new Date(ms).toISOString().slice(0, 10);
 export const addDays = (day, n) => fromUTC(toUTC(day) + n * DAY);
 export const weekdayOf = (day) => new Date(toUTC(day)).getUTCDay(); // 0 Sun .. 6 Sat
-export const isWorkday = (day) => { const w = weekdayOf(day); return w >= 1 && w <= 5; };
-export function prevWorkday(day) { let d = addDays(day, -1); while (!isWorkday(d)) d = addDays(d, -1); return d; }
-export function workdaysBetween(a, b) { // strictly between a and b
-  let n = 0; for (let d = addDays(a, 1); d < b; d = addDays(d, 1)) if (isWorkday(d)) n++; return n;
+// off(day) -> true for someone's public holidays and days off; those count like weekends.
+export const isWorkday = (day, off) => { const w = weekdayOf(day); return w >= 1 && w <= 5 && !(off && off(day)); };
+export function prevWorkday(day, off) { let d = addDays(day, -1); for (let i = 0; i < 60 && !isWorkday(d, off); i++) d = addDays(d, -1); return d; }
+export function workdaysBetween(a, b, off) { // strictly between a and b
+  let n = 0; for (let d = addDays(a, 1); d < b; d = addDays(d, 1)) if (isWorkday(d, off)) n++; return n;
 }
 export const dayStartMs = (day) => Date.parse(day + "T00:00:00+08:00");
 export const monthOf = (ms) => sgDay(ms).slice(0, 7);
 
 // Count this workday. Missing one or more workdays drops one level (never to zero in one go).
-export function streakUpdate(rec, today) {
-  if (!isWorkday(today)) return rec;
+export function streakUpdate(rec, today, off) {
+  if (!isWorkday(today, off)) return rec;
   if (rec && rec.lastDay === today) return rec;
   let streak;
   if (!rec || !rec.lastDay) streak = 1;
-  else if (workdaysBetween(rec.lastDay, today) === 0) streak = rec.streak + 1;
+  else if (workdaysBetween(rec.lastDay, today, off) === 0) streak = rec.streak + 1;
   else streak = THRESH[Math.max(0, levelFor(rec.streak) - 1)] + 1;
   return { streak, lastDay: today, best: Math.max(rec?.best || 0, streak) };
 }
 
 // First time we see someone: give credit for the workdays they already opened the app in a row.
-export function backfill(openDays, today) {
-  let n = 0, d = prevWorkday(today);
-  while (openDays.has(d)) { n++; d = prevWorkday(d); }
-  return n ? { streak: n, lastDay: prevWorkday(today), best: n } : null;
+export function backfill(openDays, today, off) {
+  let n = 0, d = prevWorkday(today, off);
+  while (openDays.has(d)) { n++; d = prevWorkday(d, off); }
+  return n ? { streak: n, lastDay: prevWorkday(today, off), best: n } : null;
 }
 
 export function levelInfo(rec) {

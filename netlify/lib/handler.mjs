@@ -19,12 +19,15 @@
 //   clipmeta/<cid>/<day>/<slot> {pid,r,name,color,monster,at,late,dur,type,size,thumb}
 //   myclip/<pid>/<cid>/<day>/<slot>_<bytes>   index for account deletion and the admin storage total
 //   ringsent/<cid>/<day>.<r>    that ring's push went out
+//   dayoff/<day>/<pid>          someone took the day off (v24)
+//   leave/<pid>/<day>           the same, listed per person (for streaks)
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
   POWERS, READY, M, CHEERS_PER_DAY, NOTES_AT_ONCE, levelInfo, streakUpdate, backfill, isWorkday, weekdayOf, addDays,
   dayStartMs, monthOf, sgSeconds, getWeather, weatherAt, dailyOf, geocode,
 } from "./powers.mjs";
+import { REGIONS, regionOf, holidayOf } from "./holidays.mjs";
 import { ringTimes, currentRing, slotKey, parseSlot, RING_COUNT, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
@@ -155,6 +158,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       now: t, day, cooldownMs: ZAP_COOLDOWN_MS, colors: COLORS,
       me: {
         ...publicPerson(me), buzz: me.buzz !== false, fx: me.fx !== false, city: me.city || null,
+        region: regionOf(me), off: holidayOf(regionOf(me), day) ? { kind: "holiday", name: holidayOf(regionOf(me), day) } : null,
         ...lv, power, ready: READY.has(power),
         canReroll: !sameMonth,
         nextReroll: sameMonth ? `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01` : null,
@@ -166,6 +170,9 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const cave = await getJSON(`cave/${me.cave}`);
     if (!cave) return base;
     const members = await caveMembers(cave.id);
+    const leaveToday = new Set((await keys(`dayoff/${day}/`)).map((k) => k.split("/")[2]));
+    const offOf = (p) => (leaveToday.has(p.id) ? { kind: "leave", name: "Day off" } : (holidayOf(regionOf(p), day) ? { kind: "holiday", name: holidayOf(regionOf(p), day) } : null));
+    base.me.off = offOf(me);
     const [ot, zaps, reach, latest] = await Promise.all([
       Promise.all(members.map((p) => getJSON(`ot/${day}/${p.id}`))),
       Promise.all(members.map((p) => (p.id === me.id ? null : getJSON(`zap/${me.id}/${p.id}`)))),
@@ -187,7 +194,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       ...base,
       cave: {
         id: cave.id, name: cave.name, owner: cave.owner, code: cave.code,
-        members: members.map((p) => ({ ...publicPerson(p), level: p.level })),
+        members: members.map((p) => ({ ...publicPerson(p), level: p.level, off: offOf(p) })),
         ot: otMap, zaps: zapMap,
         reachable: members.filter((_, i) => reach[i]).map((p) => p.id),
         chatLatest: latest,
@@ -303,17 +310,26 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return { caves, sent };
   }
 
+  // A person's days off: their public holidays plus days they marked off. Off days count like weekends.
+  async function offFn(p) {
+    const region = regionOf(p), leave = new Set((await keys(`leave/${p.id}/`)).map((k) => k.split("/")[2]));
+    return (day) => leave.has(day) || !!holidayOf(region, day);
+  }
   async function touchStreak(pid) {
     const today = sgDay(now());
     if (!isWorkday(today)) return;
+    const p = await getPerson(pid);
+    if (!p) return;
+    const off = await offFn(p);
+    if (!isWorkday(today, off)) return;
     let rec = await getJSON(`lvl/${pid}`);
     if (rec && rec.lastDay === today) return;
     if (!rec) {
       const days = new Set((await keys("use/")).filter((k) => k.endsWith("/" + pid)).map((k) => k.split("/")[1]));
       days.delete(today);
-      rec = backfill(days, today);
+      rec = backfill(days, today, off);
     }
-    await store.setJSON(`lvl/${pid}`, streakUpdate(rec, today));
+    await store.setJSON(`lvl/${pid}`, streakUpdate(rec, today, off));
   }
 
   // Scheduled every 15 minutes: Fluff Lv2+ gets one rain alert 25-45 minutes before clock-out.
@@ -321,7 +337,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const t = now(), today = sgDay(t), nowSec = sgSeconds(t);
     if (nowSec < 15 * 60) { // once a day, tidy up old power records
       const cut = addDays(today, -14);
-      const old = (await Promise.all(["cheer/", "roar/", "rainalert/", "ringsent/"].map(keys))).flat().filter((k) => k.split("/")[1] < cut);
+      const old = (await Promise.all(["cheer/", "roar/", "rainalert/", "ringsent/", "dayoff/"].map(keys))).flat().filter((k) => k.split("/")[1] < cut);
+      old.push(...(await keys("leave/")).filter((k) => k.split("/")[2] < addDays(today, -60)));
       await Promise.all(old.map((k) => store.delete(k)));
     }
     if (!isWorkday(today)) return { checked: 0, sent: 0 };
@@ -333,6 +350,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       if (levelInfo(await getJSON(`lvl/${p.id}`)).level < 2) continue;
       const ak = `rainalert/${today}/${p.id}`;
       if (await exists(ak)) continue;
+      if (!isWorkday(today, await offFn(p))) continue; // nobody needs a rain alert on their day off
       checked++;
       let w = null;
       try { w = weatherAt(await getWeather({ store, fetchFn, now, lat: p.city.lat, lon: p.city.lon }), today, p.h); } catch (e) { continue; }
@@ -575,6 +593,15 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           }
           case "buzz":
             me = { ...me, buzz: body.buzz === true }; break;
+          case "region":
+            if (!Object.hasOwn(REGIONS, body.region)) return json({ error: "Pick a holiday list." }, 400);
+            me = { ...me, region: body.region }; break;
+          case "dayoff": { // today only
+            const day = sgDay(now());
+            if (body.on === true) { await store.setJSON(`dayoff/${day}/${me.id}`, { at: now() }); await store.setJSON(`leave/${me.id}/${day}`, 0); }
+            else { await store.delete(`dayoff/${day}/${me.id}`); await store.delete(`leave/${me.id}/${day}`); }
+            return json(await state(me));
+          }
           case "pin": {
             if (!validPin(body.pin)) return json({ error: "Your passcode needs at least 4 characters." }, 400);
             const salt = randomBytes(16).toString("hex");
@@ -585,6 +612,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             await dropPersonClips(me.id);
             await stats.forget(me.id);
             await store.delete(`lvl/${me.id}`);
+            await Promise.all((await keys(`leave/${me.id}/`)).flatMap((k) => [store.delete(k), store.delete(`dayoff/${k.split("/")[2]}/${me.id}`)]));
             await Promise.all([`person/${me.id}`, `uname/${nameKey(me.name)}`, `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
             return json({ ok: true });
           default:
@@ -763,7 +791,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           if (await exists(rk)) return json({ error: "You've already roared today." }, 409);
           const o = await getJSON(`ot/${day}/${me.id}`);
           const offSec = me.h * 3600 + me.m * 60;
-          if (isWorkday(day)) {
+          if (isWorkday(day, await offFn(me))) {
             if (o && o.on && o.end == null && sgSeconds(t) >= offSec) return json({ error: "Clock out first, then roar." }, 409);
             if (sgSeconds(t) < offSec && !(o && o.on && o.end != null)) return json({ error: `You can roar once you're off at ${fmt12(me.h, me.m)}.` }, 409);
           }

@@ -57,6 +57,8 @@ const T = await mk("Terry", 17, 0), K = await mk("Sukee", 17, 30), W = await mk(
 const code = (await call("POST", "cave", { action: "create", name: "Cave" }, T.t)).data.cave.code;
 for (const x of [K, W]) await call("POST", "cave", { action: "join", code }, x.t);
 for (const x of [T, K, W]) await call("POST", "subscribe", { subscription: { endpoint: "https://push.test/" + x.id, keys: { p256dh: "k", auth: "a" } } }, x.t);
+// These checks run on Mon 9 Nov 2026, which is a public holiday (Deepavali observed); holidays are tested in holidays.test.mjs.
+for (const x of [T, K, W, O]) await call("POST", "me", { action: "region", region: "none" }, x.t);
 
 /* ---------------- streak via check-ins ---------------- */
 await call("POST", "ping", { open: true }, W.t);

@@ -1,4 +1,4 @@
-# Clock-out Countdown · v23.0
+# Clock-out Countdown · v24.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -17,6 +17,10 @@ The **News** button sits next to Screenshot at the top. It shows one comic page 
 
 On phones, the account, Cave, Screenshot and News buttons sit in one row.
 
+## Public holidays and days off
+
+Each person picks a holiday list in their account: **Singapore** (the default), **Malaysia (Kuala Lumpur)** or **None**. On a public holiday the card says **Holiday!** with the holiday's name instead of counting down, the OT button is hidden, and the day counts like a weekend: it never breaks a streak and there's no rain alert. **Taking today off** in the account does the same for one day (Day off). Holiday dates live in `netlify/lib/holidays.mjs` (Singapore 2026–2027 from the Ministry of Manpower, Malaysia 2026); add new years there when they're announced.
+
 ## Cave Calendar (Days)
 
 Inspired by Setlog. **Four times a day**, at random times between 9 am and 10 pm (Singapore time, at least an hour apart), every phone in the cave rings at the same moment, weekends too. Everyone films **2–4 seconds** of what they're doing, right in the app.
@@ -27,6 +31,7 @@ Inspired by Setlog. **Four times a day**, at random times between 9 am and 10 pm
 - The **Days** tab is a month calendar. Days with clips show a cover frame and how many clips there are. Tap a day to see who filmed each ring and play it.
 - A day plays **split screen**: for each ring, everyone's clips play side by side at once, under the ring time, then the next ring. Clips are shown whole, never cropped.
 - **Make video** records exactly that as one vertical (9:16) video: a title card with the cave name, date and everyone's monsters, then each ring's split screen with the original sound and no music. It's made on the phone, so keep the screen open until it's done. Then **Share to Instagram…** opens the share menu, or **Save video** keeps a copy.
+- **Lofi music.** Days play with a soft lofi beat (made on the phone with Web Audio, so there's no music file to license), and Make video keeps it. Everyone's own sound plays on top, a little quieter. The **Lofi music** switch in the day sheet turns it off.
 - Clips are kept. Only people in the cave can watch them. Deleting an account deletes that person's clips, and a cave's clips go when the last person leaves. The admin page shows how many clips are stored and how much space they use.
 - Clips are recorded small (well under 1 MB) so uploads stay under the function's request limit. Rings are sent by a scheduled function every 5 minutes (`netlify/functions/film-ring.mjs`); the ring times are worked out from the cave and the date, so nothing extra is stored. Clips from v15 (one ring a day) count as ring 1.
 
