@@ -70,6 +70,13 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   const stats = makeStats({ store, now, adminKey });
   const getJSON = async (key, fallback = null) => (await store.get(key, { type: "json" })) ?? fallback;
   const exists = async (key) => (await store.getMetadata(key)) !== null;
+  // Write a key only if nobody has it yet; true if we got it. The installed @netlify/blobs (8.2.0) ignores
+  // onlyIfNew, so look first (newer versions also honour onlyIfNew, which closes the small gap in between).
+  const claimKey = async (key, value) => {
+    if (await exists(key)) return false;
+    const r = await store.setJSON(key, value, { onlyIfNew: true });
+    return !(r && r.modified === false);
+  };
   const keys = async (prefix) => (await store.list({ prefix })).blobs.map((b) => b.key);
   const getPerson = (pid) => getJSON(`person/${pid}`);
   const putPerson = (p) => store.setJSON(`person/${p.id}`, p);
@@ -81,8 +88,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     if (await exists("meta/v9")) { migrated = true; return; }
     const old = await getJSON("people");
     if (!old || !old.length) { await store.setJSON("meta/v9", { at: now(), moved: 0 }); migrated = true; return; }
-    const claim = await store.setJSON("meta/v9-lock", { at: now() }, { onlyIfNew: true });
-    if (claim && claim.modified === false) return; // another request is migrating right now
+    if (!(await claimKey("meta/v9-lock", { at: now() }))) return; // another request is migrating right now
     const v8Colors = ["orange", "violet", "teal", "pink", "blue", "amber", "green"];
     const sorted = old.slice().sort((a, b) => (a.at || 0) - (b.at || 0));
     const cid = "c-" + randomBytes(5).toString("hex");
@@ -107,8 +113,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     let k = await getJSON("vapid");
     if (!k) {
       k = webpush.generateVAPIDKeys();
-      const res = await store.setJSON("vapid", k, { onlyIfNew: true });
-      if (res && res.modified === false) k = await getJSON("vapid", k);
+      if (!(await claimKey("vapid", k))) k = await getJSON("vapid", k);
     }
     return k;
   }
@@ -296,11 +301,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       if (!cave) continue;
       const r = ringTimes(cave.id, day).findIndex((at) => t >= at && t < at + 30 * 60e3); // a late job doesn't ring hours later
       if (r < 0) continue;
-      // The installed Blobs library ignores onlyIfNew, so check first: otherwise every 5-minute run rang again.
-      const sentKey = `ringsent/${cave.id}/${day}.${r}`;
-      if (await exists(sentKey)) continue;
-      const claim = await store.setJSON(sentKey, { at: t }, { onlyIfNew: true });
-      if (claim && claim.modified === false) continue;
+      // Claimed once per ring, so the 5-minute runs after it don't ring again.
+      if (!(await claimKey(`ringsent/${cave.id}/${day}.${r}`, { at: t }))) continue;
       caves++;
       for (const p of await caveMembers(cave.id)) {
         sent += await sendPush(p.id, {
@@ -394,8 +396,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   async function claimCode(cid) {
     for (let i = 0; i < 8; i++) {
       const code = newCode();
-      const r = await store.setJSON(`code/${code}`, cid, { onlyIfNew: true });
-      if (!r || r.modified !== false) return code;
+      if (await claimKey(`code/${code}`, cid)) return code;
     }
     throw new Error("Could not create an invite code.");
   }
@@ -461,8 +462,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (!validPin(body.pin)) return json({ error: "Your passcode needs at least 4 characters." }, 400);
         const color = COLORS.includes(body.color) ? body.color : COLORS[randomInt(COLORS.length)];
         const id = "p-" + randomBytes(5).toString("hex");
-        const claim = await store.setJSON(`uname/${nameKey(name)}`, id, { onlyIfNew: true });
-        if (claim && claim.modified === false) return json({ error: `The name ${name} is taken. Try adding a letter or number.` }, 409);
+        if (!(await claimKey(`uname/${nameKey(name)}`, id))) return json({ error: `The name ${name} is taken. Try adding a letter or number.` }, 409);
         const salt = randomBytes(16).toString("hex");
         const person = { id, name, h: body.h, m: body.m, color, monster: randomInt(MONSTER_COUNT), buzz: true, cave: null, at: now(), salt, hash: hashPin(body.pin, salt) };
         await putPerson(person);
@@ -616,7 +616,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             await stats.forget(me.id);
             await store.delete(`lvl/${me.id}`);
             await Promise.all((await keys(`leave/${me.id}/`)).flatMap((k) => [store.delete(k), store.delete(`dayoff/${k.split("/")[2]}/${me.id}`)]));
-            await Promise.all([`person/${me.id}`, `uname/${nameKey(me.name)}`, `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
+            const ownsName = (await getJSON(`uname/${nameKey(me.name)}`)) === me.id;
+            await Promise.all([`person/${me.id}`, ...(ownsName ? [`uname/${nameKey(me.name)}`] : []), `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
             return json({ ok: true });
           default:
             return json({ error: "Unknown action." }, 400);

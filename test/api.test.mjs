@@ -34,6 +34,8 @@ assert.equal(r.status, 200); const terry = r.data.token; const terryId = r.data.
 assert.equal(r.data.me.color, "orange"); assert.ok(r.data.me.monster >= 0 && r.data.me.monster < 10);
 assert.equal(r.data.cave, null); assert.equal(r.data.me.hash, undefined);
 assert.equal((await call("POST", "signup", { name: "terry", h: 17, m: 0, pin: "9999" })).status, 409);
+assert.equal((await call("POST", "signup", { name: "TERRY", h: 9, m: 0, pin: "8888" })).status, 409, "any spelling of a taken name");
+assert.equal((await call("POST", "login", { name: "Terry", pin: "9999" })).status, 401, "the second sign-up didn't take Terry's name");
 assert.equal((await call("POST", "signup", { name: "Lily", h: 18, m: 0, pin: "12" })).status, 400);
 r = await call("POST", "signup", { name: "Sukee", h: 17, m: 30, pin: "secret pass", color: "violet" });
 const sukee = r.data.token; const sukeeId = r.data.me.id;

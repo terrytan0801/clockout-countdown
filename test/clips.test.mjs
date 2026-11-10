@@ -166,7 +166,7 @@ assert.equal([...store._m.keys()].some((k) => k.includes(cid) && /^(clip|thumb|c
 
 // The real Blobs library (8.2.0) ignores onlyIfNew: a ring must still go out only once.
 {
-  const real = memStore(), loose = { ...real, setJSON: (k, v) => real.setJSON(k, v), _m: real._m };
+  const loose = memStore(); // ignores onlyIfNew, like the real library
   const sent = [];
   const app2 = makeApp({ store: loose, webpush: { generateVAPIDKeys: () => ({ publicKey: "P", privateKey: "Q" }), async sendNotification(sub, p) { sent.push(p); } }, now: () => clock });
   const call2 = async (method, path, body, token) => { clock += 1; const res = await app2.handle(new Request("https://x.test/api/" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: body ? JSON.stringify(body) : undefined })); return (await res.json()); };
