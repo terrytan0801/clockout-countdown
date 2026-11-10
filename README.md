@@ -1,4 +1,4 @@
-# Clock-out Countdown · v30.0
+# Clock-out Countdown · v31.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -51,6 +51,8 @@ Every monster has a power that levels up with a streak of **workdays** (Mon–Fr
 | Noodle, Spike, Bun, Chomp | coming soon | | | |
 
 **Calm mode** in the account sheet makes the monsters stand still on that phone only, for older phones or to save battery. To keep things smooth, the board only redraws the parts whose data changed, monsters pause while they are off screen, and the app stops checking for updates while it's in the background.
+
+**Sleep.** After 30 seconds without a touch the screen goes black with "Sleeping… tap to wake", and the countdown, updates, chat and monster animations stop until it is tapped (a zap or the film ring wakes it too). It stays awake while the camera is open or the day video is playing or being made. When the app goes to the background, the day video and its music stop and the camera and microphone are let go; the camera comes back on its own when you return.
 
 **Show friends' effects** in the account sheet turns off Jelly parties and Dino roars, both the banners and the push. Notes come down at midnight, and pinned notes after 7 days. Weather comes from Open-Meteo (free, no key). The rain alert runs from a scheduled Netlify function every 15 minutes (`netlify/functions/rain-alert.mjs`).
 

@@ -400,6 +400,12 @@ body.booting{overflow:hidden}
 .calday.future{opacity:.4}
 .calday.blank{visibility:hidden}
 body.noscroll{overflow:hidden}
+/* Sleep: after 30 s without a touch the screen goes black (true black lets OLED screens switch pixels off) and everything pauses */
+.sleep{position:fixed;inset:0;z-index:60;background:#000;color:#5c5c5c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  font:700 15px/1.4 var(--f-mono);letter-spacing:.06em;text-align:center;cursor:pointer;opacity:0;transition:opacity .8s ease;-webkit-tap-highlight-color:transparent}
+.sleep.on{opacity:1}
+.sleep small{font-weight:400;font-size:12px;color:#444;letter-spacing:.02em}
+body.sleeping *{animation-play-state:paused!important}
 .cam{position:fixed;inset:0;z-index:40;background:#000;color:#fff;display:flex;flex-direction:column}
 .cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .cam video.mirror{transform:scaleX(-1)}
@@ -654,7 +660,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v30.0</span>
+    <span>v31.0</span>
   </div>
 </div>
 
@@ -935,6 +941,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
 <script src="/monsters.js"></script>
 <script>
@@ -1038,7 +1045,9 @@ function ping(open){
   if(!token||!S) return;
   fetch("/api/ping",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+token},body:JSON.stringify({open:!!open}),keepalive:true}).catch(()=>{});
 }
-setInterval(()=>{if(document.visibilityState==="visible") ping(false);},60000);
+let asleep=false;
+const awake=()=>document.visibilityState==="visible"&&!asleep;
+setInterval(()=>{if(awake()) ping(false);},60000);
 async function refresh(){
   if(!token||!S) return;
   try{applyState(await api("state"));}
@@ -1253,7 +1262,7 @@ function setView(v){
   view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
   if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
   clearInterval(chatTimer);chatTimer=null;
-  if(v==="chat"){loadChat(true);chatTimer=setInterval(()=>{if(document.visibilityState==="visible") loadChat();},3000);setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);}
+  if(v==="chat"){loadChat(true);chatTimer=setInterval(()=>{if(awake()) loadChat();},3000);setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);}
 }
 $("tabBoard").addEventListener("click",()=>setView("board"));
 $("tabChat").addEventListener("click",()=>setView("chat"));
@@ -1605,7 +1614,7 @@ const pushSupported="serviceWorker" in navigator&&"PushManager" in window&&"Noti
 let swReg=null;
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("/sw.js").then(r=>{swReg=r;syncSubscription();updateBanner();}).catch(()=>{});
-  navigator.serviceWorker.addEventListener("message",e=>{if(!e.data) return;if(e.data.type==="zap") gotZap(e.data);else if(e.data.type==="roar") refresh();else if(e.data.type==="ring"){refresh();toast("Film time! Show your cave what you're doing.",5000);}});
+  navigator.serviceWorker.addEventListener("message",e=>{if(!e.data) return;wake();if(e.data.type==="zap") gotZap(e.data);else if(e.data.type==="roar") refresh();else if(e.data.type==="ring"){refresh();toast("Film time! Show your cave what you're doing.",5000);}});
 }
 function b64ToBytes(b64){const p="=".repeat((4-b64.length%4)%4);const s=atob((b64+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0));}
 async function currentSub(){if(!swReg||!pushSupported) return null;try{return await swReg.pushManager.getSubscription();}catch(e){return null;}}
@@ -2228,6 +2237,19 @@ function camReset(){
   $("camRec").setAttribute("aria-label","Start filming");$("camFlip").hidden=false;$("camMic").disabled=false;showMic();setRecRing(0);
   showCamTools(!!cam.stream);if(cam.stream&&fx.ok&&!fx.raf) fxStart();
 }
+let camWasOn=false;
+function camPause(){
+  if($("camSheet").hidden) return;
+  $("camReview").pause();
+  if(!cam.stream) return;
+  if(cam.rec&&cam.rec.state!=="inactive"){cam.rec.onstop=null;try{cam.rec.stop();}catch(e){}cam.rec=null;}
+  camWasOn=$("camAfter").hidden;camStopStream();
+  if(camWasOn) camReset();
+}
+function camResume(){
+  if(!camWasOn) return;camWasOn=false;
+  if(!$("camSheet").hidden&&$("camAfter").hidden) camStart();
+}
 function closeCam(){
   if(cam.rec&&cam.rec.state!=="inactive"){cam.rec.onstop=null;try{cam.rec.stop();}catch(e){}}
   camStopStream();camReset();$("camSheet").hidden=true;document.body.classList.remove("noscroll");
@@ -2575,7 +2597,7 @@ async function openDay(day){
 async function playDay(){
   if(!dayCtx||playing||making) return;
   let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
-  const job={cancel:false};playing=job;const ctx=dayCtx;
+  const job={cancel:false,ac};playing=job;const ctx=dayCtx;
   $("pPlay").hidden=true;
   const segs=[...$("pSegs").children];segs.forEach(s=>s.firstChild.style.width="0%");
   const g=$("pc").getContext("2d");g.setTransform($("pc").width/VW,0,0,$("pc").height/VH,0,0);
@@ -2594,7 +2616,7 @@ async function playDay(){
 }
 $("pPlay").addEventListener("click",playDay);
 $("pc").addEventListener("click",()=>{if(playing) playing.cancel=true;});
-function stopPlayer(){if(playing) playing.cancel=true;}
+function stopPlayer(){if(!playing) return;playing.cancel=true;if(playing.ac) playing.ac.suspend().catch(()=>{});}
 function closeDay(){stopPlayer();cancelMake();if(dayCtx&&dayCtx.saveUrl) URL.revokeObjectURL(dayCtx.saveUrl);dayCtx=null;$("daySheet").hidden=true;}
 $("dayClose").addEventListener("click",closeDay);
 $("redoClip").addEventListener("click",()=>{closeDay();openCam();});
@@ -2943,9 +2965,37 @@ $("retryBtn").addEventListener("click",()=>{clearTimeout(bootRetry);bootLoad();}
 renderChrome();
 if(token) bootLoad();
 else setTimeout(()=>showSplashForAuth("join"),1200);
-setInterval(()=>{if(document.visibilityState==="visible") tick();},1000);
-setInterval(()=>{if(document.visibilityState==="visible") refresh();},15000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){ping(true);refresh();syncSubscription();if(view==="chat") loadChat();}});
+setInterval(()=>{if(awake()) tick();},1000);
+setInterval(()=>{if(awake()) refresh();},15000);
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"){
+    if(asleep) wake(false);
+    camResume();ping(true);refresh();syncSubscription();if(view==="chat") loadChat();
+  }else{stopPlayer();camPause();}
+});
+
+/* ---------- Sleep: 30 s without a touch, the screen goes black and the app stops working until tapped ---------- */
+const SLEEP_MS=30000;
+let lastTouch=Date.now();
+const touched=()=>{lastTouch=Date.now();};
+["pointerdown","keydown","wheel","touchstart"].forEach(ev=>document.addEventListener(ev,touched,{capture:true,passive:true}));
+window.addEventListener("scroll",touched,{capture:true,passive:true});
+// stay awake while something is meant to run: the camera, playing or making the day video
+const busy=()=>!!playing||!!making||!$("camSheet").hidden;
+function sleep(){
+  if(asleep) return;
+  asleep=true;document.body.classList.add("sleeping");
+  const el=$("sleep");el.hidden=false;requestAnimationFrame(()=>el.classList.add("on"));
+}
+function wake(catchUp=true){
+  if(!asleep) return;
+  asleep=false;lastTouch=Date.now();document.body.classList.remove("sleeping");
+  const el=$("sleep");el.classList.remove("on");el.hidden=true;
+  if(catchUp){tick();ping(true);refresh();if(view==="chat") loadChat();}
+}
+$("sleep").addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();wake();});
+$("sleep").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();});
+setInterval(()=>{if(document.visibilityState==="visible"&&!asleep&&!busy()&&Date.now()-lastTouch>=SLEEP_MS) sleep();},2000);
 </script>
 </body>
 </html>
