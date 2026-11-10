@@ -430,6 +430,9 @@ body.noscroll{overflow:hidden}
 .cam-top span{font:700 14px/1.3 var(--f-mono);text-align:center;flex:1;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .cam-x{width:44px;height:44px;flex:none;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font:700 24px/1 var(--f-body);cursor:pointer;display:grid;place-items:center}
 .cam-x svg{width:22px;height:22px}
+.cam-x .mic-off,.cam-x.muted .mic-on{display:none}.cam-x.muted .mic-off{display:block}
+.cam-x.muted{background:#fff;color:#111}
+.cam-x:disabled{opacity:.55;cursor:default}
 .cam-bottom{position:relative;margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 16px max(28px,env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(0,0,0,.6))}
 .rec{width:84px;height:84px;border-radius:50%;border:0;background:transparent;padding:0;cursor:pointer;position:relative}
 .rec svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
@@ -651,7 +654,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v29.0</span>
+    <span>v30.0</span>
   </div>
 </div>
 
@@ -861,6 +864,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
   <div class="cam-top">
     <button class="cam-x" id="camClose" type="button" aria-label="Close the camera">×</button>
     <span id="camHint">Show your cave what you're doing</span>
+    <button class="cam-x" id="camMic" type="button" aria-pressed="false" aria-label="Sound on: tap to film without sound"><svg class="mic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><svg class="mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 9.5V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 4.6 2.5M5 11a7 7 0 0 0 11.3 5.5M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18"/></svg></button>
     <button class="cam-x" id="camFlip" type="button" aria-label="Switch camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><path d="M9 13a3 3 0 0 1 5.2-2"/><path d="M15 13a3 3 0 0 1-5.2 2"/><path d="M14.5 9.5v1.7h-1.7M9.5 16.5v-1.7h1.7"/></svg></button>
   </div>
   <div class="cam-bottom">
@@ -915,10 +919,6 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <label class="switch" for="lofiToggle">
       <span>Lofi music<small>A soft lofi beat under everyone's sound, in the player and the video.</small></span>
       <input id="lofiToggle" name="lofiToggle" type="checkbox" role="switch">
-    </label>
-    <label class="switch" for="origToggle">
-      <span>Original sound<small>Everyone's own sound from the clips. Turn off to keep it out of the video.</small></span>
-      <input id="origToggle" name="origToggle" type="checkbox" role="switch">
     </label>
     <div class="sheet-row"><button class="btn ghost" id="redoClip" type="button" hidden>Retake mine</button><button class="btn" id="makeVid" type="button">Make video</button></div>
   </div>
@@ -2064,7 +2064,8 @@ $("mPrev").addEventListener("click",()=>loadDays(addMonth(calMonth,-1)));
 $("mNext").addEventListener("click",()=>loadDays(addMonth(calMonth,1)));
 
 /* ---- the camera ---- */
-const cam={stream:null,facing:"user",rec:null,chunks:[],blob:null,thumb:null,dur:0,t0:0,raf:0,url:null};
+const LS_MIC="clockout.mic";
+const cam={mic:lsGet(LS_MIC)!=="0",stream:null,facing:"user",rec:null,chunks:[],blob:null,thumb:null,dur:0,t0:0,raf:0,url:null};
 const camSupported=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
 function drawCover(g,v,W,H,x=0,y=0){
   const vw=v.videoWidth||v.width,vh=v.videoHeight||v.height;if(!vw||!vh) return false;
@@ -2196,8 +2197,9 @@ async function widen(track){
 async function camStart(){
   camStopStream();$("camRec").disabled=true;
   const video={facingMode:cam.facing,frameRate:{ideal:30,max:30}};
-  try{cam.stream=await navigator.mediaDevices.getUserMedia({video,audio:true});}
+  try{cam.stream=await navigator.mediaDevices.getUserMedia({video,audio:cam.mic});}
   catch(e){
+    if(!cam.mic){$("camErr").textContent="The camera is blocked. Allow the camera for this app in your phone's settings, then try again.";return;}
     try{cam.stream=await navigator.mediaDevices.getUserMedia({video,audio:false});}
     catch(e2){$("camErr").textContent="The camera is blocked. Allow the camera for this app in your phone's settings, then try again.";return;}
   }
@@ -2223,7 +2225,7 @@ function camReset(){
   if(cam.url){URL.revokeObjectURL(cam.url);cam.url=null;}
   const r=$("camReview");r.pause();r.removeAttribute("src");r.load();r.hidden=true;
   $("camVideo").hidden=false;$("camCanvas").hidden=!$("camSheet").classList.contains("fx");$("camAfter").hidden=true;$("camRec").hidden=false;$("camRec").classList.remove("on");
-  $("camRec").setAttribute("aria-label","Start filming");$("camFlip").hidden=false;setRecRing(0);
+  $("camRec").setAttribute("aria-label","Start filming");$("camFlip").hidden=false;$("camMic").disabled=false;showMic();setRecRing(0);
   showCamTools(!!cam.stream);if(cam.stream&&fx.ok&&!fx.raf) fxStart();
 }
 function closeCam(){
@@ -2233,17 +2235,19 @@ function closeCam(){
 function startRec(){
   if(!cam.stream) return;
   const type=pickType();
-  let src=cam.stream;
+  // with the sound off, the clip has no audio track at all
+  const audio=cam.mic?cam.stream.getAudioTracks():[];
+  let src=cam.mic?cam.stream:new MediaStream(cam.stream.getVideoTracks());
   if(fx.ok&&$("camSheet").classList.contains("fx")&&$("camCanvas").captureStream){
-    try{fx.cstream=$("camCanvas").captureStream(30);src=new MediaStream([...fx.cstream.getVideoTracks(),...cam.stream.getAudioTracks()]);}catch(e){src=cam.stream;}
+    try{fx.cstream=$("camCanvas").captureStream(30);src=new MediaStream([...fx.cstream.getVideoTracks(),...audio]);}catch(e){}
   }
-  try{cam.rec=new MediaRecorder(src,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_600_000,audioBitsPerSecond:64_000});}
+  try{cam.rec=new MediaRecorder(src,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_600_000,...(audio.length?{audioBitsPerSecond:64_000}:{})});}
   catch(e){try{cam.rec=new MediaRecorder(src);}catch(e2){$("camErr").textContent="This phone can't record here. Try Safari on iPhone or Chrome on Android.";return;}}
   cam.chunks=[];cam.thumb=null;$("camErr").textContent="";
   cam.rec.ondataavailable=e=>{if(e.data&&e.data.size) cam.chunks.push(e.data);};
   cam.rec.onstop=finishRec;
   cam.rec.start(250);cam.t0=performance.now();
-  $("camRec").classList.add("on");$("camRec").setAttribute("aria-label","Stop filming");$("camFlip").hidden=true;
+  $("camRec").classList.add("on");$("camRec").setAttribute("aria-label","Stop filming");$("camFlip").hidden=true;$("camMic").disabled=true;
   $("camFilters").hidden=true;$("camAdjust").hidden=true;$("camAdjBtn").hidden=true;$("camAdjBtn").setAttribute("aria-pressed","false");
   let grabbed=false;
   const loop=()=>{
@@ -2282,6 +2286,18 @@ $("camRec").addEventListener("click",()=>{
 });
 $("camClose").addEventListener("click",closeCam);
 $("camFlip").addEventListener("click",()=>{cam.facing=cam.facing==="user"?"environment":"user";camStart();});
+function showMic(){
+  const b=$("camMic");b.classList.toggle("muted",!cam.mic);b.setAttribute("aria-pressed",String(!cam.mic));
+  b.setAttribute("aria-label",cam.mic?"Sound on: tap to film without sound":"Sound off: tap to film with sound");
+}
+// Sound on or off. The camera restarts so the microphone is only open when it's needed.
+$("camMic").addEventListener("click",()=>{
+  if(cam.rec&&cam.rec.state==="recording") return;
+  cam.mic=!cam.mic;lsSet(LS_MIC,cam.mic?"1":"0");showMic();
+  toast(cam.mic?"Sound on":"Sound off: your clip will be silent");
+  if(!$("camAfter").hidden) return;
+  camStart();
+});
 $("camRetake").addEventListener("click",()=>{camReset();$("camErr").textContent="";$("camHint").textContent="Show your cave what you're doing";});
 async function postClip(blob,thumb,dur,btn){
   const fd=new FormData();
@@ -2426,8 +2442,6 @@ async function dayAssets(ctx){
 /* ---- lofi: a soft beat made on the phone (Web Audio), so there's no music file and nothing to license ---- */
 const LS_LOFI="clockout.lofi";
 const lofiOn=()=>lsGet(LS_LOFI)!=="0";
-const LS_ORIG="clockout.orig";
-const origOn=()=>lsGet(LS_ORIG)!=="0";
 let noiseBuf=null;
 function noise(ac){
   if(noiseBuf&&noiseBuf.sampleRate===ac.sampleRate) return noiseBuf;
@@ -2501,7 +2515,7 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
     const vids=urls.map(u=>{if(!u) return null;const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.className="offstage";v.src=u;document.body.appendChild(v);return v;});
     await Promise.all(vids.map(v=>v&&new Promise(res=>{if(v.readyState>=2) return res();v.onloadeddata=res;v.onerror=res;setTimeout(res,8000);})));
     let srcs=[];
-    if(ac&&out&&origOn()){
+    if(ac&&out){
       const bufs=await Promise.all(gp.clips.map(c=>authBlob(clipPath(ctx.day,c)).then(b=>b.arrayBuffer()).then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null)));
       const gain=ac.createGain();gain.gain.value=(music?.45:1)/Math.sqrt(Math.max(1,bufs.filter(Boolean).length));gain.connect(out);
       srcs=bufs.map(b=>{if(!b) return null;const s=ac.createBufferSource();s.buffer=b;s.connect(gain);return s;});
@@ -2551,7 +2565,6 @@ async function openDay(day){
   $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=false;$("makeVid").textContent="Make video";
   $("redoClip").hidden=!(day===S.day&&S.me.clip&&S.cave.ring);
   $("lofiToggle").checked=lofiOn();
-  $("origToggle").checked=origOn();
   $("daySheet").hidden=false;
   if(day===S.day) markDaysSeen();
   // a still title card until Play, and fetch the clips in the background so playback starts quickly
@@ -2636,7 +2649,6 @@ async function makeVideo(){
 }
 $("makeVid").addEventListener("click",makeVideo);
 $("lofiToggle").addEventListener("change",e=>{lsSet(LS_LOFI,e.target.checked?"1":"0");});
-$("origToggle").addEventListener("change",e=>{lsSet(LS_ORIG,e.target.checked?"1":"0");});
 $("shareVid").addEventListener("click",async()=>{
   if(!dayCtx||!dayCtx.file) return;
   try{await navigator.share({files:[dayCtx.file],title:`${S.cave.name} · ${fmtLong(dayCtx.day)}`});}
