@@ -164,4 +164,18 @@ await call("POST", "cave", { action: "leave" }, W.t);
 await call("POST", "cave", { action: "leave" }, T.t);
 assert.equal([...store._m.keys()].some((k) => k.includes(cid) && /^(clip|thumb|clipmeta|myclip)\//.test(k)), false);
 
+// The real Blobs library (8.2.0) ignores onlyIfNew: a ring must still go out only once.
+{
+  const real = memStore(), loose = { ...real, setJSON: (k, v) => real.setJSON(k, v), _m: real._m };
+  const sent = [];
+  const app2 = makeApp({ store: loose, webpush: { generateVAPIDKeys: () => ({ publicKey: "P", privateKey: "Q" }), async sendNotification(sub, p) { sent.push(p); } }, now: () => clock });
+  const call2 = async (method, path, body, token) => { clock += 1; const res = await app2.handle(new Request("https://x.test/api/" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: body ? JSON.stringify(body) : undefined })); return (await res.json()); };
+  const z = await call2("POST", "signup", { name: "Zed", h: 17, m: 0, pin: "1234" });
+  const cz = (await call2("POST", "cave", { action: "create", name: "Z" }, z.token)).cave;
+  await call2("POST", "subscribe", { subscription: { endpoint: "https://push.test/z", keys: { p256dh: "k", auth: "a" } } }, z.token);
+  const at = ringTimes(cz.id, "2026-11-12")[0];
+  for (const dt of [0, 5, 10, 15, 20, 25]) { clock = at + dt * 60e3 + 1000; await app2.ringTick(); }
+  assert.equal(sent.length, 1, "one ring, one push, even when every 5-minute run sees it");
+}
+
 console.log("All Cave Calendar checks passed.");

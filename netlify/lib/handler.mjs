@@ -296,7 +296,10 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       if (!cave) continue;
       const r = ringTimes(cave.id, day).findIndex((at) => t >= at && t < at + 30 * 60e3); // a late job doesn't ring hours later
       if (r < 0) continue;
-      const claim = await store.setJSON(`ringsent/${cave.id}/${day}.${r}`, { at: t }, { onlyIfNew: true });
+      // The installed Blobs library ignores onlyIfNew, so check first: otherwise every 5-minute run rang again.
+      const sentKey = `ringsent/${cave.id}/${day}.${r}`;
+      if (await exists(sentKey)) continue;
+      const claim = await store.setJSON(sentKey, { at: t }, { onlyIfNew: true });
       if (claim && claim.modified === false) continue;
       caves++;
       for (const p of await caveMembers(cave.id)) {
