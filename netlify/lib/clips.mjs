@@ -1,11 +1,11 @@
-// Cave Calendar: a few times a day each cave's phones ring at random times, and everyone films 2-4 seconds.
+// Cave Calendar: twice a day each cave's phones ring at random times, and everyone films 2-4 seconds.
 // The ring times are worked out from the cave id and the date, so they need no storage and match for everyone.
 import { dayStartMs } from "./powers.mjs";
 
-export const RING_COUNT = 4;                 // rings a day
-export const RING_FROM = 9 * 3600;           // 9:00 am, Singapore time
+export const RING_COUNT = 2;                 // rings a day (was 4 in v16-v25: too many notifications)
+export const RING_FROM = 10 * 3600;          // 10:00 am, Singapore time
 export const RING_TO = 22 * 3600;            // 10:00 pm
-export const RING_GAP = 60 * 60;             // at least an hour between two rings
+export const RING_GAP = 3 * 3600;            // at least three hours between the two rings
 export const RING_STEP = 5 * 60;             // rings land on 5-minute marks (the ring job runs every 5 minutes)
 export const RING_WINDOW_MS = 10 * 60e3;     // 10 minutes to post on time; later posts (until the next ring) are Late
 export const CLIP_MIN_S = 1.5, CLIP_MAX_S = 5; // the app records 2-4 s; a little slack for timing

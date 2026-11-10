@@ -1,4 +1,4 @@
-# Clock-out Countdown · v25.0
+# Clock-out Countdown · v26.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -23,7 +23,7 @@ Each person picks a holiday list in their account: **Singapore** (the default), 
 
 ## Cave Calendar (Days)
 
-Inspired by Setlog. **Four times a day**, at random times between 9 am and 10 pm (Singapore time, at least an hour apart), every phone in the cave rings at the same moment, weekends too. Everyone films **2–4 seconds** of what they're doing, right in the app.
+Inspired by Setlog. **Twice a day**, at random times (one between 10 am and 1 pm, one between 4 pm and 7 pm, Singapore time), every phone in the cave rings at the same moment, weekends too. Everyone films **2–4 seconds** of what they're doing, right in the app.
 
 - Posting within **10 minutes** of a ring is on time. Until the next ring it still counts, marked **Late**. One clip per person per ring; a retake replaces it.
 - The camera shows the phone camera's full view (no cropping, widest zoom), so what you see is what gets filmed.

@@ -650,8 +650,8 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Progress bar starts at 9:00 am · Singapore / Malaysia time · Weekends and public holidays off.</span>
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
-    <span>Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v25.0</span>
+    <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
+    <span>v26.0</span>
   </div>
 </div>
 
@@ -1962,7 +1962,7 @@ function openWeather(p,w){
 $("wxClose").addEventListener("click",()=>{$("wxSheet").hidden=true;});
 
 /* ================= Cave Calendar ================= */
-// Four times a day, at random times, the cave's phones ring. Everyone films 2-4 seconds; the clips fill a calendar.
+// Twice a day, at random times, the cave's phones ring. Everyone films 2-4 seconds; the clips fill a calendar.
 // A day plays back the Setlog way: each ring shows everyone's clips side by side at once, then the next ring.
 const CLIP_MIN=2, CLIP_MAX=4, CLIP_MAX_BYTES=2_900_000, RING_LEN=238.8;
 const fmtLong=day=>new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(day+"T12:00:00Z"));
@@ -2054,7 +2054,7 @@ function renderCal(){
   }
   const total=Object.values(calData.days).reduce((a,x)=>a+x.clips.length,0);
   $("daysHint").textContent=total?`${total} ${total===1?"clip":"clips"} this month. Tap a day to watch it, or make it into one video.`
-    :"No clips this month yet. Four times a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing.";
+    :"No clips this month yet. Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing.";
 }
 $("mPrev").addEventListener("click",()=>loadDays(addMonth(calMonth,-1)));
 $("mNext").addEventListener("click",()=>loadDays(addMonth(calMonth,1)));
@@ -2525,8 +2525,11 @@ async function openDay(day){
   $("dayTitle").textContent=day===S.day?"Today":fmtLong(day);
   $("daySub").textContent=`${info.clips.length} ${info.clips.length===1?"clip":"clips"} from ${dayCtx.groups.length} ${dayCtx.groups.length===1?"ring":"rings"}`;
   const box=$("dayRings");box.replaceChildren();
-  info.rings.forEach((at,r)=>{
-    const clips=info.clips.filter(c=>c.r===r), row=document.createElement("div");row.className="dring";
+  const ringCount=Math.max(info.rings.length,...info.clips.map(c=>c.r+1));
+  Array.from({length:ringCount},(_,r)=>{
+    const clips=info.clips.filter(c=>c.r===r), at=info.rings[r]||(clips[0]&&clips[0].at);
+    if(!at) return;
+    const row=document.createElement("div");row.className="dring";
     const b=document.createElement("b");b.textContent=`Ring ${r+1} · ${sgTime(at)}`;row.appendChild(b);
     const list=document.createElement("div");
     clips.forEach(c=>{
