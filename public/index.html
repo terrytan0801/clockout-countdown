@@ -651,7 +651,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v28.0</span>
+    <span>v29.0</span>
   </div>
 </div>
 
@@ -915,6 +915,10 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <label class="switch" for="lofiToggle">
       <span>Lofi music<small>A soft lofi beat under everyone's sound, in the player and the video.</small></span>
       <input id="lofiToggle" name="lofiToggle" type="checkbox" role="switch">
+    </label>
+    <label class="switch" for="origToggle">
+      <span>Original sound<small>Everyone's own sound from the clips. Turn off to keep it out of the video.</small></span>
+      <input id="origToggle" name="origToggle" type="checkbox" role="switch">
     </label>
     <div class="sheet-row"><button class="btn ghost" id="redoClip" type="button" hidden>Retake mine</button><button class="btn" id="makeVid" type="button">Make video</button></div>
   </div>
@@ -2422,6 +2426,8 @@ async function dayAssets(ctx){
 /* ---- lofi: a soft beat made on the phone (Web Audio), so there's no music file and nothing to license ---- */
 const LS_LOFI="clockout.lofi";
 const lofiOn=()=>lsGet(LS_LOFI)!=="0";
+const LS_ORIG="clockout.orig";
+const origOn=()=>lsGet(LS_ORIG)!=="0";
 let noiseBuf=null;
 function noise(ac){
   if(noiseBuf&&noiseBuf.sampleRate===ac.sampleRate) return noiseBuf;
@@ -2495,7 +2501,7 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
     const vids=urls.map(u=>{if(!u) return null;const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.className="offstage";v.src=u;document.body.appendChild(v);return v;});
     await Promise.all(vids.map(v=>v&&new Promise(res=>{if(v.readyState>=2) return res();v.onloadeddata=res;v.onerror=res;setTimeout(res,8000);})));
     let srcs=[];
-    if(ac&&out){
+    if(ac&&out&&origOn()){
       const bufs=await Promise.all(gp.clips.map(c=>authBlob(clipPath(ctx.day,c)).then(b=>b.arrayBuffer()).then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null)));
       const gain=ac.createGain();gain.gain.value=(music?.45:1)/Math.sqrt(Math.max(1,bufs.filter(Boolean).length));gain.connect(out);
       srcs=bufs.map(b=>{if(!b) return null;const s=ac.createBufferSource();s.buffer=b;s.connect(gain);return s;});
@@ -2545,6 +2551,7 @@ async function openDay(day){
   $("dayErr").textContent="";$("shareRow").hidden=true;$("makeVid").hidden=false;$("makeVid").textContent="Make video";
   $("redoClip").hidden=!(day===S.day&&S.me.clip&&S.cave.ring);
   $("lofiToggle").checked=lofiOn();
+  $("origToggle").checked=origOn();
   $("daySheet").hidden=false;
   if(day===S.day) markDaysSeen();
   // a still title card until Play, and fetch the clips in the background so playback starts quickly
@@ -2629,6 +2636,7 @@ async function makeVideo(){
 }
 $("makeVid").addEventListener("click",makeVideo);
 $("lofiToggle").addEventListener("change",e=>{lsSet(LS_LOFI,e.target.checked?"1":"0");});
+$("origToggle").addEventListener("change",e=>{lsSet(LS_ORIG,e.target.checked?"1":"0");});
 $("shareVid").addEventListener("click",async()=>{
   if(!dayCtx||!dayCtx.file) return;
   try{await navigator.share({files:[dayCtx.file],title:`${S.cave.name} · ${fmtLong(dayCtx.day)}`});}
