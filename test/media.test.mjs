@@ -7,7 +7,8 @@ import { memStore } from "./mem-store.mjs";
 const webpush = { generateVAPIDKeys: () => ({ publicKey: "P", privateKey: "Q" }), async sendNotification() {} };
 let clock = Date.UTC(2026, 10, 11, 1, 0, 0);
 const store = memStore(), purged = [];
-const app = makeApp({ store, webpush, now: () => clock, cache: {}, purge: async (tags) => { purged.push(...tags); } });
+const warmed = [];
+const app = makeApp({ store, webpush, now: () => clock, cache: {}, purge: async (tags) => { purged.push(...tags); }, warm: async (u) => { warmed.push(u); } });
 const raw = async (method, path, body, token) => {
   clock += 1;
   return app.handle(new Request("https://x.test/api/" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: body ? JSON.stringify(body) : undefined }));
@@ -31,6 +32,8 @@ assert.equal(await upload(A.t), 200);
 
 const cal = (await call("GET", "days?month=2026-11", null, B.t)).data;
 const c = cal.days[day].clips[0];
+// the upload already put the clip and its cover in the CDN
+assert.deepEqual(warmed.sort(), ["https://x.test" + c.src, "https://x.test" + c.tsrc].sort());
 assert.match(c.src, /^\/api\/m\/clip\/c-[0-9a-f]+\/2026-11-11\/p-[0-9a-f]+\.0\/\d+\/[\w-]{22}$/);
 assert.match(c.tsrc, /^\/api\/m\/thumb\//);
 

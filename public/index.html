@@ -718,7 +718,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v37.0</span>
+    <span>v38.0</span>
   </div>
 </div>
 
@@ -1707,7 +1707,7 @@ async function signedOut(msg){
   token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
-  closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
+  closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
   $("banner").hidden=true;$("newsSheet").hidden=true;renderChrome();updatePeek();
   showSplashForAuth("login");
   if(msg) toast(msg);
@@ -2245,12 +2245,37 @@ function pickType(){
   return ["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4;codecs=avc1,mp4a","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find(t=>{try{return MediaRecorder.isTypeSupported(t);}catch(e){return false;}})||"";
 }
 // Clips need the log-in token, so they are fetched and handed to <video> as blob URLs (cached for the visit).
-const blobCache=new Map(), urlCache=new Map();
+// Clips in memory: the newest 40 (the phone's own cache keeps more, and hands them back at once).
+const blobCache=new Map(), urlCache=new Map(), BLOB_KEEP=40;
+function trimClips(){
+  const keep=new Set(dayCtx?dayCtx.clips.flatMap(c=>[clipPath(dayCtx.day,c),clipPath(dayCtx.day,c,"thumb")]):[]);
+  for(const k of blobCache.keys()){
+    if(blobCache.size<=BLOB_KEEP) break;
+    if(keep.has(k)||k.startsWith("thumb/")||/^m\/thumb\//.test(k)) continue;
+    blobCache.delete(k);
+    const u=urlCache.get(k);if(u){urlCache.delete(k);u.then(x=>URL.revokeObjectURL(x)).catch(()=>{});}
+    audioCache.delete(k);
+  }
+}
+// A clip's sound, decoded ahead of time so Play doesn't wait for it.
+const audioCache=new Map();let decodeCtx=null;
+function clipAudio(path){
+  if(!audioCache.has(path)){
+    const p=authBlob(path).then(b=>b.arrayBuffer()).then(ab=>{
+      try{decodeCtx||=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,1,44100);}catch(e){return null;}
+      return new Promise(res=>{try{const q=decodeCtx.decodeAudioData(ab,res,()=>res(null));if(q&&q.catch) q.catch(()=>res(null));}catch(e){res(null);}});
+    }).catch(()=>null);
+    audioCache.set(path,p);
+  }
+  return audioCache.get(path);
+}
 function authBlob(path){
-  if(!blobCache.has(path)){
+  if(blobCache.has(path)){const p=blobCache.get(path);blobCache.delete(path);blobCache.set(path,p);} // newest last
+  else{
     // signed links (m/…) need no log-in, so the CDN and the phone can keep them; older ones go through the log-in
     const p=fetch("/api/"+path,path.startsWith("m/")?{}:{headers:{authorization:"Bearer "+token}}).then(r=>{if(!r.ok) throw new Error("That clip couldn't be loaded.");return r.blob();});
     blobCache.set(path,p);p.catch(()=>blobCache.delete(path));
+    if(blobCache.size>BLOB_KEEP) trimClips();
   }
   return blobCache.get(path);
 }
@@ -2269,7 +2294,10 @@ function warmToday(){
   if(!info||!info.clips.length||(navigator.connection&&navigator.connection.saveData)) return;
   const sig=info.clips.map(c=>c.src||c.at).join();
   if(sig===warmed) return;warmed=sig;
-  setTimeout(()=>info.clips.forEach(c=>authBlob(clipPath(S.day,c)).catch(()=>{})),600);
+  // two at a time, so chat and the board aren't held up on a slow connection
+  const q=info.clips.map(c=>clipPath(S.day,c));
+  const next=()=>{const p=q.shift();if(p&&view==="days") authBlob(p).catch(()=>{}).then(next);};
+  setTimeout(()=>{next();next();},600);
 }
 
 /* ---- the ring bar on the board ---- */
@@ -2801,16 +2829,29 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
   // lofi under everything; everyone's own sound plays softer on top
   let music=null;
   if(ac&&out&&lofiOn()){try{music=startLofi(ac,out,total+1);}catch(e){music=null;}}
+  // Each ring is got ready while the one before it plays (the first one during the title card), so there's
+  // no wait between rings. A clip that's slow to arrive gets 4 seconds, then the ring goes on without it.
+  const ready=gp=>{
+    const vidsP=Promise.all(gp.clips.map(c=>authURL(clipPath(ctx.day,c)).catch(()=>null))).then(urls=>{
+      const vids=urls.map(u=>{if(!u) return null;const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.className="offstage";v.src=u;document.body.appendChild(v);return v;});
+      return Promise.all(vids.map(v=>v&&new Promise(res=>{if(v.readyState>=2) return res(v);v.onloadeddata=()=>res(v);v.onerror=()=>{v.remove();res(null);};setTimeout(()=>res(v.readyState>=2?v:(v.remove(),null)),4000);})));
+    });
+    const bufsP=ac&&out?Promise.all(gp.clips.map(c=>Promise.race([clipAudio(clipPath(ctx.day,c)),new Promise(r=>setTimeout(r,4000,null))]))):Promise.resolve([]);
+    return {vidsP,bufsP};
+  };
+  const prepared=[];
+  const prep=i=>{if(i<ctx.groups.length&&!prepared[i]) prepared[i]=ready(ctx.groups[i]);return prepared[i];};
+  const tidy=()=>prepared.forEach(p=>p&&p.vidsP.then(vs=>vs.forEach(v=>{if(v){v.pause();v.remove();}})).catch(()=>{}));
   try{
+  prep(0);
   await frames(1400,el=>{drawIntro(g,ctx,mons,el/1400);onPct&&onPct(el/1000/total);},job);done=1.4;
   for(let gi=0;gi<ctx.groups.length&&!job.cancel;gi++){
     const gp=ctx.groups[gi];onRing&&onRing(gi);
-    const urls=await Promise.all(gp.clips.map(c=>authURL(clipPath(ctx.day,c)).catch(()=>null)));
-    const vids=urls.map(u=>{if(!u) return null;const v=document.createElement("video");v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");v.preload="auto";v.className="offstage";v.src=u;document.body.appendChild(v);return v;});
-    await Promise.all(vids.map(v=>v&&new Promise(res=>{if(v.readyState>=2) return res();v.onloadeddata=res;v.onerror=res;setTimeout(res,8000);})));
+    const {vidsP,bufsP}=prep(gi);
+    const [vids,bufs]=await Promise.all([vidsP,bufsP]);
+    prep(gi+1); // the next ring loads while this one plays
     let srcs=[];
     if(ac&&out){
-      const bufs=await Promise.all(gp.clips.map(c=>authBlob(clipPath(ctx.day,c)).then(b=>b.arrayBuffer()).then(ab=>new Promise(res=>{try{const p=ac.decodeAudioData(ab,res,()=>res(null));if(p&&p.catch) p.catch(()=>res(null));}catch(e){res(null);}})).catch(()=>null)));
       const gain=ac.createGain();gain.gain.value=(music?.45:1)/Math.sqrt(Math.max(1,bufs.filter(Boolean).length));gain.connect(out);
       srcs=bufs.map(b=>{if(!b) return null;const s=ac.createBufferSource();s.buffer=b;s.connect(gain);return s;});
     }
@@ -2822,17 +2863,26 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
     vids.forEach(v=>{if(v){v.pause();v.remove();}});
     done+=segOf(gp);
   }
-  }finally{if(music) await music.fadeOut(job.cancel?.25:.8);}
+  }finally{tidy();if(music) await music.fadeOut(job.cancel?.25:.8);}
 }
 
 /* ---- one day: the player, who filmed each ring, make a video ---- */
 let dayCtx=null, making=null, playing=null;
 async function openDay(day){
   if(!S||!S.cave) return;
-  let d=calData&&calData.month===day.slice(0,7)&&calData.days[day]&&Date.now()-calData._at<30000?calData:null;
+  // The calendar on screen already has the day: open it at once. If it's more than 30 s old, check for new clips
+  // behind the scenes and reopen the day if any came in (unless it's playing).
+  let d=calData&&calData.month===day.slice(0,7)&&calData.days[day]?calData:null;
   if(!d){
     try{d=await api("days?month="+day.slice(0,7));d._at=Date.now();}catch(e){toast(e.message);return;}
     if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
+  }else if(Date.now()-d._at>30000){
+    const had=(d.days[day].clips||[]).map(c=>c.slot+c.at).join();
+    api("days?month="+day.slice(0,7)).then(n=>{
+      n._at=Date.now();if(calMonth===n.month){calData=n;renderCal();}
+      const now=n.days[day];
+      if(now&&dayCtx&&dayCtx.day===day&&!playing&&!making&&now.clips.map(c=>c.slot+c.at).join()!==had) openDay(day);
+    }).catch(()=>{});
   }
   const info=d.days[day];
   if(!info||!info.clips.length){toast("No clips that day yet.");return;}
@@ -2866,7 +2916,8 @@ async function openDay(day){
   // a still title card until Play, and fetch the clips in the background so playback starts quickly
   const g=$("pc").getContext("2d");g.setTransform($("pc").width/VW,0,0,$("pc").height/VH,0,0);
   dayAssets(dayCtx).then(m=>{if(dayCtx&&dayCtx.day===day&&!playing) drawIntro(g,dayCtx,m,1);});
-  info.clips.forEach(c=>authURL(clipPath(day,c)).catch(()=>{}));
+  // fetch the clips and decode their sound now, while the title card shows
+  info.clips.forEach(c=>{const p=clipPath(day,c);authURL(p).catch(()=>{});clipAudio(p);});
 }
 async function playDay(){
   if(!dayCtx||playing||making) return;

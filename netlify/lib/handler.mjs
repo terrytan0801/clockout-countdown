@@ -88,7 +88,8 @@ const fmt12 = (h, m) => `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 1
 
 // cache: things a warm server may remember between requests (pass the same object each time).
 // purge(tags): empties Netlify's CDN of those cache tags (a removed clip must not stay in the CDN).
-export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {}, purge = async () => {} }) {
+// warm(url): fetches a link once so Netlify's CDN keeps it before anyone asks for it.
+export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {}, purge = async () => {}, warm = async () => {} }) {
   const stats = makeStats({ store, now, adminKey });
   cache.sessions ||= new Map(); cache.streak ||= new Map();
   // Work the reply doesn't depend on (stats, tidying up). With waitUntil it runs after the reply has gone.
@@ -685,7 +686,10 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           dur: Math.round(dur * 10) / 10, type, size: video.size, thumb: !!hasThumb,
         });
         await store.setJSON(`myclip/${me.id}/${me.cave}/${day}/${slot}_${video.size}`, 0);
-        await later(ctx, stats.log("clip", me.id, me.cave));
+        // Put the new clip in the CDN now (after the reply), so the cave's first look at it is already fast.
+        const links = await mediaLinks(me.cave, day, { slot, at: t, thumb: hasThumb });
+        const origin = new URL(req.url).origin;
+        await later(ctx, Promise.all([stats.log("clip", me.id, me.cave), ...Object.values(links).map((l) => warm(origin + l))]));
         return fresh(me);
       }
       const media = /^(clip|thumb)\/([\w-]+)\/(\d{4}-\d{2}-\d{2})\/([\w.-]+)$/.exec(route);

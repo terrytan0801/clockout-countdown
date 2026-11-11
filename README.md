@@ -1,4 +1,4 @@
-# Clock-out Countdown · v37.0
+# Clock-out Countdown · v38.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -131,7 +131,9 @@ Clips and covers are fetched through signed links (`/api/m/<clip|thumb>/<cid>/<d
 - the phone keeps them too (service worker cache `media-v1`, newest 300), so a day you've watched plays at once, even offline;
 - a retake has a new time in its link, the old link stops working, and the removed clip is purged from the CDN by its cache tag (`purgeCache` from `@netlify/functions`); deleting an account purges its clips the same way.
 
-Links are only handed to members of the cave (in `/api/days`). The Days tab also fetches today's clips in the background so Play starts straight away. Clips are recorded at 1.2 Mbps (was 1.6), about a quarter smaller.
+Links are only handed to members of the cave (in `/api/days`). Since v38 the server also fetches a new clip's links once right after the upload (in the background), so the CDN has them before the cave's first look.
+
+Opening and playing a day (v38): the day opens at once from the calendar already on screen (new clips are checked for behind it); the clips are fetched and their sound decoded as soon as the day opens; each ring is made ready while the one before it plays, and a clip that hasn't arrived after 4 seconds is left out of its ring instead of holding it up. At most 40 clips stay in memory (covers and the open day's clips are always kept); the phone's own cache keeps the rest. The Days tab's background fetch of today's clips goes two at a time. The Days tab also fetches today's clips in the background so Play starts straight away. Clips are recorded at 1.2 Mbps (was 1.6), about a quarter smaller.
 
 ## Work hours and lunch (v35)
 
