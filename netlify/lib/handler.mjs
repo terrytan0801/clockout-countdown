@@ -21,6 +21,10 @@
 //   ringsent/<cid>/<day>.<r>    that ring's push went out
 //   dayoff/<day>/<pid>          someone took the day off (v24)
 //   leave/<pid>/<day>           the same, listed per person (for streaks)
+//   ver/<cid>                   changes whenever anything the cave's board shows changes (v32): phones ask
+//                               "still the same?" and skip the full read when it is
+//   chatlast/<cid>              {at,pid,id} of the newest chat message, so nobody lists the chat to find it
+//   daysum/<cid>/<day>          {sig, clips} one record per calendar day, rebuilt when the clips' etags change
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
@@ -28,7 +32,7 @@ import {
   dayStartMs, monthOf, sgSeconds, getWeather, weatherAt, dailyOf, geocode,
 } from "./powers.mjs";
 import { REGIONS, regionOf, holidayOf } from "./holidays.mjs";
-import { ringTimes, currentRing, slotKey, parseSlot, RING_COUNT, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
+import { ringTimes, currentRing, slotKey, parseSlot, RING_COUNT, RING_FROM, RING_TO, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
 export const LOCK_AFTER = 5;
@@ -37,6 +41,8 @@ export const COLORS = ["orange", "red", "pink", "violet", "indigo", "blue", "cya
 export const MONSTER_COUNT = 10;
 export const MAX_MEMBERS = 30;
 export const CHAT_KEEP = 200;
+const SESSION_CACHE_MS = 60e3;  // a warm server remembers who a token belongs to for a minute
+const VER_BUCKET_MS = 10 * 60e3; // phones do a full read at least this often (weather, expiring notes)
 const MAX_SUBS_PER_PERSON = 5;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -64,10 +70,27 @@ const publicPerson = ({ id, name, h, m, color, monster }) => ({ id, name, h, m, 
 const chatKeyTs = (key) => Number(key.split("/").pop().split("-")[0]);
 
 export const makeHandler = (opts) => makeApp(opts).handle;
+// A branch deploy (dev--<site>.netlify.app) keeps its own data, so testing never touches the real caves.
+export function isDevDeploy(req, context) {
+  const host = new URL(req.url).hostname;
+  return /^(?!main--)[a-z0-9-]+--/.test(host) && context?.deploy?.context !== "production";
+}
 const fmt12 = (h, m) => `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 
-export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a) }) {
+// cache: things a warm server may remember between requests (pass the same object each time).
+export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {} }) {
   const stats = makeStats({ store, now, adminKey });
+  cache.sessions ||= new Map(); cache.streak ||= new Map();
+  // Work the reply doesn't depend on (stats, tidying up). With waitUntil it runs after the reply has gone.
+  const later = (ctx, p) => {
+    const q = Promise.resolve(p).catch((e) => console.error("later", e));
+    if (ctx && typeof ctx.waitUntil === "function") { ctx.waitUntil(q); return null; }
+    return q;
+  };
+  const bump = async (cid) => { if (cid) await store.setJSON(`ver/${cid}`, now().toString(36) + randomBytes(2).toString("hex")); };
+  // The ring that counts right now. On the test site you can film before the first ring.
+  const ringOf = (cid, day, t) => currentRing(cid, day, t) || (dev ? { r: 0, at: dayStartMs(day), until: dayStartMs(day), closes: ringTimes(cid, day)[0] } : null);
+  const verToken = (ver, cid, day, t) => { const r = ringOf(cid, day, t); return `${ver || "0"}.${day}.${r ? r.r : "-"}.${Math.floor(t / VER_BUCKET_MS)}`; };
   const getJSON = async (key, fallback = null) => (await store.get(key, { type: "json" })) ?? fallback;
   const exists = async (key) => (await store.getMetadata(key)) !== null;
   // Write a key only if nobody has it yet; true if we got it. The installed @netlify/blobs (8.2.0) ignores
@@ -82,12 +105,11 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   const putPerson = (p) => store.setJSON(`person/${p.id}`, p);
 
   /* ---------- one-time move of v8 data (single "people" list) into a cave ---------- */
-  let migrated = false;
   async function migrate() {
-    if (migrated) return;
-    if (await exists("meta/v9")) { migrated = true; return; }
+    if (cache.migrated) return;
+    if (await exists("meta/v9")) { cache.migrated = true; return; }
     const old = await getJSON("people");
-    if (!old || !old.length) { await store.setJSON("meta/v9", { at: now(), moved: 0 }); migrated = true; return; }
+    if (!old || !old.length) { await store.setJSON("meta/v9", { at: now(), moved: 0 }); cache.migrated = true; return; }
     if (!(await claimKey("meta/v9-lock", { at: now() }))) return; // another request is migrating right now
     const v8Colors = ["orange", "violet", "teal", "pink", "blue", "amber", "green"];
     const sorted = old.slice().sort((a, b) => (a.at || 0) - (b.at || 0));
@@ -106,16 +128,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     }));
     await store.setJSON("meta/v9", { at: now(), moved: sorted.length, cave: cid });
     await Promise.all(["people", "zaps", `ot/${day}`, "meta/v9-lock"].map((k) => store.delete(k)));
-    migrated = true;
+    cache.migrated = true;
   }
 
   async function vapidKeys() {
+    if (cache.vapid) return cache.vapid;
     let k = await getJSON("vapid");
     if (!k) {
       k = webpush.generateVAPIDKeys();
       if (!(await claimKey("vapid", k))) k = await getJSON("vapid", k);
     }
-    return k;
+    return (cache.vapid = k);
   }
 
   async function newSession(pid) {
@@ -127,9 +150,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   async function auth(req) {
     const m = /^Bearer ([0-9a-f]{48})$/.exec(req.headers.get("authorization") || "");
     if (!m) return null;
-    const s = await getJSON(`sessions/${m[1]}`);
-    if (!s) return null;
-    const me = await getPerson(s.pid);
+    const hit = cache.sessions.get(m[1]);
+    let pid = hit && hit.until > now() ? hit.pid : null;
+    if (!pid) {
+      const s = await getJSON(`sessions/${m[1]}`);
+      if (!s) return null;
+      pid = s.pid;
+      if (cache.sessions.size > 5000) cache.sessions.clear();
+      cache.sessions.set(m[1], { pid, until: now() + SESSION_CACHE_MS });
+    }
+    const me = await getPerson(pid);
+    if (!me) cache.sessions.delete(m[1]);
     return me ? { me, token: m[1] } : null;
   }
 
@@ -144,12 +175,21 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return rows.filter(Boolean).sort((x, y) => x.joinedAt - y.joinedAt || (x.id < y.id ? -1 : 1));
   }
 
+  // The newest chat message, from its own small record (written on every post).
+  async function chatLast(cid) {
+    let l = await getJSON(`chatlast/${cid}`);
+    if (!l) { // caves from before v32: look once, then remember
+      const ks = await keys(`chat/${cid}/`);
+      const last = ks.length ? ks.reduce((a, b) => (chatKeyTs(b) > chatKeyTs(a) ? b : a)) : null;
+      const msg = last && (await getJSON(last));
+      l = msg ? { at: msg.at, pid: msg.pid, id: msg.id || last.split("/").pop() } : { at: 0, pid: null, id: null };
+      await store.setJSON(`chatlast/${cid}`, l);
+    }
+    return l;
+  }
   async function chatLatest(cid) {
-    const ks = await keys(`chat/${cid}/`);
-    if (!ks.length) return null;
-    const last = ks.reduce((a, b) => (chatKeyTs(b) > chatKeyTs(a) ? b : a));
-    const msg = await getJSON(last);
-    return msg ? { at: msg.at, pid: msg.pid } : null;
+    const l = await chatLast(cid);
+    return l.at ? { at: l.at, pid: l.pid } : null;
   }
 
   async function state(me) {
@@ -160,7 +200,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
     const [yy, mm] = monthOf(t).split("-").map(Number);
     const base = {
-      now: t, day, cooldownMs: ZAP_COOLDOWN_MS, colors: COLORS,
+      now: t, day, cooldownMs: ZAP_COOLDOWN_MS, colors: COLORS, ...(dev ? { dev: true } : {}),
       me: {
         ...publicPerson(me), buzz: me.buzz !== false, fx: me.fx !== false, city: me.city || null,
         region: regionOf(me), off: holidayOf(regionOf(me), day) ? { kind: "holiday", name: holidayOf(regionOf(me), day) } : null,
@@ -172,31 +212,38 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       cave: null,
     };
     if (!me.cave) return base;
-    const cave = await getJSON(`cave/${me.cave}`);
+    // Everything that only needs the cave id starts at once; the per-member reads follow in one more round.
+    const cid = me.cave, ring = ringOf(cid, day, t);
+    const P = {
+      cave: getJSON(`cave/${cid}`), ver: getJSON(`ver/${cid}`), members: caveMembers(cid), leave: keys(`dayoff/${day}/`),
+      latest: chatLatest(cid), clips: ring ? clipsOf(cid, day) : Promise.resolve([]),
+      pow: Promise.all([cheersToday(day), liveNotes(cid, t), keys(`roar/${day}/`).then((ks) => Promise.all(ks.map((k) => getJSON(k))))]),
+    };
+    Object.values(P).forEach((q) => q.catch(() => {}));
+    const [cave, ver] = await Promise.all([P.cave, P.ver]);
     if (!cave) return base;
-    const members = await caveMembers(cave.id);
-    const leaveToday = new Set((await keys(`dayoff/${day}/`)).map((k) => k.split("/")[2]));
+    const members = await P.members;
+    const leaveToday = new Set((await P.leave).map((k) => k.split("/")[2]));
     const offOf = (p) => (leaveToday.has(p.id) ? { kind: "leave", name: "Day off" } : (holidayOf(regionOf(p), day) ? { kind: "holiday", name: holidayOf(regionOf(p), day) } : null));
     base.me.off = offOf(me);
-    const [ot, zaps, reach, latest] = await Promise.all([
+    const ids = new Set(members.map((p) => p.id));
+    const [ot, zaps, reach, latest, extra, today] = await Promise.all([
       Promise.all(members.map((p) => getJSON(`ot/${day}/${p.id}`))),
       Promise.all(members.map((p) => (p.id === me.id ? null : getJSON(`zap/${me.id}/${p.id}`)))),
       Promise.all(members.map((p) => exists(`subs/${p.id}`))),
-      chatLatest(cave.id),
+      P.latest,
+      powersState(me, lv.level, power, cave, members, ids, day, t, base.me, P.pow),
+      P.clips,
     ]);
     const otMap = {}, zapMap = {};
     members.forEach((p, i) => {
       if (ot[i]) otMap[p.id] = ot[i];
       if (zaps[i] && t - zaps[i].at < ZAP_COOLDOWN_MS) zapMap[p.id] = zaps[i].at;
     });
-    const ids = new Set(members.map((p) => p.id));
-    const extra = await powersState(me, lv.level, power, cave, members, ids, day, t, base.me);
-    const ring = currentRing(cave.id, day, t);
-    const today = ring ? await clipsOf(cave.id, day) : [];
     const mine = ring && today.find((c) => c.pid === me.id && c.r === ring.r);
     base.me.clip = mine ? { at: mine.at, late: mine.late, r: mine.r } : null;
     return {
-      ...base,
+      ...base, v: verToken(ver, cid, day, t),
       cave: {
         id: cave.id, name: cave.name, owner: cave.owner, code: cave.code,
         members: members.map((p) => ({ ...publicPerson(p), level: p.level, off: offOf(p) })),
@@ -220,9 +267,9 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     await Promise.all(dead.map((n) => store.delete(n.k)));
     return rows.filter((n) => n.expires > t).sort((a, b) => (b.pinned - a.pinned) || (a.at - b.at)).map(({ k, ...n }) => n);
   }
-  async function powersState(me, level, power, cave, members, ids, day, t, meOut) {
-    const [cheers, notes, roarKeys] = await Promise.all([cheersToday(day), liveNotes(cave.id, t), keys(`roar/${day}/`)]);
-    const roars = (await Promise.all(roarKeys.map((k) => getJSON(k)))).filter((r) => r && ids.has(r.pid)).sort((a, b) => a.at - b.at);
+  async function powersState(me, level, power, cave, members, ids, day, t, meOut, pre) {
+    const [cheers, notes, allRoars] = await pre;
+    const roars = allRoars.filter((r) => r && ids.has(r.pid)).sort((a, b) => a.at - b.at);
     const cheerMap = {};
     for (const c of cheers) if (ids.has(c.to)) (cheerMap[c.to] ||= []).push({ from: c.from, lv: c.lv });
     if (power === "mush" && level >= 1) meOut.cheersLeft = Math.max(0, CHEERS_PER_DAY[level] - cheers.filter((c) => c.from === me.id).length);
@@ -274,6 +321,28 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       return m && { ...m, slot: seg, r: m.r ?? parseSlot(seg).r, day: k.split("/")[2] };
     }))).filter(Boolean);
   }
+  // A month of clips for the calendar: one read per day, not one per clip. Each day's record carries the etags
+  // of the clips it was built from, so a new clip, a retake or a deletion makes that day rebuild itself.
+  async function monthClips(cid, month, ctx) {
+    const [metaList, sumKeys] = await Promise.all([store.list({ prefix: `clipmeta/${cid}/${month}` }), keys(`daysum/${cid}/${month}`)]);
+    const byDay = {};
+    for (const b of metaList.blobs) (byDay[b.key.split("/")[2]] ||= []).push(b);
+    const have = new Set(sumKeys.map((k) => k.split("/")[2]));
+    const out = (await Promise.all(Object.entries(byDay).map(async ([day, blobs]) => {
+      const sig = blobs.map((b) => `${b.key.split("/").pop()}:${b.etag}`).sort().join("|");
+      const sum = have.has(day) ? await getJSON(`daysum/${cid}/${day}`) : null;
+      if (sum && sum.sig === sig) return sum.clips;
+      const clips = (await Promise.all(blobs.map(async (b) => {
+        const m = await getJSON(b.key), seg = b.key.split("/").pop();
+        return m && { ...m, slot: seg, r: m.r ?? parseSlot(seg).r, day };
+      }))).filter(Boolean);
+      await store.setJSON(`daysum/${cid}/${day}`, { sig, clips });
+      return clips;
+    }))).flat();
+    const gone = sumKeys.filter((k) => !byDay[k.split("/")[2]]);
+    if (gone.length) await later(ctx, Promise.all(gone.map((k) => store.delete(k))));
+    return out;
+  }
   const clipsOf = async (cid, day) => (await metasUnder(`clipmeta/${cid}/${day}/`)).sort((a, b) => a.r - b.r || a.at - b.at);
   async function dropClip(cid, day, slot, pid) {
     const idx = await keys(`myclip/${pid}/${cid}/${day}/${slot}_`);
@@ -283,6 +352,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   async function dropCaveClips(cid) {
     const metas = await keys(`clipmeta/${cid}/`);
     await Promise.all(metas.map((k) => { const [, , day, slot] = k.split("/"); return dropClip(cid, day, slot, parseSlot(slot).pid); }));
+    await Promise.all((await keys(`daysum/${cid}/`)).map((k) => store.delete(k)));
   }
   async function dropPersonClips(pid) {
     const idx = await keys(`myclip/${pid}/`);
@@ -293,25 +363,32 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   }
 
   // Scheduled every 5 minutes: ring each cave's phones at its random times (RING_COUNT a day).
+  async function ringCave(cave, day, r) {
+    let sent = 0;
+    await Promise.all((await caveMembers(cave.id)).map(async (p) => {
+      sent += await sendPush(p.id, {
+        title: `⏰ ${cave.name}: film time!`,
+        body: "Film 3 seconds of what you're doing right now. You have 10 minutes.",
+        tag: `ring-${day}-${r}`, url: "/?film=1", buzz: p.buzz !== false, kind: "ring",
+      });
+    }));
+    return sent;
+  }
   async function ringTick() {
-    const t = now(), day = sgDay(t);
+    const t = now(), day = sgDay(t), sec = sgSeconds(t);
+    if (sec < RING_FROM || sec > RING_TO + 35 * 60) return { caves: 0, sent: 0 }; // no rings at night: nothing to read
     let caves = 0, sent = 0;
-    for (const k of await keys("cave/")) {
-      const cave = await getJSON(k);
-      if (!cave) continue;
+    const all = await Promise.all((await keys("cave/")).map((k) => getJSON(k)));
+    await Promise.all(all.map(async (cave) => {
+      if (!cave) return;
       const r = ringTimes(cave.id, day).findIndex((at) => t >= at && t < at + 30 * 60e3); // a late job doesn't ring hours later
-      if (r < 0) continue;
+      if (r < 0) return;
       // Claimed once per ring, so the 5-minute runs after it don't ring again.
-      if (!(await claimKey(`ringsent/${cave.id}/${day}.${r}`, { at: t }))) continue;
+      if (!(await claimKey(`ringsent/${cave.id}/${day}.${r}`, { at: t }))) return;
       caves++;
-      for (const p of await caveMembers(cave.id)) {
-        sent += await sendPush(p.id, {
-          title: `⏰ ${cave.name}: film time!`,
-          body: "Film 3 seconds of what you're doing right now. You have 10 minutes.",
-          tag: `ring-${day}-${r}`, url: "/?film=1", buzz: p.buzz !== false, kind: "ring",
-        });
-      }
-    }
+      sent += await ringCave(cave, day, r);
+      await bump(cave.id);
+    }));
     return { caves, sent };
   }
 
@@ -320,21 +397,21 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const region = regionOf(p), leave = new Set((await keys(`leave/${p.id}/`)).map((k) => k.split("/")[2]));
     return (day) => leave.has(day) || !!holidayOf(region, day);
   }
-  async function touchStreak(pid) {
-    const today = sgDay(now());
-    if (!isWorkday(today)) return;
-    const p = await getPerson(pid);
-    if (!p) return;
+  async function touchStreak(p) {
+    const today = sgDay(now()), pid = p.id;
+    if (!isWorkday(today) || cache.streak.get(pid) === today) return;
+    let rec = await getJSON(`lvl/${pid}`);
+    if (rec && rec.lastDay === today) { cache.streak.set(pid, today); return; } // the usual case: one read, once
     const off = await offFn(p);
     if (!isWorkday(today, off)) return;
-    let rec = await getJSON(`lvl/${pid}`);
-    if (rec && rec.lastDay === today) return;
     if (!rec) {
       const days = new Set((await keys("use/")).filter((k) => k.endsWith("/" + pid)).map((k) => k.split("/")[1]));
       days.delete(today);
       rec = backfill(days, today, off);
     }
     await store.setJSON(`lvl/${pid}`, streakUpdate(rec, today, off));
+    await bump(p.cave); // the cave sees levels
+    cache.streak.set(pid, today);
   }
 
   // Scheduled every 15 minutes: Fluff Lv2+ gets one rain alert 25-45 minutes before clock-out.
@@ -371,9 +448,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
 
   async function sendPush(pid, payload) {
     const key = `subs/${pid}`;
-    const subs = await getJSON(key, []);
+    const [subs, { publicKey, privateKey }] = await Promise.all([getJSON(key, []), vapidKeys()]);
     if (!subs.length) return 0;
-    const { publicKey, privateKey } = await vapidKeys();
     const opts = { TTL: 600, urgency: "high", vapidDetails: { subject: "mailto:clockout@example.com", publicKey, privateKey } };
     let sent = 0;
     const keep = [];
@@ -402,22 +478,24 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   }
 
   // Take a person out of their cave. Hands the cave to the next member, or deletes it if empty.
+  // Returns the cave id if the cave is still there (so the others can be told), or null.
   async function leaveCave(person) {
     const cid = person.cave;
-    if (!cid) return;
+    if (!cid) return null;
     await store.delete(`member/${cid}/${person.id}`);
     await putPerson({ ...person, cave: null });
     const cave = await getJSON(`cave/${cid}`);
-    if (!cave) return;
+    if (!cave) return null;
     const rest = (await caveMembers(cid)).filter((p) => p.id !== person.id);
     if (!rest.length) {
       await store.delete(`code/${cave.code}`);
       await store.delete(`cave/${cid}`);
-      await Promise.all((await keys(`chat/${cid}/`)).map((k) => store.delete(k)));
+      await Promise.all([...(await keys(`chat/${cid}/`)), `chatlast/${cid}`, `ver/${cid}`].map((k) => store.delete(k)));
       await dropCaveClips(cid);
-    } else if (cave.owner === person.id) {
-      await store.setJSON(`cave/${cid}`, { ...cave, owner: rest[0].id });
+      return null;
     }
+    if (cave.owner === person.id) await store.setJSON(`cave/${cid}`, { ...cave, owner: rest[0].id });
+    return cid;
   }
 
   async function joinCave(person, cid) {
@@ -428,7 +506,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return null;
   }
 
-  async function handle(req) {
+  async function handle(req, ctx) {
     const url = new URL(req.url);
     const route = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
     const method = req.method.toUpperCase();
@@ -453,6 +531,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       }
 
       /* ---------- signed out ---------- */
+      if (route === "where" && method === "GET") return json({ region, dev });
       if (route === "vapid" && method === "GET") return json({ publicKey: (await vapidKeys()).publicKey });
 
       if (route === "signup" && method === "POST") {
@@ -497,19 +576,31 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       const a = await auth(req);
       if (!a) return json({ error: "Please log in again." }, 401);
       let { me } = a;
+      // After a change: mark the caves it touched as changed, then send the new state.
+      const fresh = async (who, ...cids) => {
+        await Promise.all([...new Set([who.cave, ...cids])].filter(Boolean).map(bump));
+        return json(await state(who));
+      };
 
-      if (route === "state" && method === "GET") return json(await state(me));
+      if (route === "state" && method === "GET") {
+        // "Still the same?" costs one read. Cyclo watches who is online, which changes all the time, so it always reads.
+        const have = url.searchParams.get("v");
+        if (have && me.cave && POWERS[me.monster] !== "cyclo") {
+          const t = now(), v = verToken(await getJSON(`ver/${me.cave}`), me.cave, sgDay(t), t);
+          if (v === have) return json({ same: true, now: t, v });
+        }
+        return json(await state(me));
+      }
 
       if (route === "ping" && method === "POST") {
-        await stats.ping(me.id, body.open === true);
-        await touchStreak(me.id);
+        await Promise.all([stats.ping(me.id, body.open === true), touchStreak(me)]);
         return json({ ok: true });
       }
 
       /* ---------- Cave Calendar ---------- */
       if (route === "clip" && method === "POST") {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
-        const t = now(), day = sgDay(t), ring = currentRing(me.cave, day, t);
+        const t = now(), day = sgDay(t), ring = ringOf(me.cave, day, t);
         if (!ring) return json({ error: "Your cave's phones haven't rung yet today. Wait for the ring!" }, 409);
         let fd;
         try { fd = await req.formData(); } catch { return json({ error: "That upload didn't come through. Try again." }, 400); }
@@ -529,8 +620,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           dur: Math.round(dur * 10) / 10, type, size: video.size, thumb: !!hasThumb,
         });
         await store.setJSON(`myclip/${me.id}/${me.cave}/${day}/${slot}_${video.size}`, 0);
-        await stats.log("clip", me.id, me.cave);
-        return json(await state(me));
+        await later(ctx, stats.log("clip", me.id, me.cave));
+        return fresh(me);
       }
       const media = /^(clip|thumb)\/([\w-]+)\/(\d{4}-\d{2}-\d{2})\/([\w.-]+)$/.exec(route);
       if (media && method === "GET") {
@@ -547,7 +638,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
         const t = now(), today = sgDay(t);
         const month = /^\d{4}-\d{2}$/.test(url.searchParams.get("month") || "") ? url.searchParams.get("month") : today.slice(0, 7);
-        const metas = await metasUnder(`clipmeta/${me.cave}/${month}`);
+        const metas = await monthClips(me.cave, month, ctx);
         const pids = [...new Set(metas.map((c) => c.pid))];
         const live = Object.fromEntries((await Promise.all(pids.map(getPerson))).filter(Boolean).map((p) => [p.id, p]));
         const days = {};
@@ -569,7 +660,15 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         catch (e) { return json({ error: "Couldn't look up places right now. Try again in a moment." }, 502); }
       }
 
-      if (route === "logout" && method === "POST") { await store.delete(`sessions/${a.token}`); return json({ ok: true }); }
+      if (route === "logout" && method === "POST") { cache.sessions.delete(a.token); await store.delete(`sessions/${a.token}`); return json({ ok: true }); }
+
+      // Test site only: ring my cave's phones now.
+      if (route === "dev/ring" && method === "POST" && dev) {
+        const cave = me.cave && (await getJSON(`cave/${me.cave}`));
+        if (!cave) return json({ error: "Join a cave first." }, 409);
+        const t = now(), day = sgDay(t);
+        return json({ sent: await ringCave(cave, day, ringOf(cave.id, day, t).r) });
+      }
 
       if (route === "me" && method === "POST") {
         switch (body.action) {
@@ -603,7 +702,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             const day = sgDay(now());
             if (body.on === true) { await store.setJSON(`dayoff/${day}/${me.id}`, { at: now() }); await store.setJSON(`leave/${me.id}/${day}`, 0); }
             else { await store.delete(`dayoff/${day}/${me.id}`); await store.delete(`leave/${me.id}/${day}`); }
-            return json(await state(me));
+            return fresh(me);
           }
           case "pin": {
             if (!validPin(body.pin)) return json({ error: "Your passcode needs at least 4 characters." }, 400);
@@ -611,7 +710,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             me = { ...me, salt, hash: hashPin(body.pin, salt) }; break;
           }
           case "delete":
-            await leaveCave(me);
+            cache.sessions.delete(a.token);
+            await bump(await leaveCave(me));
             await dropPersonClips(me.id);
             await stats.forget(me.id);
             await store.delete(`lvl/${me.id}`);
@@ -623,7 +723,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             return json({ error: "Unknown action." }, 400);
         }
         await putPerson(me);
-        return json(await state(me));
+        return fresh(me);
       }
 
       if (route === "cave" && method === "POST") {
@@ -640,7 +740,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             if (err) return json({ error: err.error }, err.status);
             await stats.log("cave", me.id, cid, "create");
             me = { ...me, cave: cid };
-            return json(await state(me));
+            return fresh(me);
           }
           case "peek": {
             const code = String(body.code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -654,34 +754,36 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             const cid = code && (await getJSON(`code/${code}`));
             const target = cid && (await getJSON(`cave/${cid}`));
             if (!target) return json({ error: "That invite code doesn't match any cave." }, 404);
-            if (me.cave === cid) return json(await state(me));
+            if (me.cave === cid) return fresh(me);
             if (me.cave && body.switch !== true) return json({ error: "You're already in a cave.", needsSwitch: true, from: cave?.name }, 409);
-            if (me.cave) { await stats.log("cave", me.id, me.cave, "leave"); await leaveCave(me); me = await getPerson(me.id); }
+            let was = null;
+            if (me.cave) { await stats.log("cave", me.id, me.cave, "leave"); was = await leaveCave(me); me = await getPerson(me.id); }
             const err = await joinCave(me, cid);
-            if (err) return json({ error: err.error }, err.status);
+            if (err) { await bump(was); return json({ error: err.error }, err.status); }
             await stats.log("cave", me.id, cid, "join");
             me = { ...me, cave: cid };
-            return json(await state(me));
+            return fresh(me, was);
           }
-          case "leave":
+          case "leave": {
             if (!me.cave) return json(await state(me));
             await stats.log("cave", me.id, me.cave, "leave");
-            await leaveCave(me);
+            const left = await leaveCave(me);
             me = { ...me, cave: null };
-            return json(await state(me));
+            return fresh(me, left);
+          }
           case "rename": {
             if (!isOwner) return json({ error: "Only the cave owner can rename it." }, 403);
             const name = cleanName(body.name);
             if (!name) return json({ error: "Give the cave a name." }, 400);
             await store.setJSON(`cave/${cave.id}`, { ...cave, name });
-            return json(await state(me));
+            return fresh(me);
           }
           case "newcode": {
             if (!isOwner) return json({ error: "Only the cave owner can change the invite code." }, 403);
             const code = await claimCode(cave.id);
             await store.setJSON(`cave/${cave.id}`, { ...cave, code });
             await store.delete(`code/${cave.code}`);
-            return json(await state(me));
+            return fresh(me);
           }
           case "kick": {
             if (!isOwner) return json({ error: "Only the cave owner can remove people." }, 403);
@@ -691,7 +793,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             if (!target || target.cave !== cave.id) return json({ error: "They're not in this cave." }, 404);
             await stats.log("cave", target.id, cave.id, "kick");
             await leaveCave(target);
-            return json(await state(me));
+            return fresh(me);
           }
           default:
             return json({ error: "Unknown action." }, 400);
@@ -704,7 +806,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (end !== null && !isInt(end, 0, 86399)) return json({ error: "Bad clock-out time." }, 400);
         const key = `ot/${sgDay(now())}/${me.id}`;
         if (on) await store.setJSON(key, { on: true, end }); else await store.delete(key);
-        return json(await state(me));
+        return fresh(me);
       }
 
       if (route === "subscribe" && method === "POST") {
@@ -713,34 +815,39 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           return json({ error: "That isn't a valid push subscription." }, 400);
         const clean = { endpoint: sub.endpoint, expirationTime: sub.expirationTime ?? null, keys: { p256dh: String(sub.keys.p256dh), auth: String(sub.keys.auth) } };
         const key = `subs/${me.id}`;
+        const had = await getJSON(key, []);
+        // Already mine and unchanged (the app re-sends it now and then): nothing to do, nobody else's list to check.
+        if (had.some((s) => s.endpoint === clean.endpoint && s.keys?.p256dh === clean.keys.p256dh && s.keys?.auth === clean.keys.auth)) return json({ ok: true });
         await dropEndpointEverywhere(clean.endpoint, key); // one phone belongs to one person
-        const mine = (await getJSON(key, [])).filter((s) => s.endpoint !== clean.endpoint);
+        const mine = had.filter((s) => s.endpoint !== clean.endpoint);
         mine.push(clean);
         await store.setJSON(key, mine.slice(-MAX_SUBS_PER_PERSON));
+        await bump(me.cave); // the cave sees who can be zapped
         return json({ ok: true });
       }
 
       if (route === "unsubscribe" && method === "POST") {
         await dropEndpointEverywhere(String(body.endpoint || ""), null);
+        await bump(me.cave);
         return json({ ok: true });
       }
 
       if (route === "zap" && method === "POST") {
-        const to = await getPerson(String(body.to || ""));
+        const toId = /^[\w-]{1,40}$/.test(String(body.to || "")) ? body.to : null; // ids from v8 have other shapes; just no slashes
+        const t = now();
+        const zk = `zap/${me.id}/${toId}`;
+        // who they are and my cooldown: read together, then the buzz goes out while the cooldown is saved
+        const [to, last] = toId ? await Promise.all([getPerson(toId), getJSON(zk)]) : [null, null];
         if (!to || !me.cave || to.cave !== me.cave) return json({ error: "You can only zap people in your cave." }, 404);
         if (to.id === me.id) return json({ error: "You can't zap yourself." }, 400);
-        const t = now();
-        const zk = `zap/${me.id}/${to.id}`;
-        const last = await getJSON(zk);
         if (last && t - last.at < ZAP_COOLDOWN_MS) return json({ error: "Cooling down.", retryInMs: ZAP_COOLDOWN_MS - (t - last.at) }, 429);
-        await store.setJSON(zk, { at: t });
         const buzz = to.buzz !== false;
-        const sent = await sendPush(to.id, {
+        const [, sent] = await Promise.all([store.setJSON(zk, { at: t }), sendPush(to.id, {
           title: `⚡ Zap from ${me.name}!`,
           body: cleanText(body.message, 140) || `${me.name} zapped you.`,
           tag: `zap-${me.id}`, url: "/", buzz, from: me.name,
-        });
-        await stats.log("zap", me.id, to.id, sent < 1 ? "n" : buzz ? "b" : "q");
+        })]);
+        await later(ctx, stats.log("zap", me.id, to.id, sent < 1 ? "n" : buzz ? "b" : "q"));
         return json({ ok: true, sent, at: t, buzz });
       }
 
@@ -764,7 +871,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           const used = (await cheersToday(day)).filter((c) => c.from === me.id).length;
           if (used >= CHEERS_PER_DAY[level]) return json({ error: "No cheers left today. More tomorrow!" }, 429);
           await store.setJSON(`cheer/${day}/${to.id}/${String(t).padStart(13, "0")}_${me.id}_${level}`, { from: me.id, at: t, lv: level });
-          return json(await state(me));
+          return fresh(me);
         }
 
         if (route === "note") {
@@ -776,7 +883,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             if (!n) return json({ error: "That note is already gone." }, 404);
             if (n.pid !== me.id && cave?.owner !== me.id) return json({ error: "Only the writer or the cave owner can take a note down." }, 403);
             await store.delete(k);
-            return json(await state(me));
+            return fresh(me);
           }
           const text = cleanText(body.text, 80).replace(/\n+/g, " ");
           if (!text) return json({ error: "Write something on the note first." }, 400);
@@ -787,7 +894,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           const id = `${String(t).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
           const expires = pinned ? t + 7 * 864e5 : dayStartMs(addDays(day, 1));
           await store.setJSON(`note/${me.cave}/${id}`, { id, pid: me.id, text, at: t, pinned, expires });
-          return json(await state(me));
+          return fresh(me);
         }
 
         if (route === "roar") {
@@ -805,7 +912,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           await Promise.all(mates.map((p) => sendPush(p.id, {
             title: `${me.name} roars!`, body: text, tag: `roar-${me.id}`, url: "/", buzz: p.buzz !== false, kind: "roar",
           })));
-          return json(await state(me));
+          return fresh(me);
         }
       }
 
@@ -822,7 +929,9 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (!me.cave) return json({ error: "Join a cave to chat." }, 409);
         const prefix = `chat/${me.cave}/`;
         if (method === "GET") {
-          const after = Number(url.searchParams.get("after") || 0);
+          const after = Number(url.searchParams.get("after") || 0), lastSeen = url.searchParams.get("last");
+          // "Anything new?" is one small read when the phone already has the newest message.
+          if (after && lastSeen && (await chatLast(me.cave)).id === lastSeen) return json({ messages: [] });
           let ks = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
           ks = after ? ks.filter((k) => chatKeyTs(k) > after) : ks.slice(-60);
           const msgs = (await Promise.all(ks.map((k) => getJSON(k)))).filter(Boolean);
@@ -834,10 +943,12 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           const at = now();
           const id = `${String(at).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
           const msg = { id, pid: me.id, name: me.name, color: me.color, monster: me.monster, text, at };
-          await store.setJSON(prefix + id, msg);
-          await stats.log("msg", me.id, me.cave);
-          const all = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
-          if (all.length > CHAT_KEEP) await Promise.all(all.slice(0, all.length - CHAT_KEEP).map((k) => store.delete(k)));
+          await Promise.all([store.setJSON(prefix + id, msg), store.setJSON(`chatlast/${me.cave}`, { at, pid: me.id, id })]);
+          await bump(me.cave); // boards show the unread dot
+          await later(ctx, Promise.all([stats.log("msg", me.id, me.cave), (async () => {
+            const all = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
+            if (all.length > CHAT_KEEP) await Promise.all(all.slice(0, all.length - CHAT_KEEP).map((k) => store.delete(k)));
+          })()]));
           return json({ message: msg });
         }
       }

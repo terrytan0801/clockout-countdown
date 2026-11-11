@@ -2,11 +2,11 @@ import { getStore } from "@netlify/blobs";
 import webpush from "web-push";
 import { makeApp } from "../lib/handler.mjs";
 
-// Cave Calendar: four times a day, at each cave's random times, everyone's phone rings to film 2-4 seconds.
+// Cave Calendar: twice a day, at each cave's random times, everyone's phone rings to film 2-4 seconds.
 export default async () => {
   const store = getStore({ name: "clockout", consistency: "strong", region: "ap-southeast-1" });
   const result = await makeApp({ store, webpush, adminKey: process.env.ADMIN_KEY || null }).ringTick();
   console.log("film ring", JSON.stringify(result));
 };
 
-export const config = { schedule: "*/5 * * * *" };
+export const config = { schedule: "*/5 * * * *", region: "sin" };

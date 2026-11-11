@@ -123,6 +123,23 @@ assert.equal((await call("GET", `clip/${cid}/${day}/${s0}`)).status, 401);
 assert.equal((await call("GET", `clip/${other.id}/${day}/${O.id}`, null, T.t)).status, 403);
 
 /* ---------- calendar ---------- */
+// v32: one record per day. The first look builds it; after that the month costs one read per day, not per clip.
+{
+  const cost = async (fn) => { const b = { ...store._ops }; const r = await fn(); return { r, read: store._ops.read - b.read, list: store._ops.list - b.list }; };
+  const m0 = await cost(() => call("GET", "days?month=" + day.slice(0, 7), null, W.t));
+  const m1 = await cost(() => call("GET", "days?month=" + day.slice(0, 7), null, W.t));
+  assert.deepEqual(m1.r.data, { ...m0.r.data }, "the same calendar either way");
+  assert.ok(store._m.has(`daysum/${cid}/${day}`));
+  const clipsThatDay = m0.r.data.days[day].clips.length, people = new Set(m0.r.data.days[day].clips.map((c) => c.pid)).size;
+  assert.ok(clipsThatDay >= 3);
+  assert.equal(m1.list, 2); assert.equal(m1.read, 1 + 1 + people, "me, the day's record, and the people in it (the session is remembered)");
+  // a retake changes the record (same key, new etag)
+  const before = m1.r.data.days[day].clips.find((c) => c.pid === T.id && c.r === 1).at;
+  await upload(T.t, { size: 40_000 });
+  const m2 = (await call("GET", "days?month=" + day.slice(0, 7), null, W.t)).data;
+  assert.ok(m2.days[day].clips.find((c) => c.pid === T.id && c.r === 1).at > before, "the retake shows");
+  assert.equal(m2.days[day].clips.length, clipsThatDay);
+}
 let cal = (await call("GET", "days?month=2026-11", null, W.t)).data;
 assert.equal(cal.month, "2026-11"); assert.equal(cal.today, day);
 assert.deepEqual(Object.keys(cal.days), [day]);
@@ -162,7 +179,7 @@ assert.equal([...store._m.keys()].some((k) => k.includes(K.id) && /^(clip|thumb|
 // when the last person leaves, the cave's clips go with it
 await call("POST", "cave", { action: "leave" }, W.t);
 await call("POST", "cave", { action: "leave" }, T.t);
-assert.equal([...store._m.keys()].some((k) => k.includes(cid) && /^(clip|thumb|clipmeta|myclip)\//.test(k)), false);
+assert.equal([...store._m.keys()].some((k) => k.includes(cid) && /^(clip|thumb|clipmeta|myclip|daysum|ver|chatlast)\//.test(k)), false);
 
 // The real Blobs library (8.2.0) ignores onlyIfNew: a ring must still go out only once.
 {

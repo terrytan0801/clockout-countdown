@@ -13,7 +13,7 @@ const webpush = {
 const store = memStore();
 const now = () => Date.now() + Number(process.env.SHIFT_MS || 0);
 const seedMod = process.env.SEED ? await import("./seed.mjs") : null;
-const handle = makeHandler({ store, webpush, now, ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}) });
+const handle = makeHandler({ store, webpush, now, dev: process.env.DEV === "1", cache: {}, ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}) });
 if (seedMod) await seedMod.seed(store, now());
 const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 const root = new URL("../public/", import.meta.url).pathname;

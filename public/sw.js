@@ -1,20 +1,35 @@
 // Clock-out Countdown service worker: receives zaps (push) and keeps the app installable.
-const VERSION = "v31.0";
+const VERSION = "v32.0";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
-// Network first. If the phone is offline, show a plain note instead of the browser's error page.
+// The app's own files (page, styles, monsters, icons) are fetched from the network and a copy is kept.
+// If the network is down, or the page takes more than 4 seconds, the kept copy is used, so the app still opens.
+// Nothing under /api is ever kept here.
+const SHELL = "shell-v1";
+const keep = async (req, res) => { if (res && res.ok && res.type === "basic") (await caches.open(SHELL)).put(req, res.clone()); return res; };
+const offlineNote = () => new Response(
+  "<!doctype html><meta name=viewport content='width=device-width'><body style='font-family:system-ui;padding:24px'>You're offline. Open Clock-out again when you're back online.</body>",
+  { headers: { "content-type": "text/html; charset=utf-8" } });
 self.addEventListener("fetch", (e) => {
-  if (e.request.mode !== "navigate") return;
-  e.respondWith(
-    fetch(e.request).catch(
-      () => new Response(
-        "<!doctype html><meta name=viewport content='width=device-width'><body style='font-family:system-ui;padding:24px'>You're offline. Open Clock-out again when you're back online.</body>",
-        { headers: { "content-type": "text/html; charset=utf-8" } }
-      )
-    )
-  );
+  const req = e.request, url = new URL(req.url);
+  if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/.netlify/") || url.pathname.startsWith("/admin")) return;
+  const nav = req.mode === "navigate";
+  const key = nav ? "/" : req; // every way into the app is the same page
+  e.respondWith((async () => {
+    const cached = () => caches.match(key, { ignoreSearch: nav });
+    const net = fetch(req).then((res) => keep(key, res));
+    try {
+      if (!nav) return await net;
+      const slow = new Promise((ok) => setTimeout(ok, 4000, null));
+      const first = await Promise.race([net, slow]);
+      if (first) return first;
+      return (await cached()) || (await net);
+    } catch (err) {
+      return (await cached()) || (nav ? offlineNote() : Response.error());
+    }
+  })());
 });
 
 self.addEventListener("push", (e) => {

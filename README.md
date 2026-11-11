@@ -1,4 +1,4 @@
-# Clock-out Countdown · v31.0
+# Clock-out Countdown · v32.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -108,3 +108,24 @@ public/admin.html           admin page (/admin)
 test/api.test.mjs, test/powers.test.mjs, test/clips.test.mjs   npm test: API, power and calendar checks against an in-memory store
 test/dev-server.mjs         local preview with a fake store: node test/dev-server.mjs (SEED=1 adds demo data; SEED_CLIPS=<folder> adds calendar clips)
 ```
+
+## Speed and saving reads (v32)
+
+- **"Still the same?"** Each cave has a version (`ver/<cid>`) that changes whenever something its board shows changes. Phones send the version they have (`/api/state?v=…`); if it matches, the server answers `{same:true}` after one small read instead of re-reading the whole cave. The version also changes by itself each day, at each ring and every 10 minutes.
+- **Chat** keeps the newest message's id in `chatlast/<cid>`, so "anything new?" doesn't list the chat.
+- **Calendar** keeps one record per day (`daysum/<cid>/<day>`). It rebuilds itself when a clip is added, retaken or deleted (it compares the clips' etags).
+- **Zap and chat show at once** on the phone and are sent in the background; they are undone with a message if the server can't be reached.
+- **Saved board.** The last board a phone saw today is kept on the phone, so the app opens straight away and still opens offline (marked "Offline · retrying"). The service worker keeps a copy of the app's own files for that; nothing under `/api` is kept.
+- A warm server remembers sessions for a minute and the push keys for as long as it lives. Logging out is still immediate.
+- Functions ask to run in Singapore (`region: "sin"`), next to the data. `GET /api/where` shows the region actually used.
+
+## Test site (dev branch)
+
+Work goes to the `dev` branch first. With Netlify branch deploys turned on for `dev`, it is served at `https://dev--<site>.netlify.app`, which doesn't use deploy credits. The test site:
+
+- keeps its own data (store `clockout-dev`), so nothing done there touches the real caves; sign up again there;
+- installs as its own app, "Clockout DEV", with a red DEV band on the icon and a red DEV pill on screen;
+- lets you film at any time, and **Ring now** sends the film-time notification to your test cave;
+- doesn't run the scheduled jobs (rings, rain alerts), because Netlify only runs those on the live site.
+
+Merging `dev` into `main` is what updates the live app (one deploy, 15 credits).

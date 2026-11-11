@@ -17,6 +17,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<script>
+// The test site (dev--<site>.netlify.app) installs as its own app with its own name, so it can't be mixed up with the real one.
+var IS_DEV=/^(?!main--)[a-z0-9-]+--/.test(location.hostname);
+if(IS_DEV){
+  document.querySelector('link[rel="manifest"]').href="/manifest-dev.webmanifest";
+  document.querySelector('link[rel="apple-touch-icon"]').href="/icons/dev-apple-touch-icon.png";
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content="Clockout DEV";
+  document.documentElement.classList.add("dev");
+}
+</script>
 <link rel="stylesheet" href="/monsters.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
@@ -65,6 +75,12 @@ button{font:inherit;color:inherit;-webkit-user-select:none;user-select:none}
 
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .htext{display:flex;flex-direction:column;gap:2px;min-width:0}
+.devpill{display:none}
+html.dev .devpill{display:flex;position:fixed;left:10px;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:35;align-items:center;gap:8px;
+  background:#b3261e;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.08em;padding:6px 6px 6px 10px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.devpill button{font:inherit;letter-spacing:.04em;color:#b3261e;background:#fff;border:0;border-radius:999px;padding:6px 10px;cursor:pointer}
+.devpill button:disabled{opacity:.6}
+.bubble.pending{opacity:.55}
 .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);line-height:1.05;margin:0;text-wrap:balance;overflow-wrap:anywhere}
 .now{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -660,7 +676,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v31.0</span>
+    <span>v32.0</span>
   </div>
 </div>
 
@@ -941,6 +957,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="devpill" data-html2canvas-ignore><span>DEV · test site</span><button type="button" id="devRing">Ring now</button></div>
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
 <script src="/monsters.js"></script>
@@ -954,6 +971,7 @@ const HAPPY_SUB=["go enjoy your evening","dinner is calling","bubble tea time","
 const OT_BIG=["Finally free!","Escaped!","Made it out!","Survived!"];
 const QUIPS_NEAR=["Packing up","Final sprint","Looking busy","Eyes on the door"];
 const QUIPS_OT=["hang in there","the grind goes on","boss owes you dinner","send snacks"];
+const LS_SUBSENT="clockout.subsent";
 const LS_TOKEN="clockout.token", SS_JOIN="clockout.join";
 
 const $=id=>document.getElementById(id);
@@ -1019,9 +1037,22 @@ function members(){
   if(!S||!S.cave) return [];
   return S.cave.members.map(p=>({...p,c:colorVar(p.color),cs:softVar(p.color)}));
 }
-function applyState(d){
+const LS_STATE="clockout.state";
+const pendingZaps={}; // zaps shown on screen that the server hasn't confirmed yet
+function saveState(){try{lsSet(LS_STATE,JSON.stringify({t:token,s:S}));}catch(e){}}
+// The last board this phone saw today, so the app opens without waiting for the server.
+function savedState(){
+  try{
+    const c=JSON.parse(lsGet(LS_STATE)||"null");
+    if(!c||c.t!==token||!c.s||!c.s.me) return null;
+    const p=sgParts(Date.now());
+    return c.s.day===`${p.year}-${p.month}-${p.day}`?c.s:null;
+  }catch(e){return null;}
+}
+function applyState(d,fromCache){
   const prevCave=S&&S.cave&&S.cave.id;
-  S=d;offset=d.now-Date.now();
+  S=d;if(!fromCache){offset=d.now-Date.now();saveState();}
+  if(S.cave) for(const pid in pendingZaps) S.cave.zaps[pid]=pendingZaps[pid];
   $("offline").hidden=true;
   if(!S.cave&&view!=="board") view="board";
   if((S.cave&&S.cave.id)!==prevCave){resetChat();prevLaneState={};seenRoars=null;}
@@ -1050,7 +1081,12 @@ const awake=()=>document.visibilityState==="visible"&&!asleep;
 setInterval(()=>{if(awake()) ping(false);},60000);
 async function refresh(){
   if(!token||!S) return;
-  try{applyState(await api("state"));}
+  try{
+    // "Still the same?" The server answers with one small read when nothing in the cave changed.
+    const d=await api("state"+(S.v?"?v="+encodeURIComponent(S.v):""));
+    if(d.same){offset=d.now-Date.now();$("offline").hidden=true;}
+    else applyState(d);
+  }
   catch(e){if(e.status!==401) $("offline").hidden=false;}
 }
 function renderChrome(){
@@ -1215,18 +1251,26 @@ function zapMessage(p){
   if(state==="ot") return `${Math.floor((nowSec-offSec)/60)} mins of OT already. Go home!`;
   return "You're off! Go enjoy your evening.";
 }
+// The zap shows at once (flash, buzz, cooldown); the server is told in the background, and it's undone if that fails.
 async function zap(p,el,btn){
   btn.disabled=true;
+  const had=S.cave.zaps[p.id];
+  const undo=()=>{delete pendingZaps[p.id];if(S&&S.cave){if(had) S.cave.zaps[p.id]=had;else delete S.cave.zaps[p.id];}};
+  pendingZaps[p.id]=S.cave.zaps[p.id]=clockNow();
+  el.classList.remove("zapped");void el.offsetWidth;el.classList.add("zapped");
+  setTimeout(()=>el.classList.remove("zapped"),800);
+  if(navigator.vibrate) navigator.vibrate(30);
+  toast(`Zapped ${p.name}! ⚡`);tick();
   try{
     const d=await api("zap",{to:p.id,message:zapMessage(p)});
-    S.cave.zaps[p.id]=d.at;
-    el.classList.remove("zapped");void el.offsetWidth;el.classList.add("zapped");
-    setTimeout(()=>el.classList.remove("zapped"),800);
-    if(navigator.vibrate) navigator.vibrate(30);
-    toast(d.sent<1?`${p.name} hasn't turned on zaps yet, so nothing buzzed.`
-      :d.buzz?`Zapped ${p.name}! Their phone is buzzing ⚡`:`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);
+    delete pendingZaps[p.id];
+    if(S&&S.cave) S.cave.zaps[p.id]=d.at;
+    if(d.sent<1) toast(`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
+    else if(!d.buzz) toast(`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);
   }catch(e){
-    if(e.status===429&&e.data.retryInMs){S.cave.zaps[p.id]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
+    undo();
+    if(e.status===429&&e.data.retryInMs){if(S&&S.cave) S.cave.zaps[p.id]=clockNow()-(S.cooldownMs-e.data.retryInMs);toast(`Wait ${mmss(e.data.retryInMs)} before zapping ${p.name} again.`);}
+    else if(!e.status) toast(`Couldn't reach the server, so ${p.name} wasn't zapped. Try again.`,4500);
     else if(e.status!==401) toast(e.message);
   }finally{tick();}
 }
@@ -1270,7 +1314,7 @@ $("tabDays").addEventListener("click",()=>setView("days"));
 const readKey=()=>`clockout.read.${S.cave.id}`;
 function markRead(){
   if(!S||!S.cave) return;
-  const last=Math.max(chatMsgs.length?chatMsgs[chatMsgs.length-1].at:0,(S.cave.chatLatest&&S.cave.chatLatest.at)||0);
+  const last=Math.max(chatMsgs.reduce((n,m)=>m.pending?n:Math.max(n,m.at),0),(S.cave.chatLatest&&S.cave.chatLatest.at)||0);
   if(last) lsSet(readKey(),String(last));
   if(view==="chat"&&last>lastReadSent){lastReadSent=last;api("chat/read",{at:last}).catch(()=>{});}
   updateUnread();
@@ -1286,11 +1330,12 @@ async function loadChat(first){
   if(!S||!S.cave||chatBusy) return;
   chatBusy=true;
   try{
-    const d=await api("chat"+(chatAfter?`?after=${chatAfter-1}`:""));
+    const real=chatMsgs.filter(m=>!m.pending), lastReal=real[real.length-1];
+    const d=await api("chat"+(chatAfter?`?after=${chatAfter-1}`+(lastReal?`&last=${lastReal.id}`:""):""));
     const fresh=d.messages.filter(m=>!chatMsgs.some(x=>x.id===m.id));
     if(fresh.length||first){
-      chatMsgs=chatMsgs.concat(fresh).sort((a,b)=>a.at-b.at).slice(-200);
-      if(chatMsgs.length) chatAfter=chatMsgs[chatMsgs.length-1].at;
+      chatMsgs=chatMsgs.concat(fresh).sort((a,b)=>(a.pending?1:0)-(b.pending?1:0)||a.at-b.at).slice(-200);
+      chatAfter=chatMsgs.reduce((n,m)=>m.pending?n:Math.max(n,m.at),chatAfter);
       renderChat(first);
     }
     if(view==="chat") markRead();
@@ -1329,12 +1374,12 @@ function renderChat(forceBottom){
       const t=document.createElement("time");const p=sgParts(m.at);t.textContent=fmt12(+p.hour%24,+p.minute);
       meta.append(b,t);body.appendChild(meta);group.appendChild(body);list.appendChild(group);
     }
-    const bub=document.createElement("div");bub.className="bubble";bub.textContent=m.text;
+    const bub=document.createElement("div");bub.className="bubble"+(m.pending?" pending":"");bub.textContent=m.text;
     group.querySelector(".mg-body").appendChild(bub);
     lastPid=m.pid;lastAt=m.at;
   });
   if(S.cave.seen){ // Cyclo Lv2: who has read the latest message
-    const last=chatMsgs[chatMsgs.length-1];
+    const last=chatMsgs.filter(m=>!m.pending).pop()||chatMsgs[chatMsgs.length-1];
     const who=members().filter(p=>p.id!==last.pid&&p.id!==S.me.id&&(S.cave.seen[p.id]||0)>=last.at).map(p=>p.name);
     if(who.length){const sn=document.createElement("div");sn.className="seen";sn.textContent=`Seen by ${who.join(", ")}`;list.appendChild(sn);}
   }
@@ -1344,16 +1389,23 @@ $("composer").addEventListener("submit",async e=>{
   e.preventDefault();
   const input=$("chatInput"), text=input.value.trim();
   if(!text) return;
-  const btn=$("chatSend");btn.disabled=true;
+  // The message shows at once (faded until the server has it) and the box is free for the next one.
+  const tmp={id:"tmp-"+Date.now()+Math.random(),pid:S.me.id,name:S.me.name,color:S.me.color,monster:S.me.monster,text,at:clockNow(),pending:true};
+  chatMsgs.push(tmp);input.value="";renderChat(true);input.focus();
+  const drop=()=>{chatMsgs=chatMsgs.filter(x=>x!==tmp);};
   try{
     const d=await api("chat",{text});
-    input.value="";
+    drop();
     if(!chatMsgs.some(x=>x.id===d.message.id)) chatMsgs.push(d.message);
+    chatMsgs.sort((a,b)=>(a.pending?1:0)-(b.pending?1:0)||a.at-b.at);
     chatAfter=Math.max(chatAfter,d.message.at);
-    S.cave.chatLatest={at:d.message.at,pid:S.me.id};
+    if(S&&S.cave) S.cave.chatLatest={at:d.message.at,pid:S.me.id};
     renderChat(true);markRead();
-  }catch(ex){if(ex.status!==401) toast(ex.message);}
-  finally{btn.disabled=false;input.focus();}
+  }catch(ex){
+    drop();renderChat(true);
+    if(!input.value) input.value=text; // give the words back
+    if(ex.status!==401) toast(ex.status?ex.message:"Couldn't send that. Check your connection and try again.",4500);
+  }
 });
 
 /* ================= lobby ================= */
@@ -1464,7 +1516,7 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
+  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearInterval(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
@@ -1621,7 +1673,10 @@ async function currentSub(){if(!swReg||!pushSupported) return null;try{return aw
 async function syncSubscription(){
   if(!token||!pushSupported||Notification.permission!=="granted") return;
   const sub=await currentSub(); if(!sub) return;
-  try{await api("subscribe",{subscription:sub.toJSON()});}catch(e){}
+  const j=sub.toJSON(), sig=[token.slice(0,12),j.endpoint,j.keys&&j.keys.p256dh,j.keys&&j.keys.auth].join("|");
+  let sent=null;try{sent=JSON.parse(lsGet(LS_SUBSENT)||"null");}catch(e){}
+  if(sent&&sent.sig===sig&&Date.now()-sent.at<3*864e5) return; // the server already has it (re-checked every 3 days)
+  try{await api("subscribe",{subscription:j});lsSet(LS_SUBSENT,JSON.stringify({sig,at:Date.now()}));}catch(e){}
 }
 async function enableZaps(){
   const btn=$("bannerBtn");btn.disabled=true;
@@ -2034,7 +2089,7 @@ async function loadDays(m){
   if(!S||!S.cave) return;
   const now=S.day.slice(0,7);
   calMonth=m||calMonth||now;if(calMonth>now) calMonth=now;
-  try{const d=await api("days?month="+calMonth);if(d.month===calMonth){calData=d;renderCal();}}
+  try{const d=await api("days?month="+calMonth);d._at=Date.now();if(d.month===calMonth){calData=d;renderCal();}}
   catch(e){$("daysHint").textContent=e.message;}
 }
 function renderCal(){
@@ -2557,9 +2612,11 @@ async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
 let dayCtx=null, making=null, playing=null;
 async function openDay(day){
   if(!S||!S.cave) return;
-  let d;
-  try{d=await api("days?month="+day.slice(0,7));}catch(e){toast(e.message);return;}
-  if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
+  let d=calData&&calData.month===day.slice(0,7)&&calData.days[day]&&Date.now()-calData._at<30000?calData:null;
+  if(!d){
+    try{d=await api("days?month="+day.slice(0,7));d._at=Date.now();}catch(e){toast(e.message);return;}
+    if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
+  }
   const info=d.days[day];
   if(!info||!info.clips.length){toast("No clips that day yet.");return;}
   stopPlayer();cancelMake();
@@ -2953,14 +3010,27 @@ function showSplashForAuth(mode){
 }
 async function bootLoad(){
   $("loadingText").textContent="Loading your cave";$("retryBtn").hidden=true;
-  try{applyState(await api("state"));hideSplash();}
+  // Show the board this phone last saw straight away; the server's answer replaces it when it arrives.
+  const saved=!S&&savedState();
+  if(saved){try{applyState(saved,true);hideSplash();}catch(e){S=null;}}
+  try{
+    if(S){await refresh();if(!$("offline").hidden) throw new Error("offline");}
+    else{applyState(await api("state"));hideSplash();}
+  }
   catch(e){
     if(e.status===401) return; // signedOut() already put the log-in card up
+    if(S) return; // the saved board is up and marked Offline; the 15-second refresh keeps trying
     $("loadingText").textContent="Can't reach the server. Retrying";$("retryBtn").hidden=false;
     bootRetry=setTimeout(bootLoad,4000);
   }
 }
 $("retryBtn").addEventListener("click",()=>{clearTimeout(bootRetry);bootLoad();});
+$("devRing").addEventListener("click",async e=>{
+  const b=e.currentTarget;b.disabled=true;
+  try{const d=await api("dev/ring",{});toast(d.sent?`Rang ${d.sent} ${d.sent===1?"phone":"phones"}. You can film any time on the test site.`:"No phone in this cave has notifications on. You can still film.",4500);refresh();}
+  catch(ex){if(ex.status!==401) toast(ex.message);}
+  finally{b.disabled=false;}
+});
 
 renderChrome();
 if(token) bootLoad();
