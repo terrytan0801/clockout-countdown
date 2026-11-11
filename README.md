@@ -1,4 +1,4 @@
-# Clock-out Countdown · v38.0
+# Clock-out Countdown · v39.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -142,6 +142,11 @@ Each person sets when they **start work** as well as when they clock out (accoun
 ## Waiting on a save (v37)
 
 Every button shrinks a little the moment it's pressed. When a save takes longer than 0.3 seconds, a card pops up with your own monster busy at its laptop and papers flying out, saying what it's doing (Saving…, Joining…, Logging you in…). It stays at least half a second once shown, so it never flickers, and the pressed button can't be pressed again meanwhile. Zap, chat Send and reactions don't use it: they already show their result at once.
+
+## Chat speed (v39)
+
+- **Asks more often while people are talking.** With the chat open, the phone asks for new messages every 1.5 seconds while someone has written in the last minute (or you're typing), every 3 seconds after a quiet minute, and every 6 seconds after five quiet minutes. An "anything new?" costs two small reads; Sleep stops it altogether.
+- **Kept on the phone.** The last 60 messages and their reactions are kept on the phone (`clockout.chat`, for the same person and cave), so after a restart the chat shows at once and only newer messages are fetched.
 
 ## Test site (dev branch)
 

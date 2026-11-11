@@ -718,7 +718,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v38.0</span>
+    <span>v39.0</span>
   </div>
 </div>
 
@@ -1421,9 +1421,45 @@ let lastReadSent=0;
 function setView(v){
   closeReact();view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
   if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
-  clearInterval(chatTimer);chatTimer=null;
-  if(v==="chat"){loadChat(true);chatTimer=setInterval(()=>{if(awake()) loadChat();},3000);setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);}
+  clearTimeout(chatTimer);chatTimer=null;
+  if(v==="chat"){
+    if(restoreChat()) renderChat(true); // the messages this phone already has show at once
+    loadChat(true);scheduleChat();setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);
+  }
 }
+/* ---------- chat: kept on the phone, and asked for more often while people are talking ---------- */
+const LS_CHAT="clockout.chat";
+let saveChatT=null, lastTyped=0;
+function saveChat(){
+  clearTimeout(saveChatT);
+  saveChatT=setTimeout(()=>{
+    if(!S||!S.cave) return;
+    const msgs=chatMsgs.filter(m=>!m.pending).slice(-60), reacts={};
+    msgs.forEach(m=>{if(chatReacts[m.id]) reacts[m.id]=chatReacts[m.id];});
+    try{lsSet(LS_CHAT,JSON.stringify({u:S.me.id,cid:S.cave.id,msgs,reacts,rv:chatRv}));}catch(e){}
+  },300);
+}
+// After the app restarts, pick up the messages kept on the phone (only for the same person and cave).
+function restoreChat(){
+  if(chatMsgs.length||!S||!S.cave) return false;
+  let c=null;try{c=JSON.parse(lsGet(LS_CHAT)||"null");}catch(e){}
+  if(!c||c.u!==S.me.id||c.cid!==S.cave.id||!Array.isArray(c.msgs)||!c.msgs.length) return false;
+  chatMsgs=c.msgs;chatReacts=c.reacts||{};chatRv=c.rv||null;
+  chatAfter=chatMsgs.reduce((n,m)=>Math.max(n,m.at),0);
+  return true;
+}
+// How long until we ask again: 1.5 s while people are talking (or you're typing), 3 s after a quiet minute, 6 s after five.
+function chatDelay(){
+  const newest=chatMsgs.reduce((n,m)=>m.pending?n:Math.max(n,m.at||0),0);
+  const quiet=clockNow()-Math.max(newest,lastTyped);
+  return quiet<60e3?1500:quiet<300e3?3000:6000;
+}
+function scheduleChat(){
+  clearTimeout(chatTimer);chatTimer=null;
+  if(view!=="chat") return;
+  chatTimer=setTimeout(async()=>{chatTimer=null;if(awake()) await loadChat();scheduleChat();},chatDelay());
+}
+$("chatInput").addEventListener("input",()=>{const was=chatDelay();lastTyped=clockNow();if(was>1500) scheduleChat();});
 $("tabBoard").addEventListener("click",()=>setView("board"));
 $("tabChat").addEventListener("click",()=>setView("chat"));
 $("tabDays").addEventListener("click",()=>setView("days"));
@@ -1455,6 +1491,7 @@ async function loadChat(first){
       chatMsgs=chatMsgs.concat(fresh).sort((a,b)=>(a.pending?1:0)-(b.pending?1:0)||a.at-b.at).slice(-200);
       chatAfter=chatMsgs.reduce((n,m)=>m.pending?n:Math.max(n,m.at),chatAfter);
       renderChat(first);
+      saveChat();
     }
     if(view==="chat") markRead();
   }catch(e){}
@@ -1531,7 +1568,7 @@ $("composer").addEventListener("submit",async e=>{
     chatMsgs.sort((a,b)=>(a.pending?1:0)-(b.pending?1:0)||a.at-b.at);
     chatAfter=Math.max(chatAfter,d.message.at);
     if(S&&S.cave) S.cave.chatLatest={at:d.message.at,pid:S.me.id};
-    renderChat(true);markRead();
+    renderChat(true);markRead();saveChat();scheduleChat();
   }catch(ex){
     drop();renderChat(true);
     if(!input.value) input.value=text; // give the words back
@@ -1571,7 +1608,7 @@ async function react(id,emoji){
   if(emoji) mineNow[S.me.id]=emoji;else delete mineNow[S.me.id];
   chatReacts={...chatReacts,[id]:mineNow};if(!Object.keys(mineNow).length) delete chatReacts[id];
   renderChat();reactBusy++;
-  try{const d=await api("chat/react",{id,emoji});chatReacts=d.reactions;chatRv=d.rv;}
+  try{const d=await api("chat/react",{id,emoji});chatReacts=d.reactions;chatRv=d.rv;saveChat();}
   catch(e){chatReacts=before;if(e.status!==401) toast(e.status?e.message:"Couldn't react. Check your connection and try again.");}
   finally{reactBusy--;renderChat();}
 }
@@ -1704,8 +1741,8 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
-  clearInterval(chatTimer);chatTimer=null;
+  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
+  clearTimeout(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
   $("banner").hidden=true;$("newsSheet").hidden=true;renderChrome();updatePeek();
