@@ -9,4 +9,4 @@ export default async () => {
   console.log("rain alerts", JSON.stringify(result));
 };
 
-export const config = { schedule: "*/15 * * * *", region: "sin" };
+export const config = { schedule: "*/15 * * * *" };

@@ -117,7 +117,7 @@ test/dev-server.mjs         local preview with a fake store: node test/dev-serve
 - **Zap and chat show at once** on the phone and are sent in the background; they are undone with a message if the server can't be reached.
 - **Saved board.** The last board a phone saw today is kept on the phone, so the app opens straight away and still opens offline (marked "Offline · retrying"). The service worker keeps a copy of the app's own files for that; nothing under `/api` is kept.
 - A warm server remembers sessions for a minute and the push keys for as long as it lives. Logging out is still immediate.
-- Functions ask to run in Singapore (`region: "sin"`), next to the data. `GET /api/where` shows the region actually used.
+- The functions run in Netlify's default region (US East); the data is in Singapore. Choosing the functions' region needs Netlify Pro (setting it in code makes the deploy fail on other plans). `GET /api/where` shows the region in use.
 
 ## Test site (dev branch)
 

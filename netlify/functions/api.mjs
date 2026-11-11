@@ -13,5 +13,5 @@ export default async (req, context) => {
   return makeApp({ store, webpush, adminKey: process.env.ADMIN_KEY || null, dev, cache: caches[dev ? "dev" : "live"], region: process.env.AWS_REGION || null }).handle(req, context);
 };
 
-// Run next to the data (Singapore) so each read doesn't cross the Pacific. Ignored on plans without region selection.
-export const config = { path: "/api/*", region: "sin" };
+// No region here: choosing the functions' region needs Netlify Pro, and on other plans the deploy fails.
+export const config = { path: "/api/*" };

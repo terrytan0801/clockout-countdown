@@ -9,4 +9,4 @@ export default async () => {
   console.log("film ring", JSON.stringify(result));
 };
 
-export const config = { schedule: "*/5 * * * *", region: "sin" };
+export const config = { schedule: "*/5 * * * *" };
