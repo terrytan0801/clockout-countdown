@@ -327,6 +327,12 @@ body.booting{overflow:hidden}
 .clock i{position:absolute;left:50%;bottom:50%;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--ink);transform-origin:50% 100%}
 .clock .hh{height:12px;animation:spin 12s linear infinite}.clock .mm{height:17px;animation:spin 1.2s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* v37: every button answers the moment it's pressed, and shows a spinner while the server works */
+button:not(:disabled):active{transform:scale(.96)}
+button{transition:transform .08s ease}
+button.busy{pointer-events:none;opacity:.8}
+button.busy::before{content:"";display:inline-block;width:.85em;height:.85em;margin-right:.45em;vertical-align:-.1em;
+  border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
 .win{position:absolute;right:6%;top:12px;width:76px;height:54px;border-radius:8px;background:#1d2a44;border:3px solid var(--line);overflow:hidden}
 .win::before{content:"";position:absolute;right:14px;top:9px;width:18px;height:18px;border-radius:50%;background:#ffd23f;box-shadow:-6px -3px 0 0 #1d2a44 inset}
 .win i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;animation:twinkle 1.6s ease-in-out infinite}
@@ -696,7 +702,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v36.0</span>
+    <span>v37.0</span>
   </div>
 </div>
 
@@ -1057,7 +1063,19 @@ function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;
   if(q.get("film")){ssSet("clockout.film","1");history.replaceState(null,"","/");}
 })();
 
+// The button that was just pressed. A save it starts shows a spinner on that button until the server answers.
+// (Zap, chat Send and reactions already show their result at once, so they don't need one.)
+let pressed=null;
+const NO_SPIN="#chatSend,.lbtn.zap,#rxPick button";
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button");pressed=b&&!b.matches(NO_SPIN)?{b,t:Date.now()}:null;},true);
+document.addEventListener("submit",e=>{const b=e.submitter||e.target.querySelector('button[type="submit"],button:not([type])');if(b&&!b.matches(NO_SPIN)) pressed={b,t:Date.now()};},true);
 async function api(path,body,method){
+  let spin=null;
+  if(body&&pressed&&Date.now()-pressed.t<1500){spin=pressed.b;pressed=null;spin.classList.add("busy");spin.setAttribute("aria-busy","true");}
+  try{return await apiCall(path,body,method);}
+  finally{if(spin){spin.classList.remove("busy");spin.removeAttribute("aria-busy");}}
+}
+async function apiCall(path,body,method){
   const headers={};
   if(token) headers.authorization="Bearer "+token;
   if(body) headers["content-type"]="application/json";

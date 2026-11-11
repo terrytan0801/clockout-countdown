@@ -1,4 +1,4 @@
-# Clock-out Countdown · v36.0
+# Clock-out Countdown · v37.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
