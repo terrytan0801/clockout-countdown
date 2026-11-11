@@ -562,6 +562,9 @@ body.sleeping *{animation-play-state:paused!important}
 .cbub.r{flex-direction:row-reverse}
 .cbub .mon{width:46px!important;height:46px!important;flex:none}
 .cbub span{background:var(--bc);border-radius:12px;padding:7px 10px;font-size:13px}
+.panel-art .cbub .bw{align-items:flex-start}
+.panel-art .cbub .rx{background:var(--card);padding:2px 7px;font-size:11px;margin:-5px 0 0 8px;border-radius:999px}
+.panel-art .cbub .rx .e{background:none;padding:0;font-size:13px}
 .cdots{display:flex;gap:6px}
 .cdots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .cdots i.on{background:var(--ink)}
@@ -693,7 +696,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v35.0</span>
+    <span>v36.0</span>
   </div>
 </div>
 
@@ -2886,6 +2889,15 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v35-lunch",v:"v32.0–35.0",at:"2026-11-11T12:37",title:"Lunch, reactions and a faster app",changes:[
+    "Set when you start work: your bar fills from then, and before it your card says Not in yet.",
+    "Set a lunch break: your card says Lunch and your monster eats.",
+    "Hold a chat message to react with 👍 ❤️ 😂 😮 😢 🙏, or copy it.",
+    "Zaps and messages show at once, the app opens straight away, and clips you've watched are kept on your phone."],panels:[
+    {art:"hours",title:"Your hours",text:"Tap your name and set Start work. Your bar fills from then, so mornings aren't stuck at 0%."},
+    {art:"lunch",title:"Lunch time!",text:"Set a lunch break and your monster eats while you do. Film ring at lunch? Show us your food."},
+    {art:"react",title:"React like WhatsApp",text:"Hold a message, pick an emoji. Tap the little bubble to see who reacted."},
+    {art:"fast",title:"Faster everything",text:"Zaps and messages show at once, and a day you've watched plays straight from your phone."}]},
   {id:"v24-holidays",v:"v24.0",at:"2026-11-09T10:05",title:"Holidays and lofi music",changes:[
     "Public holidays: pick Singapore or Malaysia in your account; holidays show as Holiday and never break your streak.",
     "Taking today off in your account shows Day off on your card.",
@@ -3011,6 +3023,12 @@ function panelArt(kind){
     case "dayoff":{const c=propEl("cal","prop");c.style.color="var(--c-teal)";add(monEl(me.monster,me.color,"dance"),c,burstEl("OFF",{top:"14px",right:"22px"}));break;}
     case "lofi":{const n=propEl("note","prop shake");n.style.color="var(--c-violet)";add(monEl(me.monster,me.color,"dance"),n,burstEl("♪ lofi",{top:"14px",left:"18px"}));break;}
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
+    case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
+    case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
+    case "react":{const w=document.createElement("div");w.className="cbub";w.appendChild(small(crew[0]));
+      const col=document.createElement("div");col.className="bw";const t=document.createElement("span");t.textContent="Leaving at 5!";t.style.setProperty("--bc",softVar(crew[0].color));
+      const rx=document.createElement("span");rx.className="rx";rx.innerHTML='<span class="e">😂</span><span class="e">❤️</span> 3';col.append(t,rx);w.appendChild(col);add(w);break;}
+    case "fast":{const z=propEl("bolt","prop shake");z.style.color="var(--zap)";add(small(me),z,small(crew[0]),burstEl("ZOOM!",{top:"14px",left:"16px"}));break;}
     default:add(monEl(me.monster,me.color,"dance"),propEl("share"),burstEl("TA-DA!",{top:"16px",left:"20px"}));
   }
   return box;
