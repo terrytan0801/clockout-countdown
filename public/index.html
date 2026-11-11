@@ -330,9 +330,25 @@ body.booting{overflow:hidden}
 /* v37: every button answers the moment it's pressed, and shows a spinner while the server works */
 button:not(:disabled):active{transform:scale(.96)}
 button{transition:transform .08s ease}
-button.busy{pointer-events:none;opacity:.8}
-button.busy::before{content:"";display:inline-block;width:.85em;height:.85em;margin-right:.45em;vertical-align:-.1em;
-  border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+button.busy{pointer-events:none;opacity:.6}
+/* the wait: your monster busy at its laptop, papers flying */
+.busymon{position:fixed;left:50%;top:50%;z-index:45;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 22px 14px;border-radius:20px;background:var(--card);
+  border:2.5px solid var(--ink);box-shadow:0 12px 32px rgba(0,0,0,.25);transition:opacity .18s ease,transform .18s ease}
+.busymon.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.busymon .stage{position:relative;width:120px;height:96px;display:flex;justify-content:center;isolation:isolate}
+.busymon .mon{width:96px;height:96px}
+.busymon .paper{position:absolute;width:18px;height:22px;left:51px;top:66px;z-index:-1;opacity:0;animation:paperfly 1.5s ease-out infinite}
+.busymon .paper:nth-of-type(2){animation-delay:.5s}
+.busymon .paper:nth-of-type(3){animation-delay:1s}
+.busymon .paper svg{width:100%;height:100%}
+@keyframes paperfly{0%{transform:translate(0,0) rotate(0) scale(.6);opacity:0}25%{opacity:1}
+  100%{transform:translate(var(--dx,52px),-70px) rotate(var(--rot,40deg)) scale(1);opacity:0}}
+.busymon .paper:nth-of-type(2){--dx:-56px;--rot:-35deg}
+.busymon .paper:nth-of-type(3){--dx:6px;--rot:70deg}
+.busymon b{font:700 13px/1.2 var(--f-mono);letter-spacing:.04em;color:var(--ink)}
+.busymon b i{display:inline-block;width:1.4em;text-align:left;font-style:normal}
+@media (prefers-reduced-motion:reduce){.busymon .paper{animation:none;opacity:0}}
 .win{position:absolute;right:6%;top:12px;width:76px;height:54px;border-radius:8px;background:#1d2a44;border:3px solid var(--line);overflow:hidden}
 .win::before{content:"";position:absolute;right:14px;top:9px;width:18px;height:18px;border-radius:50%;background:#ffd23f;box-shadow:-6px -3px 0 0 #1d2a44 inset}
 .win i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;animation:twinkle 1.6s ease-in-out infinite}
@@ -998,6 +1014,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="busymon" id="busyMon" role="status" aria-live="polite" hidden><div class="stage" id="busyStage"></div><b id="busyText">Saving<i>…</i></b></div>
 <div class="rxpick" id="rxPick" role="menu" aria-label="React to this message" hidden></div>
 <div class="devpill" data-html2canvas-ignore><span>DEV · test site</span><button type="button" id="devRing">Ring now</button></div>
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
@@ -1064,16 +1081,47 @@ function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;
 })();
 
 // The button that was just pressed. A save it starts shows a spinner on that button until the server answers.
-// (Zap, chat Send and reactions already show their result at once, so they don't need one.)
+// (Zap, chat Send and reactions already show their result at once, so they don't need it.)
 let pressed=null;
 const NO_SPIN="#chatSend,.lbtn.zap,#rxPick button";
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button");pressed=b&&!b.matches(NO_SPIN)?{b,t:Date.now()}:null;},true);
 document.addEventListener("submit",e=>{const b=e.submitter||e.target.querySelector('button[type="submit"],button:not([type])');if(b&&!b.matches(NO_SPIN)) pressed={b,t:Date.now()};},true);
+// While a save takes more than a moment, your monster shows up busy at its laptop with papers flying.
+const PAPER='<span class="paper"><svg viewBox="0 0 18 22" aria-hidden="true"><path d="M1 1h11l5 5v15H1z" fill="var(--card)" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 9h9M4 13h9M4 17h6" stroke="var(--muted)" stroke-width="1.4" stroke-linecap="round"/></svg></span>';
+let busyN=0, busyShowT=null, busyAt=0, busyHideT=null;
+function busyWords(b){
+  const t=(b&&b.textContent||"").trim().toLowerCase();
+  if(/^save/.test(t)) return "Saving";
+  if(/log ?in/.test(t)) return "Logging you in";
+  if(/sign ?up|start|create/.test(t)) return "Setting things up";
+  if(/join/.test(t)) return "Joining";
+  if(/leave|delete|remove|kick/.test(t)) return "Updating";
+  return "Working on it";
+}
+function busyStart(b){
+  busyN++;clearTimeout(busyHideT);
+  if(busyN>1) return;
+  const words=busyWords(b);
+  busyShowT=setTimeout(()=>{ // quick saves (under 0.3 s) don't flash it
+    const me=S&&S.me?S.me:{monster:0,color:"orange"};
+    const stage=$("busyStage"), key=me.monster+"|"+me.color;
+    if(stage.dataset.k!==key){stage.dataset.k=key;stage.replaceChildren(monEl(me.monster,me.color,"work"));stage.insertAdjacentHTML("beforeend",PAPER+PAPER+PAPER);}
+    $("busyText").firstChild.nodeValue=words;
+    const el=$("busyMon");el.hidden=false;requestAnimationFrame(()=>el.classList.add("on"));busyAt=Date.now();
+  },300);
+}
+function busyEnd(){
+  busyN=Math.max(0,busyN-1);if(busyN) return;
+  clearTimeout(busyShowT);
+  const el=$("busyMon");if(el.hidden) return;
+  // once it shows, it stays long enough to be seen, then fades
+  busyHideT=setTimeout(()=>{el.classList.remove("on");setTimeout(()=>{if(!busyN) el.hidden=true;},200);},Math.max(0,450-(Date.now()-busyAt)));
+}
 async function api(path,body,method){
   let spin=null;
-  if(body&&pressed&&Date.now()-pressed.t<1500){spin=pressed.b;pressed=null;spin.classList.add("busy");spin.setAttribute("aria-busy","true");}
+  if(body&&pressed&&Date.now()-pressed.t<1500){spin=pressed.b;pressed=null;spin.classList.add("busy");spin.setAttribute("aria-busy","true");busyStart(spin);}
   try{return await apiCall(path,body,method);}
-  finally{if(spin){spin.classList.remove("busy");spin.removeAttribute("aria-busy");}}
+  finally{if(spin){spin.classList.remove("busy");spin.removeAttribute("aria-busy");busyEnd();}}
 }
 async function apiCall(path,body,method){
   const headers={};

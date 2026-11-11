@@ -137,6 +137,10 @@ Links are only handed to members of the cave (in `/api/days`). The Days tab also
 
 Each person sets when they **start work** as well as when they clock out (account sheet; 9 am until set). The bar fills from their own start time, and before it the card says "Not in yet · Starts at …" instead of sitting at 0%. An optional **lunch break** (start time and 30 min to 1½ hours) turns their card to "Lunch" and their monster eats a steaming bowl of noodles; if the film ring goes off during your lunch, the ring bar asks you to show your lunch.
 
+## Waiting on a save (v37)
+
+Every button shrinks a little the moment it's pressed. When a save takes longer than 0.3 seconds, a card pops up with your own monster busy at its laptop and papers flying out, saying what it's doing (Saving…, Joining…, Logging you in…). It stays at least half a second once shown, so it never flickers, and the pressed button can't be pressed again meanwhile. Zap, chat Send and reactions don't use it: they already show their result at once.
+
 ## Test site (dev branch)
 
 Work goes to the `dev` branch first. With Netlify branch deploys turned on for `dev`, it is served at `https://dev--<site>.netlify.app`, which doesn't use deploy credits. The test site:
