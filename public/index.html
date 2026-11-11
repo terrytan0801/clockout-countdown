@@ -204,6 +204,23 @@ body.calm .newsbtn .nmon{animation:none!important}
 .mg-meta b{color:var(--ink);font-family:var(--f-body);font-size:13px}
 .bubble{background:var(--cs0);color:var(--ink);padding:8px 12px;border-radius:14px;border-top-left-radius:5px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}
 .mg.mine .bubble{border-top-left-radius:14px;border-top-right-radius:5px}
+/* reactions (v33): hold a message to react, like WhatsApp */
+.bw{display:flex;flex-direction:column;align-items:flex-start;max-width:100%}
+.mg.mine .bw{align-items:flex-end}
+.bubble[data-id]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;cursor:default;transition:transform .12s ease}
+.bubble.held{transform:scale(.97)}
+.rx{margin:-6px 8px 0;position:relative;display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:999px;background:var(--card);
+  border:1px solid var(--line);font:600 12px/1.4 var(--f-mono);color:var(--muted);box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer}
+.rx .e{font-size:14px;line-height:1.2}
+.rx.mine{border-color:var(--ink)}
+.rxpick{position:fixed;z-index:50;display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;background:var(--card);
+  border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.18);animation:rxIn .14s ease-out}
+@keyframes rxIn{from{opacity:0;transform:translateY(6px) scale(.92)}to{opacity:1;transform:none}}
+.rxpick button{border:0;background:transparent;font-size:24px;line-height:1;width:40px;height:40px;border-radius:50%;cursor:pointer;padding:0}
+.rxpick button.on{background:var(--track)}
+.rxpick button:active{transform:scale(1.2)}
+@media (max-width:360px){.rxpick button{width:34px;height:34px;font-size:21px}}
+.rxpick .copy{font:700 12px/1 var(--f-mono);letter-spacing:.04em;color:var(--ink);width:auto;padding:0 10px;border-radius:999px;border-left:1px solid var(--line)}
 .composer{display:flex;flex-direction:row;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--card)}
 .composer input{flex:1;min-width:0}
 
@@ -676,7 +693,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v32.0</span>
+    <span>v33.0</span>
   </div>
 </div>
 
@@ -957,6 +974,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="rxpick" id="rxPick" role="menu" aria-label="React to this message" hidden></div>
 <div class="devpill" data-html2canvas-ignore><span>DEV · test site</span><button type="button" id="devRing">Ring now</button></div>
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
@@ -1299,11 +1317,11 @@ function gotZap(d){
 }
 
 /* ================= views & chat ================= */
-let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false;
-function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;$("chatList").replaceChildren();}
+let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false, chatReacts={}, chatRv=null;
+function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;chatReacts={};chatRv=null;closeReact();$("chatList").replaceChildren();}
 let lastReadSent=0;
 function setView(v){
-  view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
+  closeReact();view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
   if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
   clearInterval(chatTimer);chatTimer=null;
   if(v==="chat"){loadChat(true);chatTimer=setInterval(()=>{if(awake()) loadChat();},3000);setTimeout(()=>$("chatInput").focus({preventScroll:true}),50);}
@@ -1331,9 +1349,11 @@ async function loadChat(first){
   chatBusy=true;
   try{
     const real=chatMsgs.filter(m=>!m.pending), lastReal=real[real.length-1];
-    const d=await api("chat"+(chatAfter?`?after=${chatAfter-1}`+(lastReal?`&last=${lastReal.id}`:""):""));
+    const d=await api("chat"+(chatAfter?`?after=${chatAfter-1}`+(lastReal?`&last=${lastReal.id}`:"")+(chatRv?`&rv=${chatRv}`:""):""));
     const fresh=d.messages.filter(m=>!chatMsgs.some(x=>x.id===m.id));
-    if(fresh.length||first){
+    let rxChanged=false;
+    if(d.reactions&&!reactBusy){rxChanged=JSON.stringify(d.reactions)!==JSON.stringify(chatReacts);chatReacts=d.reactions;chatRv=d.rv;}
+    if(fresh.length||first||rxChanged){
       chatMsgs=chatMsgs.concat(fresh).sort((a,b)=>(a.pending?1:0)-(b.pending?1:0)||a.at-b.at).slice(-200);
       chatAfter=chatMsgs.reduce((n,m)=>m.pending?n:Math.max(n,m.at),chatAfter);
       renderChat(first);
@@ -1375,7 +1395,20 @@ function renderChat(forceBottom){
       meta.append(b,t);body.appendChild(meta);group.appendChild(body);list.appendChild(group);
     }
     const bub=document.createElement("div");bub.className="bubble"+(m.pending?" pending":"");bub.textContent=m.text;
-    group.querySelector(".mg-body").appendChild(bub);
+    const bw=document.createElement("div");bw.className="bw";bw.appendChild(bub);
+    if(!m.pending){
+      bub.dataset.id=m.id;
+      const rx=chatReacts[m.id];
+      if(rx&&Object.keys(rx).length){
+        const pill=document.createElement("button");pill.type="button";pill.className="rx"+(rx[S.me.id]?" mine":"");pill.dataset.id=m.id;
+        const kinds=[...new Set(Object.values(rx))];
+        kinds.slice(0,3).forEach(e=>{const sp=document.createElement("span");sp.className="e";sp.textContent=e;pill.appendChild(sp);});
+        const n=Object.keys(rx).length;if(n>1) pill.append(" "+n);
+        pill.setAttribute("aria-label",`Reactions: ${kinds.join(" ")}. Tap to see who.`);
+        bw.appendChild(pill);
+      }
+    }
+    group.querySelector(".mg-body").appendChild(bw);
     lastPid=m.pid;lastAt=m.at;
   });
   if(S.cave.seen){ // Cyclo Lv2: who has read the latest message
@@ -1407,6 +1440,63 @@ $("composer").addEventListener("submit",async e=>{
     if(ex.status!==401) toast(ex.status?ex.message:"Couldn't send that. Check your connection and try again.",4500);
   }
 });
+
+/* ---------- reactions: hold a message (or right-click) to react, like WhatsApp ---------- */
+const QUICK_RX=["👍","❤️","😂","😮","😢","🙏"];
+let reactBusy=0, rxFor=null, holdT=null, holdAt=null;
+function closeReact(){const p=$("rxPick");if(p){p.hidden=true;p.replaceChildren();}rxFor=null;document.querySelectorAll(".bubble.held").forEach(b=>b.classList.remove("held"));}
+function openReact(bub){
+  const id=bub.dataset.id, m=chatMsgs.find(x=>x.id===id);
+  if(!m||rxFor===id) return;
+  closeReact();rxFor=id;bub.classList.add("held");
+  if(navigator.vibrate) navigator.vibrate(12);
+  const p=$("rxPick"), mine=(chatReacts[id]||{})[S.me.id];
+  QUICK_RX.forEach(e=>{
+    const b=document.createElement("button");b.type="button";b.textContent=e;b.setAttribute("role","menuitem");b.setAttribute("aria-label","React "+e);
+    if(e===mine) b.classList.add("on");
+    b.addEventListener("click",()=>{closeReact();react(id,e===mine?null:e);});
+    p.appendChild(b);
+  });
+  const c=document.createElement("button");c.type="button";c.className="copy";c.textContent="Copy";c.setAttribute("role","menuitem");
+  c.addEventListener("click",async()=>{closeReact();try{await navigator.clipboard.writeText(m.text);toast("Copied");}catch(e){toast("Couldn't copy on this phone.");}});
+  p.appendChild(c);
+  p.hidden=false;
+  const r=bub.getBoundingClientRect(), w=p.offsetWidth, h=p.offsetHeight, mineSide=m.pid===S.me.id;
+  let x=mineSide?r.right-w:r.left;x=Math.max(8,Math.min(x,innerWidth-w-8));
+  let y=r.top-h-8;if(y<8) y=r.bottom+8;
+  p.style.left=x+"px";p.style.top=y+"px";
+  p.querySelector("button").focus({preventScroll:true});
+}
+async function react(id,emoji){
+  const before=JSON.parse(JSON.stringify(chatReacts));
+  const mineNow={...(chatReacts[id]||{})};
+  if(emoji) mineNow[S.me.id]=emoji;else delete mineNow[S.me.id];
+  chatReacts={...chatReacts,[id]:mineNow};if(!Object.keys(mineNow).length) delete chatReacts[id];
+  renderChat();reactBusy++;
+  try{const d=await api("chat/react",{id,emoji});chatReacts=d.reactions;chatRv=d.rv;}
+  catch(e){chatReacts=before;if(e.status!==401) toast(e.status?e.message:"Couldn't react. Check your connection and try again.");}
+  finally{reactBusy--;renderChat();}
+}
+(function(){
+  const list=$("chatList");
+  const cancel=()=>{clearTimeout(holdT);holdT=null;};
+  list.addEventListener("pointerdown",e=>{
+    const bub=e.target.closest(".bubble[data-id]");if(!bub) return;
+    holdAt={x:e.clientX,y:e.clientY};cancel();holdT=setTimeout(()=>{holdT=null;openReact(bub);},420);
+  });
+  list.addEventListener("pointermove",e=>{if(holdT&&holdAt&&Math.hypot(e.clientX-holdAt.x,e.clientY-holdAt.y)>10) cancel();});
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>list.addEventListener(ev,cancel));
+  list.addEventListener("contextmenu",e=>{const bub=e.target.closest(".bubble[data-id]");if(!bub) return;e.preventDefault();cancel();openReact(bub);});
+  list.addEventListener("scroll",()=>{cancel();if(rxFor) closeReact();},{passive:true});
+  list.addEventListener("click",e=>{
+    const pill=e.target.closest(".rx");if(!pill) return;
+    const rx=chatReacts[pill.dataset.id]||{}, byId={};members().forEach(p=>byId[p.id]=p.name);
+    const groups={};for(const [pid,em] of Object.entries(rx)) (groups[em]||=[]).push(pid===S.me.id?"You":(byId[pid]||"Someone"));
+    toast(Object.entries(groups).map(([em,who])=>`${em} ${who.join(", ")}`).join("  ·  "),4000);
+  });
+  document.addEventListener("pointerdown",e=>{if(rxFor&&!e.target.closest("#rxPick")&&!e.target.closest(".bubble.held")) closeReact();},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&rxFor) closeReact();});
+})();
 
 /* ================= lobby ================= */
 $("joinForm").addEventListener("submit",async e=>{

@@ -1,4 +1,4 @@
-# Clock-out Countdown · v32.0
+# Clock-out Countdown · v33.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -118,6 +118,10 @@ test/dev-server.mjs         local preview with a fake store: node test/dev-serve
 - **Saved board.** The last board a phone saw today is kept on the phone, so the app opens straight away and still opens offline (marked "Offline · retrying"). The service worker keeps a copy of the app's own files for that; nothing under `/api` is kept.
 - A warm server remembers sessions for a minute and the push keys for as long as it lives. Logging out is still immediate.
 - The functions run in Netlify's default region (US East); the data is in Singapore. Choosing the functions' region needs Netlify Pro (setting it in code makes the deploy fail on other plans). `GET /api/where` shows the region in use.
+
+## Chat reactions (v33)
+
+Hold a message (or right-click on a computer) to react with 👍 ❤️ 😂 😮 😢 🙏, or copy it. One reaction per person per message, as on WhatsApp: picking another replaces it, picking yours again removes it. Tap the little pill under a message to see who reacted. Each reaction is its own key, `react/<cid>/<msgid>/<pid>/<emoji hex>`, so one listing gives a whole cave's reactions and two people reacting at once never overwrite each other; `chatre/<cid>` changes on every reaction so phones only fetch them when something changed.
 
 ## Test site (dev branch)
 

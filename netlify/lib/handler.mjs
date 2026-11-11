@@ -25,6 +25,9 @@
 //                               "still the same?" and skip the full read when it is
 //   chatlast/<cid>              {at,pid,id} of the newest chat message, so nobody lists the chat to find it
 //   daysum/<cid>/<day>          {sig, clips} one record per calendar day, rebuilt when the clips' etags change
+//   react/<cid>/<msgid>/<pid>/<emoji as hex>   0   a chat reaction (v33); everything is in the key, so one listing
+//                               gives all of a cave's reactions, and each person only ever writes their own keys
+//   chatre/<cid>                {rv} changes whenever someone reacts, so phones know to fetch reactions again
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
@@ -41,6 +44,9 @@ export const COLORS = ["orange", "red", "pink", "violet", "indigo", "blue", "cya
 export const MONSTER_COUNT = 10;
 export const MAX_MEMBERS = 30;
 export const CHAT_KEEP = 200;
+export const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]; // WhatsApp's quick six
+const emojiHex = (e) => [...e].map((c) => c.codePointAt(0).toString(16)).join("-");
+const hexEmoji = (h) => { try { return String.fromCodePoint(...h.split("-").map((x) => parseInt(x, 16))); } catch { return null; } };
 const SESSION_CACHE_MS = 60e3;  // a warm server remembers who a token belongs to for a minute
 const VER_BUCKET_MS = 10 * 60e3; // phones do a full read at least this often (weather, expiring notes)
 const MAX_SUBS_PER_PERSON = 5;
@@ -187,6 +193,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     }
     return l;
   }
+  // All reactions in a cave: { msgid: { pid: emoji } }, from one listing.
+  async function reactionsOf(cid) {
+    const out = {};
+    for (const k of await keys(`react/${cid}/`)) {
+      const [, , mid, pid, hex] = k.split("/");
+      const e = hexEmoji(hex);
+      if (e) (out[mid] ||= {})[pid] = e;
+    }
+    return out;
+  }
+  const chatRv = async (cid) => (await getJSON(`chatre/${cid}`))?.rv || "0";
   async function chatLatest(cid) {
     const l = await chatLast(cid);
     return l.at ? { at: l.at, pid: l.pid } : null;
@@ -490,7 +507,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     if (!rest.length) {
       await store.delete(`code/${cave.code}`);
       await store.delete(`cave/${cid}`);
-      await Promise.all([...(await keys(`chat/${cid}/`)), `chatlast/${cid}`, `ver/${cid}`].map((k) => store.delete(k)));
+      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`react/${cid}/`)), `chatlast/${cid}`, `chatre/${cid}`, `ver/${cid}`].map((k) => store.delete(k)));
       await dropCaveClips(cid);
       return null;
     }
@@ -925,17 +942,48 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         return json({ ok: true });
       }
 
+      // React to a message (WhatsApp style): one reaction per person per message; the same emoji again, or none, removes it.
+      if (route === "chat/react" && method === "POST") {
+        if (!me.cave) return json({ error: "Join a cave to chat." }, 409);
+        const id = String(body.id || "");
+        const emoji = body.emoji == null ? null : String(body.emoji);
+        if (!/^[0-9]{13}-[0-9a-f]{6}$/.test(id)) return json({ error: "That message is gone." }, 404);
+        if (emoji !== null && !REACTIONS.includes(emoji)) return json({ error: "Pick one of the reactions." }, 400);
+        const [msg, mine] = await Promise.all([exists(`chat/${me.cave}/${id}`), keys(`react/${me.cave}/${id}/${me.id}/`)]);
+        if (!msg) return json({ error: "That message is gone." }, 404);
+        const want = emoji && `react/${me.cave}/${id}/${me.id}/${emojiHex(emoji)}`;
+        const same = want && mine.length === 1 && mine[0] === want;
+        if (!same) {
+          await Promise.all(mine.map((k) => store.delete(k)));
+          if (want) await store.setJSON(want, 0);
+        }
+        const rv = now().toString(36) + randomBytes(2).toString("hex");
+        await store.setJSON(`chatre/${me.cave}`, { rv });
+        const all = await reactionsOf(me.cave);
+        return json({ id, reactions: all, rv }); // the whole cave's, so the phone can take this rv as its own
+      }
+
       if (route === "chat") {
         if (!me.cave) return json({ error: "Join a cave to chat." }, 409);
         const prefix = `chat/${me.cave}/`;
         if (method === "GET") {
-          const after = Number(url.searchParams.get("after") || 0), lastSeen = url.searchParams.get("last");
-          // "Anything new?" is one small read when the phone already has the newest message.
-          if (after && lastSeen && (await chatLast(me.cave)).id === lastSeen) return json({ messages: [] });
-          let ks = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
-          ks = after ? ks.filter((k) => chatKeyTs(k) > after) : ks.slice(-60);
-          const msgs = (await Promise.all(ks.map((k) => getJSON(k)))).filter(Boolean);
-          return json({ messages: msgs });
+          const after = Number(url.searchParams.get("after") || 0), lastSeen = url.searchParams.get("last"), rvSeen = url.searchParams.get("rv");
+          // "Anything new?" is two small reads when the phone already has the newest message and reactions.
+          // phones from before v33 don't send rv and don't show reactions: they only get them with a first load
+          const wantRv = rvSeen !== null || !after;
+          const [last, rv] = await Promise.all([after && lastSeen ? chatLast(me.cave) : null, wantRv ? chatRv(me.cave) : null]);
+          const newMsgs = !(after && lastSeen && last.id === lastSeen);
+          const newReacts = wantRv && rvSeen !== rv;
+          if (!newMsgs && !newReacts) return json({ messages: [] });
+          const [msgs, reactions] = await Promise.all([
+            newMsgs ? (async () => {
+              let ks = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
+              ks = after ? ks.filter((k) => chatKeyTs(k) > after) : ks.slice(-60);
+              return (await Promise.all(ks.map((k) => getJSON(k)))).filter(Boolean);
+            })() : [],
+            newReacts ? reactionsOf(me.cave) : null,
+          ]);
+          return json({ messages: msgs, ...(reactions ? { reactions, rv } : {}) });
         }
         if (method === "POST") {
           const text = cleanText(body.text, 500);
@@ -947,7 +995,11 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           await bump(me.cave); // boards show the unread dot
           await later(ctx, Promise.all([stats.log("msg", me.id, me.cave), (async () => {
             const all = (await keys(prefix)).sort((x, y) => chatKeyTs(x) - chatKeyTs(y));
-            if (all.length > CHAT_KEEP) await Promise.all(all.slice(0, all.length - CHAT_KEEP).map((k) => store.delete(k)));
+            if (all.length <= CHAT_KEEP) return;
+            const gone = all.slice(0, all.length - CHAT_KEEP);
+            const goneIds = new Set(gone.map((k) => k.split("/").pop()));
+            const reacts = (await keys(`react/${me.cave}/`)).filter((k) => goneIds.has(k.split("/")[2]));
+            await Promise.all([...gone, ...reacts].map((k) => store.delete(k)));
           })()]));
           return json({ message: msg });
         }
