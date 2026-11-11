@@ -1,4 +1,4 @@
-# Clock-out Countdown · v33.0
+# Clock-out Countdown · v34.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -122,6 +122,16 @@ test/dev-server.mjs         local preview with a fake store: node test/dev-serve
 ## Chat reactions (v33)
 
 Hold a message (or right-click on a computer) to react with 👍 ❤️ 😂 😮 😢 🙏, or copy it. One reaction per person per message, as on WhatsApp: picking another replaces it, picking yours again removes it. Tap the little pill under a message to see who reacted. Each reaction is its own key, `react/<cid>/<msgid>/<pid>/<emoji hex>`, so one listing gives a whole cave's reactions and two people reacting at once never overwrite each other; `chatre/<cid>` changes on every reaction so phones only fetch them when something changed.
+
+## Clip loading (v34)
+
+Clips and covers are fetched through signed links (`/api/m/<clip|thumb>/<cid>/<day>/<slot>/<at>/<sig>`, HMAC with the stored `mediakey`). They need no log-in, so:
+
+- Netlify's CDN keeps each one (`Netlify-CDN-Cache-Control: public, durable, max-age=31536000, immutable`): the first viewer pulls it across from the store, later viewers get it from the CDN;
+- the phone keeps them too (service worker cache `media-v1`, newest 300), so a day you've watched plays at once, even offline;
+- a retake has a new time in its link, the old link stops working, and the removed clip is purged from the CDN by its cache tag (`purgeCache` from `@netlify/functions`); deleting an account purges its clips the same way.
+
+Links are only handed to members of the cave (in `/api/days`). The Days tab also fetches today's clips in the background so Play starts straight away. Clips are recorded at 1.2 Mbps (was 1.6), about a quarter smaller.
 
 ## Test site (dev branch)
 

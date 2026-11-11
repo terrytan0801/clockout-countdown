@@ -28,7 +28,8 @@
 //   react/<cid>/<msgid>/<pid>/<emoji as hex>   0   a chat reaction (v33); everything is in the key, so one listing
 //                               gives all of a cave's reactions, and each person only ever writes their own keys
 //   chatre/<cid>                {rv} changes whenever someone reacts, so phones know to fetch reactions again
-import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
+//   mediakey                    secret for signing clip links (v34)
+import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
   POWERS, READY, M, CHEERS_PER_DAY, NOTES_AT_ONCE, levelInfo, streakUpdate, backfill, isWorkday, weekdayOf, addDays,
@@ -84,7 +85,8 @@ export function isDevDeploy(req, context) {
 const fmt12 = (h, m) => `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 
 // cache: things a warm server may remember between requests (pass the same object each time).
-export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {} }) {
+// purge(tags): empties Netlify's CDN of those cache tags (a removed clip must not stay in the CDN).
+export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {}, purge = async () => {} }) {
   const stats = makeStats({ store, now, adminKey });
   cache.sessions ||= new Map(); cache.streak ||= new Map();
   // Work the reply doesn't depend on (stats, tidying up). With waitUntil it runs after the reply has gone.
@@ -145,6 +147,32 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       if (!(await claimKey("vapid", k))) k = await getJSON("vapid", k);
     }
     return (cache.vapid = k);
+  }
+
+  /* ---------- signed clip links (v34) ----------
+     A clip's link carries a signature, so it can be fetched without logging in and kept by Netlify's CDN.
+     The first person to watch a clip pulls it across from the store; everyone after that gets the CDN's copy,
+     from the edge nearest them, and the phone keeps its own copy too. Links are only handed to the cave. */
+  // One lookup per warm server, shared by every link in a reply (so they never disagree).
+  function mediaKey() {
+    cache.mediaKey ||= (async () => {
+      let k = await getJSON("mediakey");
+      if (!k) {
+        k = randomBytes(32).toString("hex");
+        await claimKey("mediakey", k);
+        k = await getJSON("mediakey", k); // whoever wrote last, everyone uses what's stored
+      }
+      return k;
+    })();
+    cache.mediaKey.catch(() => { cache.mediaKey = null; });
+    return cache.mediaKey;
+  }
+  const mediaSig = (key, kind, cid, day, slot, at) => createHmac("sha256", key).update(`${kind}|${cid}|${day}|${slot}|${at}`).digest("base64url").slice(0, 22);
+  const mediaTag = (cid, day, slot) => `clip-${cid}-${day}-${slot}`.replace(/[^\w-]/g, "_");
+  async function mediaLinks(cid, day, c) {
+    const key = await mediaKey();
+    const link = (kind) => `/api/m/${kind}/${cid}/${day}/${c.slot}/${c.at}/${mediaSig(key, kind, cid, day, c.slot, c.at)}`;
+    return { src: link("clip"), ...(c.thumb ? { tsrc: link("thumb") } : {}) };
   }
 
   async function newSession(pid) {
@@ -365,6 +393,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const idx = await keys(`myclip/${pid}/${cid}/${day}/${slot}_`);
     if (slot === pid) idx.push(...(await keys(`myclip/${pid}/${cid}/${day}_`))); // v15 index
     await Promise.all([`clip/${cid}/${day}/${slot}`, `thumb/${cid}/${day}/${slot}`, `clipmeta/${cid}/${day}/${slot}`, ...idx].map((k) => store.delete(k)));
+    try { await purge([mediaTag(cid, day, slot)]); } catch (e) { console.error("purge", e.message); }
   }
   async function dropCaveClips(cid) {
     const metas = await keys(`clipmeta/${cid}/`);
@@ -589,6 +618,23 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         return json({ token, ...(await state(p)) });
       }
 
+      // Signed clip links: no log-in, cacheable for a year (a retake has a new time, so a new link).
+      const sm = /^m\/(clip|thumb)\/([\w-]+)\/(\d{4}-\d{2}-\d{2})\/([\w.-]+)\/(\d{1,15})\/([\w-]{22})$/.exec(route);
+      if (sm && method === "GET") {
+        const [, kind, cid, day, slot, at, sig] = sm;
+        const want = mediaSig(await mediaKey(), kind, cid, day, slot, at);
+        if (!timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return json({ error: "That link doesn't work." }, 403);
+        // the link is for one take: after a retake (same key, new time) the old link stops working
+        const [r, meta] = await Promise.all([store.getWithMetadata(`${kind}/${cid}/${day}/${slot}`, { type: "arrayBuffer" }), getJSON(`clipmeta/${cid}/${day}/${slot}`)]);
+        if (!r || !r.data || !meta || String(meta.at) !== at) return json({ error: "That clip is gone." }, 404);
+        return new Response(r.data, { headers: {
+          "content-type": (r.metadata && r.metadata.type) || (kind === "clip" ? "video/mp4" : "image/jpeg"),
+          "cache-control": "public, max-age=31536000, immutable",
+          "netlify-cdn-cache-control": "public, durable, max-age=31536000, immutable",
+          "netlify-cache-tag": mediaTag(cid, day, slot),
+        } });
+      }
+
       /* ---------- signed in ---------- */
       const a = await auth(req);
       if (!a) return json({ error: "Please log in again." }, 401);
@@ -666,6 +712,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             at: c.at, late: c.late, dur: c.dur, thumb: c.thumb,
           });
         });
+        await Promise.all(Object.entries(days).map(([d, info]) => Promise.all(info.clips.map(async (c) => Object.assign(c, await mediaLinks(me.cave, d, c))))));
         Object.values(days).forEach((d) => d.clips.sort((a, b) => a.r - b.r || a.at - b.at));
         return json({ month, today, days });
       }

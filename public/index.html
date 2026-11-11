@@ -693,7 +693,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v33.0</span>
+    <span>v34.0</span>
   </div>
 </div>
 
@@ -2134,7 +2134,8 @@ function pickType(){
 const blobCache=new Map(), urlCache=new Map();
 function authBlob(path){
   if(!blobCache.has(path)){
-    const p=fetch("/api/"+path,{headers:{authorization:"Bearer "+token}}).then(r=>{if(!r.ok) throw new Error("That clip couldn't be loaded.");return r.blob();});
+    // signed links (m/…) need no log-in, so the CDN and the phone can keep them; older ones go through the log-in
+    const p=fetch("/api/"+path,path.startsWith("m/")?{}:{headers:{authorization:"Bearer "+token}}).then(r=>{if(!r.ok) throw new Error("That clip couldn't be loaded.");return r.blob();});
     blobCache.set(path,p);p.catch(()=>blobCache.delete(path));
   }
   return blobCache.get(path);
@@ -2143,7 +2144,19 @@ function authURL(path){
   if(!urlCache.has(path)){const p=authBlob(path).then(b=>URL.createObjectURL(b));urlCache.set(path,p);p.catch(()=>urlCache.delete(path));}
   return urlCache.get(path);
 }
-const clipPath=(day,c,kind="clip")=>`${kind}/${S.cave.id}/${day}/${c.slot}?v=${c.at}`;
+const clipPath=(day,c,kind="clip")=>{
+  const signed=kind==="clip"?c.src:c.tsrc;
+  return signed?signed.replace(/^\/api\//,""):`${kind}/${S.cave.id}/${day}/${c.slot}?v=${c.at}`;
+};
+// Fetch today's clips in the background while the calendar is open, so Play starts at once.
+let warmed="";
+function warmToday(){
+  const info=calData&&calData.days&&calData.days[S.day];
+  if(!info||!info.clips.length||(navigator.connection&&navigator.connection.saveData)) return;
+  const sig=info.clips.map(c=>c.src||c.at).join();
+  if(sig===warmed) return;warmed=sig;
+  setTimeout(()=>info.clips.forEach(c=>authBlob(clipPath(S.day,c)).catch(()=>{})),600);
+}
 
 /* ---- the ring bar on the board ---- */
 function updateRing(){
@@ -2179,7 +2192,7 @@ async function loadDays(m){
   if(!S||!S.cave) return;
   const now=S.day.slice(0,7);
   calMonth=m||calMonth||now;if(calMonth>now) calMonth=now;
-  try{const d=await api("days?month="+calMonth);d._at=Date.now();if(d.month===calMonth){calData=d;renderCal();}}
+  try{const d=await api("days?month="+calMonth);d._at=Date.now();if(d.month===calMonth){calData=d;renderCal();warmToday();}}
   catch(e){$("daysHint").textContent=e.message;}
 }
 function renderCal(){
@@ -2408,7 +2421,7 @@ function startRec(){
   if(fx.ok&&$("camSheet").classList.contains("fx")&&$("camCanvas").captureStream){
     try{fx.cstream=$("camCanvas").captureStream(30);src=new MediaStream([...fx.cstream.getVideoTracks(),...audio]);}catch(e){}
   }
-  try{cam.rec=new MediaRecorder(src,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_600_000,...(audio.length?{audioBitsPerSecond:64_000}:{})});}
+  try{cam.rec=new MediaRecorder(src,{...(type?{mimeType:type}:{}),videoBitsPerSecond:1_200_000,...(audio.length?{audioBitsPerSecond:64_000}:{})});}
   catch(e){try{cam.rec=new MediaRecorder(src);}catch(e2){$("camErr").textContent="This phone can't record here. Try Safari on iPhone or Chrome on Android.";return;}}
   cam.chunks=[];cam.thumb=null;$("camErr").textContent="";
   cam.rec.ondataavailable=e=>{if(e.data&&e.data.size) cam.chunks.push(e.data);};

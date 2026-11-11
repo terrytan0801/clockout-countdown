@@ -1,5 +1,5 @@
 // Clock-out Countdown service worker: receives zaps (push) and keeps the app installable.
-const VERSION = "v33.0";
+const VERSION = "v34.0";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
@@ -12,8 +12,23 @@ const keep = async (req, res) => { if (res && res.ok && res.type === "basic") (a
 const offlineNote = () => new Response(
   "<!doctype html><meta name=viewport content='width=device-width'><body style='font-family:system-ui;padding:24px'>You're offline. Open Clock-out again when you're back online.</body>",
   { headers: { "content-type": "text/html; charset=utf-8" } });
+// Clips and covers (signed links under /api/m/) never change, so they are kept on the phone after the first
+// view and shown from there, even offline. The newest 300 are kept.
+const MEDIA = "media-v1", MEDIA_MAX = 300;
+async function mediaFirst(req) {
+  const c = await caches.open(MEDIA);
+  const hit = await c.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok) {
+    await c.put(req, res.clone());
+    c.keys().then((ks) => Promise.all(ks.slice(0, Math.max(0, ks.length - MEDIA_MAX)).map((k) => c.delete(k)))).catch(() => {});
+  }
+  return res;
+}
 self.addEventListener("fetch", (e) => {
   const req = e.request, url = new URL(req.url);
+  if (req.method === "GET" && url.origin === location.origin && url.pathname.startsWith("/api/m/")) { e.respondWith(mediaFirst(req)); return; }
   if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/.netlify/") || url.pathname.startsWith("/admin")) return;
   const nav = req.mode === "navigate";
   const key = nav ? "/" : req; // every way into the app is the same page
