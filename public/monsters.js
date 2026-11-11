@@ -3,7 +3,7 @@
 //   .b        body group (moves for each mood)    .arm   only shown while dancing
 //   .pu       pupils (look down at the laptop)    .lid   half-closed eyelids on overtime
 //   .mouth    normal mouth                        .mouth-t  wobbly tired mouth
-//   .sweat .zz .lap   overtime sweat, sleepy z's, and the laptop
+//   .sweat .zz .lap   overtime sweat, sleepy z's, and the laptop      .food  lunch bowl (mood .eat)
 (function () {
   function starPoints(cx, cy, ro, ri, n) {
     const p = [];
@@ -17,11 +17,16 @@
     `<path class="${cls} lid" d="M${cx - r} ${cy + 1} A${r} ${r} 0 0 1 ${cx + r} ${cy + 1}Z"/>` +
     `<path class="m-line lid" style="stroke-width:2" d="M${cx - r + 1} ${cy + 1} L${cx + r - 1} ${cy + 1}"/>`;
   const LAPTOP = `<g class="lap"><rect class="lap-back" x="23" y="63" width="54" height="28" rx="3"/><circle class="lap-logo" cx="50" cy="77" r="3.2"/><rect class="lap-base" x="14" y="90" width="72" height="4.5" rx="2"/></g>`;
+  // lunch (v35): a steaming bowl with chopsticks, shown instead of the laptop
+  const FOOD = `<g class="food"><path class="steam" d="M42 62 q-3 -5 0 -9 q3 -4 0 -8"/><path class="steam s2" d="M52 61 q-3 -5 0 -9 q3 -4 0 -8"/>` +
+    `<path class="chop" d="M60 56 L80 80"/><path class="chop" d="M66 54 L83 79"/>` +
+    `<path class="bowl" d="M24 76 Q26 95 50 95 Q74 95 76 76Z"/><ellipse class="rice" cx="50" cy="76" rx="26" ry="5"/>` +
+    `<path class="bowl-band" d="M28 84 Q50 90 72 84"/></g>`;
   const SWEAT = `<path class="sweat" d="M75 27 Q80 34 75 38 Q70 34 75 27Z"/>`;
   const ZZ = `<text class="zz" x="80" y="20">z</text><text class="zz z2" x="86" y="11">z</text>`;
   const eye = (cx, cy, r, pr, dx = 1, dy = 1) =>
     `<circle class="m-eye" cx="${cx}" cy="${cy}" r="${r}"/><circle class="m-pupil pu" cx="${cx + dx}" cy="${cy + dy}" r="${pr}"/>`;
-  const wrap = (cls, inner) => `<svg viewBox="0 0 100 100" class="${cls}" aria-hidden="true">${inner}${LAPTOP}${ZZ}</svg>`;
+  const wrap = (cls, inner) => `<svg viewBox="0 0 100 100" class="${cls}" aria-hidden="true">${inner}${LAPTOP}${FOOD}${ZZ}</svg>`;
 
   window.MONSTERS = [
     { name: "Jelly", svg: wrap("jelly", `

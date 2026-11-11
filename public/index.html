@@ -693,7 +693,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v34.0</span>
+    <span>v35.0</span>
   </div>
 </div>
 
@@ -751,11 +751,26 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <div class="section-label" id="acctColorLabel">Your colour</div>
     <div class="swatches" id="acctColors" role="radiogroup" aria-labelledby="acctColorLabel"></div>
     <form id="acctTimeForm" class="inline-form" novalidate>
-      <label for="acctTime">Clock-out time
+      <label for="acctStart">Start work
+        <input id="acctStart" name="acctStart" type="time">
+      </label>
+      <label for="acctTime">Clock-out
         <input id="acctTime" name="acctTime" type="time">
       </label>
       <button class="btn" id="acctTimeSave" type="submit">Save</button>
     </form>
+    <form id="acctLunchForm" class="inline-form" novalidate>
+      <label for="acctLunch">Lunch break
+        <input id="acctLunch" name="acctLunch" type="time">
+      </label>
+      <label for="acctLunchDur">How long
+        <select id="acctLunchDur" name="acctLunchDur">
+          <option value="">No lunch</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option><option value="90">1½ hours</option>
+        </select>
+      </label>
+      <button class="btn" id="acctLunchSave" type="submit">Save</button>
+    </form>
+    <p class="sheet-hint">Your bar fills from your start time. At lunch your monster eats.</p>
     <label for="regionSel">Public holidays
       <select id="regionSel" name="regionSel">
         <option value="sg">Singapore</option>
@@ -983,7 +998,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 "use strict";
 /* ================= constants & helpers ================= */
 const COLOR_KEYS=["orange","red","pink","violet","indigo","blue","cyan","teal","green","amber","gold","brown"];
-const START=9*3600;
+
 const HAPPY_BIG=["Freedom!","Peace out!","Bye, office!","Home time!","Off duty!","We out!"];
 const HAPPY_SUB=["go enjoy your evening","dinner is calling","bubble tea time","couch mode: on","you earned this","see you tomorrow, desk"];
 const OT_BIG=["Finally free!","Escaped!","Made it out!","Survived!"];
@@ -1139,18 +1154,28 @@ function renderChrome(){
 }
 
 /* ================= lanes ================= */
+// When someone starts work: their own start time (v35), 9 am before that, and never after their clock-out.
+function startOf(p){
+  const off=p.h*3600+p.m*60, st=(p.sh??9)*3600+(p.sm??0)*60;
+  return st<off?st:Math.max(0,off-9*3600);
+}
+// Their lunch break today as [from, to) in seconds, or null.
+function lunchOf(p){const l=p.lunch;if(!l) return null;const a=l.h*3600+l.m*60;return [a,a+l.dur*60];}
 function laneState(p,n,nowSec){
   const offSec=p.h*3600+p.m*60, o=(S&&S.cave&&S.cave.ot[p.id])||{on:false,end:null};
   if(n.wd==="Sat"||n.wd==="Sun") return {state:"weekend",offSec,o};
   if(p.off) return {state:"off",offSec,o};
-  if(nowSec<offSec) return {state:o.on?"before-ot":"before",offSec,o};
+  if(nowSec<offSec){
+    const l=lunchOf(p);
+    return {state:o.on?"before-ot":"before",offSec,o,notIn:nowSec<startOf(p),lunch:!!(l&&nowSec>=l[0]&&nowSec<l[1]),lunchEnd:l&&l[1]};
+  }
   if(o.on&&o.end==null) return {state:"ot",offSec,o};
   if(o.on) return {state:"done-ot",offSec,o};
   return {state:"done",offSec,o};
 }
 function moodOf(p){
-  const n=sgNow(),{state}=laneState(p,n,n.h*3600+n.m*60+n.s);
-  return state==="ot"?"tired":(state.startsWith("before")?"work":"dance");
+  const n=sgNow(),{state,lunch}=laneState(p,n,n.h*3600+n.m*60+n.s);
+  return state==="ot"?"tired":(state.startsWith("before")?(lunch?"eat":"work"):"dance");
 }
 function buildLanes(){
   const lanes=$("lanes");
@@ -1209,14 +1234,15 @@ function tick(){
     const {p,state,offSec,o}=r, el=p.el; if(!el) return;
     const pick=a=>a[(idx+seed)%a.length];
     const big=el.querySelector(".big"),sub=el.querySelector(".sub"),tag=el.querySelector(".tag"),bar=el.querySelector(".bar i"),mon=el.querySelector(".mon");
-    const left=offSec-nowSec, span=Math.max(1,offSec-START), pct=Math.min(100,Math.max(0,(nowSec-START)/span*100));
+    const st=startOf(p), left=offSec-nowSec, span=Math.max(1,offSec-st), pct=Math.min(100,Math.max(0,(nowSec-st)/span*100));
     const isDone=state==="done"||state==="done-ot"||state==="weekend"||state==="off";
     el.classList.toggle("done",isDone);
     el.classList.toggle("overtime",state==="ot");
     el.classList.toggle("first",r===firstLeft);
     el.classList.toggle("rainbow",isDone&&p.monster===0&&p.level>=3);
-    const mood=isDone?"dance":state==="ot"?"tired":"work";
-    if(!mon.classList.contains(mood)){mon.classList.remove("work","tired","dance");mon.classList.add(mood);}
+    const mood=isDone?"dance":state==="ot"?"tired":r.lunch?"eat":"work";
+    if(!mon.classList.contains(mood)){mon.classList.remove("work","tired","dance","eat");mon.classList.add(mood);}
+    el.classList.toggle("lunch",!!r.lunch);
 
     if(state==="weekend"){
       setT(big,"Weekend!");setT(sub,`No work today · ${pick(HAPPY_SUB)}`);setT(tag,"Weekend");bar.style.width="100%";
@@ -1225,8 +1251,10 @@ function tick(){
       setT(big,leave?"Day off!":"Holiday!");setT(sub,`${leave?"Taking today off":p.off.name} · ${pick(HAPPY_SUB)}`);setT(tag,leave?"Day off":"Holiday");bar.style.width="100%";
     }else if(state.startsWith("before")){
       setH(big,`<span class="t">Time −</span> ${Math.ceil(left/60)} mins`);
-      sub.textContent=`${hms(left)} · ${left<=1800?pick(QUIPS_NEAR):Math.floor(pct)+"% done"}`;
-      setT(tag,state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working"));
+      if(r.lunch) sub.textContent=`🍜 Lunch till ${fmtSec(r.lunchEnd)} · ${hms(left)} to go`;
+      else if(r.notIn) sub.textContent=`${hms(left)} · Starts at ${fmtSec(st)}`;
+      else sub.textContent=`${hms(left)} · ${left<=1800?pick(QUIPS_NEAR):Math.floor(pct)+"% done"}`;
+      setT(tag,r.lunch?"Lunch":r.notIn?"Not in yet":state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working"));
       bar.style.width=pct.toFixed(1)+"%";
     }else if(state==="ot"){
       const over=nowSec-offSec;
@@ -1265,6 +1293,7 @@ function zapMessage(p){
   const n=sgNow(), nowSec=n.h*3600+n.m*60+n.s, {state,offSec}=laneState(p,n,nowSec);
   if(state==="weekend") return "It's the weekend. Stop thinking about work!";
   if(state==="off") return p.off.kind==="leave"?"You're off today. No work talk!":`It's ${p.off.name}. Enjoy the holiday!`;
+  if(state.startsWith("before")&&laneState(p,n,nowSec).lunch) return "Enjoy your lunch! 🍜";
   if(state.startsWith("before")){const m=Math.ceil((offSec-nowSec)/60);return m<=30?`Only ${m} mins left. Start packing up!`:`${m} mins to go. Hang in there!`;}
   if(state==="ot") return `${Math.floor((nowSec-offSec)/60)} mins of OT already. Go home!`;
   return "You're off! Go enjoy your evening.";
@@ -1631,7 +1660,8 @@ function renderAcct(){
 $("meChip").addEventListener("click",()=>{
   if(!S){openAuth("login");return;}
   renderAcct();
-  $("acctTime").value=`${pad(S.me.h)}:${pad(S.me.m)}`;$("acctPin").value="";$("acctErr").textContent="";
+  $("acctTime").value=`${pad(S.me.h)}:${pad(S.me.m)}`;$("acctStart").value=`${pad(S.me.sh??9)}:${pad(S.me.sm??0)}`;
+  $("acctLunch").value=S.me.lunch?`${pad(S.me.lunch.h)}:${pad(S.me.lunch.m)}`:"12:30";$("acctLunchDur").value=S.me.lunch?String(S.me.lunch.dur):"";$("acctPin").value="";$("acctErr").textContent="";
   deleteArmed=false;$("deleteBtn").textContent="Delete account";rerollArmed=false;
   $("cityResults").replaceChildren();$("cityInput").value="";
   $("acctSheet").hidden=false;
@@ -1659,9 +1689,24 @@ $("dayoffToggle").addEventListener("change",async e=>{
 });
 $("acctTimeForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const t=$("acctTime").value;if(!/^\d{2}:\d{2}$/.test(t)){$("acctErr").textContent="Pick a clock-out time.";return;}
+  const t=$("acctTime").value, s0=$("acctStart").value;
+  if(!/^\d{2}:\d{2}$/.test(t)){$("acctErr").textContent="Pick a clock-out time.";return;}
+  if(!/^\d{2}:\d{2}$/.test(s0)){$("acctErr").textContent="Pick a start time.";return;}
+  const [h,m]=t.split(":").map(Number), [sh,sm]=s0.split(":").map(Number);
+  if(sh*60+sm>=h*60+m){$("acctErr").textContent="Your start time needs to be before your clock-out time.";return;}
+  try{applyState(await api("me",{action:"time",h,m,sh,sm}));$("acctErr").textContent="";toast(`Work hours set: ${fmt12(sh,sm)} to ${fmt12(h,m)}.`);}
+  catch(ex){$("acctErr").textContent=ex.message;}
+});
+$("acctLunchForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const t=$("acctLunch").value, dur=Number($("acctLunchDur").value);
+  if(!dur){
+    try{applyState(await api("me",{action:"lunch",off:true}));$("acctErr").textContent="";toast("No lunch break set.");}catch(ex){$("acctErr").textContent=ex.message;}
+    return;
+  }
+  if(!/^\d{2}:\d{2}$/.test(t)){$("acctErr").textContent="Pick when lunch starts.";return;}
   const [h,m]=t.split(":").map(Number);
-  try{applyState(await api("me",{action:"time",h,m}));$("acctErr").textContent="";toast(`Clock-out time set to ${fmt12(h,m)}.`);}
+  try{applyState(await api("me",{action:"lunch",h,m,dur}));$("acctErr").textContent="";toast(`Lunch at ${fmt12(h,m)} for ${dur<60?dur+" min":dur===60?"1 hour":"1½ hours"}. Your monster will eat then 🍜`);}
   catch(ex){$("acctErr").textContent=ex.message;}
 });
 $("acctPinForm").addEventListener("submit",async e=>{
@@ -2166,7 +2211,7 @@ function updateRing(){
   const which=`Ring ${r.r+1} of ${r.of}`, last=r.r+1>=r.of;
   let title,sub,btn;
   if(mine){title="You're in this ring";sub=`${n} of ${total} filmed · ${which} · ${last?"that was today's last ring":"the next one is a surprise"}`;btn="Watch";}
-  else if(hot){title="Film time!";sub=`${mmss(r.until-t)} left · ${n} of ${total} filmed · ${which}`;btn="Film now";}
+  else if(hot){const n0=sgNow(),me0=members().find(p=>p.id===S.me.id);title=me0&&laneState(me0,n0,n0.h*3600+n0.m*60+n0.s).lunch?"Film time! Show us your lunch 🍜":"Film time!";sub=`${mmss(r.until-t)} left · ${n} of ${total} filmed · ${which}`;btn="Film now";}
   else{title="You missed the ring";sub=`${which} went off at ${sgTime(r.at)}. You can still film it, marked late.`;btn="Film late";}
   setT($("ringTitle"),title);setT($("ringSub"),sub);setT($("ringBtn"),btn);
   bar.classList.toggle("hot",hot);bar.hidden=false;

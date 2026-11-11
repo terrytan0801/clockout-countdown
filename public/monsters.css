@@ -1,4 +1,4 @@
-/* Monster parts + moods. Wrap an SVG from monsters.js in .mon and add one of .work / .tired / .dance.
+/* Monster parts + moods. Wrap an SVG from monsters.js in .mon and add one of .work / .tired / .dance / .eat.
    Colour comes from --mc on the .mon or any parent. */
 .mon svg{width:100%;height:100%;overflow:visible;display:block}
 .m-body{fill:var(--mc)}
@@ -13,11 +13,17 @@
 .m-blush{fill:var(--mc);opacity:.45}
 .lap-back{fill:var(--lap)} .lap-logo,.lap-base{fill:var(--lap-hi)}
 .sweat{fill:var(--sweat)}
+.bowl{fill:var(--bowl,#e8583e)} .bowl-band{stroke:var(--eye);stroke-width:2.2;fill:none;opacity:.7}
+.rice{fill:var(--eye);stroke:var(--stem-edge,#ddd0bc);stroke-width:1}
+.chop{stroke:var(--chop,#a0672f);stroke-width:2.6;stroke-linecap:round}
+.steam{stroke:var(--muted,#9aa8a0);stroke-width:2;stroke-linecap:round;fill:none;opacity:.7}
 .zz{font:700 13px var(--f-mono,monospace);fill:var(--muted)}
 .mon svg *{transform-box:view-box}
 
 /* which parts show in which mood */
-.mon .lap,.mon .lid,.mon .sweat,.mon .zz,.mon .mouth-t{display:none}
+.mon .lap,.mon .lid,.mon .sweat,.mon .zz,.mon .mouth-t,.mon .food{display:none}
+.mon.eat .food{display:inline}
+.mon.eat .pu{transform:translateY(2.5px)}
 .mon.work .lap,.mon.tired .lap{display:inline}
 .mon.tired .lid,.mon.tired .sweat,.mon.tired .zz,.mon.tired .mouth-t{display:inline}
 .mon.tired .mouth{display:none}
@@ -36,6 +42,15 @@
 @keyframes m-slump{0%,100%{transform:rotate(-4deg) scaleY(.95)}50%{transform:rotate(4deg) scaleY(.9)}}
 @keyframes m-drip{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(16px);opacity:0}}
 @keyframes m-zz{0%{transform:translate(0,0);opacity:0}30%{opacity:1}100%{transform:translate(8px,-16px);opacity:0}}
+
+/* lunch: munching, chewing, steam rising */
+.mon.eat .b{transform-origin:50px 90px;animation:m-munch .5s ease-in-out infinite}
+.mon.eat .mouth{transform-origin:50px 66px;animation:m-chew .25s ease-in-out infinite alternate}
+.mon.eat .steam{animation:m-steam 1.6s ease-out infinite}
+.mon.eat .steam.s2{animation-delay:.8s}
+@keyframes m-munch{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(2.5px) rotate(-2deg)}60%{transform:translateY(-1px) rotate(1.5deg)}}
+@keyframes m-chew{from{transform:scaleY(1)}to{transform:scaleY(.45)}}
+@keyframes m-steam{0%{transform:translateY(4px);opacity:0}30%{opacity:.8}100%{transform:translateY(-10px);opacity:0}}
 
 /* off: everyone dances their own way */
 .mon.dance .sh{transform-origin:50px 93px;animation:m-shadow .6s ease-in-out infinite}

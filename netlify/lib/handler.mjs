@@ -1,7 +1,8 @@
 // Clock-out Countdown API (v9). All state lives in one Netlify Blobs store.
 // Every record has its own key, so two people acting at once never overwrite each other.
 //
-//   person/<pid>               {id,name,h,m,color,monster,buzz,cave,at,salt,hash}
+//   person/<pid>               {id,name,h,m,sh,sm,lunch,color,monster,buzz,cave,at,salt,hash}
+//                              sh:sm = start of work (v35, 9:00 if not set); lunch = {h,m,dur} or null
 //   uname/<lower name>         pid                       (makes names unique)
 //   sessions/<token>           {pid, at}
 //   lock/<lower name>          {fails, until}            (wrong-PIN lockout)
@@ -73,7 +74,8 @@ const validPin = (p) => typeof p === "string" && p.length >= 4 && p.length <= 32
 const nameKey = (name) => encodeURIComponent(name.toLowerCase());
 const hashPin = (pin, salt) => scryptSync(pin, salt, 32).toString("hex");
 const newCode = () => Array.from({ length: 6 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
-const publicPerson = ({ id, name, h, m, color, monster }) => ({ id, name, h, m, color, monster });
+export const LUNCH_LENGTHS = [30, 45, 60, 90];
+const publicPerson = ({ id, name, h, m, sh = 9, sm = 0, lunch = null, color, monster }) => ({ id, name, h, m, sh, sm, lunch, color, monster });
 const chatKeyTs = (key) => Number(key.split("/").pop().split("-")[0]);
 
 export const makeHandler = (opts) => makeApp(opts).handle;
@@ -736,9 +738,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
 
       if (route === "me" && method === "POST") {
         switch (body.action) {
-          case "time":
+          case "time": {
             if (!isInt(body.h, 0, 23) || !isInt(body.m, 0, 59)) return json({ error: "Pick a valid clock-out time." }, 400);
-            me = { ...me, h: body.h, m: body.m }; break;
+            const hasStart = body.sh !== undefined || body.sm !== undefined;
+            if (hasStart && (!isInt(body.sh, 0, 23) || !isInt(body.sm, 0, 59))) return json({ error: "Pick a valid start time." }, 400);
+            if (hasStart && body.sh * 60 + body.sm >= body.h * 60 + body.m) return json({ error: "Your start time needs to be before your clock-out time." }, 400);
+            me = { ...me, h: body.h, m: body.m, ...(hasStart ? { sh: body.sh, sm: body.sm } : {}) }; break;
+          }
+          case "lunch":
+            if (body.off === true) { me = { ...me, lunch: null }; break; }
+            if (!isInt(body.h, 0, 23) || !isInt(body.m, 0, 59) || !LUNCH_LENGTHS.includes(body.dur)) return json({ error: "Pick a lunch time and how long it is." }, 400);
+            me = { ...me, lunch: { h: body.h, m: body.m, dur: body.dur } }; break;
           case "color":
             if (!COLORS.includes(body.color)) return json({ error: "Pick one of the colours." }, 400);
             me = { ...me, color: body.color }; break;

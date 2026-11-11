@@ -1,4 +1,4 @@
-# Clock-out Countdown · v34.0
+# Clock-out Countdown · v35.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -132,6 +132,10 @@ Clips and covers are fetched through signed links (`/api/m/<clip|thumb>/<cid>/<d
 - a retake has a new time in its link, the old link stops working, and the removed clip is purged from the CDN by its cache tag (`purgeCache` from `@netlify/functions`); deleting an account purges its clips the same way.
 
 Links are only handed to members of the cave (in `/api/days`). The Days tab also fetches today's clips in the background so Play starts straight away. Clips are recorded at 1.2 Mbps (was 1.6), about a quarter smaller.
+
+## Work hours and lunch (v35)
+
+Each person sets when they **start work** as well as when they clock out (account sheet; 9 am until set). The bar fills from their own start time, and before it the card says "Not in yet · Starts at …" instead of sitting at 0%. An optional **lunch break** (start time and 30 min to 1½ hours) turns their card to "Lunch" and their monster eats a steaming bowl of noodles; if the film ring goes off during your lunch, the ring bar asks you to show your lunch.
 
 ## Test site (dev branch)
 
