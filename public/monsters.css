@@ -22,9 +22,12 @@
 
 /* which parts show in which mood */
 .mon{position:relative}
-.mon .lap,.mon .lid,.mon .sweat,.mon .zz,.mon .mouth-t,.mon .food,.mon .book,.mon .game,.mon .ball,.mon .note{display:none}
-.mon.eat .food{display:inline}
+.mon .lap,.mon .lid,.mon .sweat,.mon .zz,.mon .mouth-t{display:none}
 .mon.eat .pu{transform:translateY(2.5px)}
+/* props (v41) sit in their own SVGs over the monster (front) or behind it (back), same 100x100 box */
+.mon>svg.pl{position:absolute;inset:0;pointer-events:none}
+.mon>svg:not(.pl){position:relative;z-index:1}
+.mon>svg.pl.back{z-index:0}.mon>svg.pl.front{z-index:2}
 .mon.work .lap,.mon.tired .lap{display:inline}
 .mon.tired .lid,.mon.tired .sweat,.mon.tired .zz,.mon.tired .mouth-t{display:inline}
 .mon.tired .mouth{display:none}
@@ -53,45 +56,130 @@
 @keyframes m-chew{from{transform:scaleY(1)}to{transform:scaleY(.45)}}
 @keyframes m-steam{0%{transform:translateY(4px);opacity:0}30%{opacity:.8}100%{transform:translateY(-10px);opacity:0}}
 
-/* asleep (v40): eyes shut and z's; three ways of sleeping, picked per person per day */
-.mon.nap .b>.m-eye:not(.mouth),.mon.nap .pu,.mon.music .b>.m-eye:not(.mouth),.mon.music .pu{transform-box:fill-box;transform-origin:center;transform:scaleY(.14)}
+/* asleep: in bed, eyes shut, z's; four ways of sleeping, picked per person per day */
+.mon.nap .b>.m-eye:not(.mouth),.mon.nap .pu,.mon.zen .b>.m-eye:not(.mouth),.mon.zen .pu,.mon.guitar .b>.m-eye:not(.mouth),.mon.guitar .pu{transform-box:fill-box;transform-origin:center;transform:scaleY(.14)}
 .mon.nap .mouth{transform-box:fill-box;transform-origin:center;transform:scale(.6)}
 .mon.nap .zz{display:inline;animation:m-zz 2.8s ease-in-out infinite}
 .mon.nap .zz.z2{animation-delay:1.4s}
-.mon.nap.sv1 .b{transform-origin:50px 90px;animation:m-breathe 3.2s ease-in-out infinite}
-.mon.nap.sv2 svg{transform:translateY(14%) rotate(-84deg) scale(.84)}
-.mon.nap.sv2 .zz,.mon.nap.sv2 .m-shadow{display:none}
+.mon.nap .m-shadow,.mon.nap .lL,.mon.nap .lR{display:none}
+.mon.nap>svg:not(.pl){transform:translateY(6%) scale(.86)}
+.mon.nap.sv1 .b,.mon.nap.sv4 .b{transform-origin:50px 90px;animation:m-breathe 3.2s ease-in-out infinite}
+.mon.nap.sv2>svg:not(.pl){transform:translate(8%,20%) rotate(-84deg) scale(.7)}
+.mon.nap.sv2 .zz{display:none}
 .mon.nap.sv2 .b{transform-origin:50px 90px;animation:m-breathe 3.6s ease-in-out infinite}
-.mon.nap.sv2::after{content:"z z";position:absolute;right:6%;top:4%;font:700 12px var(--f-mono,monospace);color:var(--muted);animation:m-zzz 2.8s ease-in-out infinite}
+.mon.nap.sv2::after{content:"z z";position:absolute;z-index:3;right:6%;top:18%;font:700 12px var(--f-mono,monospace);color:var(--muted);animation:m-zzz 2.8s ease-in-out infinite}
 .mon.nap.sv3 .b{transform-origin:50px 88px;animation:m-nod 3.4s ease-in-out infinite}
+.snot{fill:rgba(170,215,255,.55);stroke:rgba(110,160,210,.8);stroke-width:1;transform-origin:60px 60px;animation:m-snot 3.2s ease-in-out infinite}
+@keyframes m-snot{0%,100%{transform:scale(.25)}50%{transform:scale(1.15)}}
 @keyframes m-breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,1.06)}}
 @keyframes m-nod{0%{transform:rotate(0)}68%,80%{transform:translateY(3px) rotate(10deg)}86%{transform:rotate(-3deg)}100%{transform:rotate(0)}}
 @keyframes m-zzz{0%{transform:translate(0,4px);opacity:0}30%{opacity:1}100%{transform:translate(6px,-10px);opacity:0}}
+.hb{fill:#a8784f;stroke:#7a5233;stroke-width:1.5}.hb-in{fill:#bf8c5f}.foot{fill:#a8784f;stroke:#7a5233;stroke-width:1.5}
+.pillow{fill:#fffdf6;stroke:#d8cfbd;stroke-width:1.2}
+.blanket{stroke:rgba(0,0,0,.25);stroke-width:1.2}.blanket-fold{fill:rgba(255,255,255,.35)}
+.mattress{fill:#ece4d6;stroke:#cbbfa8;stroke-width:1}.bedleg{fill:#7a5233}
+.bl-stripe{stroke:#e8583e;stroke-width:3.2}.bl-dot{stroke:#fff;stroke-width:4.2;stroke-linecap:round}
+.bl-star{fill:#f2c94c}.bl-heart{fill:#fff;opacity:.85}.bl-check{stroke:rgba(255,255,255,.45);stroke-width:2.4}
 
-/* free time (v40): reading, gaming, playing ball, listening to music (or dancing, below) */
-.bk-cover{fill:#3d6fd6}.bk-page{fill:#fffdf6;stroke:#cbbfa8;stroke-width:1}.bk-line{stroke:#b8ad97;stroke-width:1.3;fill:none}
-.gm-body{fill:#3a3f4b}.gm-screen{fill:#8ee6a0}.gm-pad{stroke:#e9e2d4;stroke-width:3;stroke-linecap:round}.gm-btn{fill:#e8583e}.gm-btn.b2{fill:#f2c94c}
-.bl{fill:#f08a24;stroke:#8a4410;stroke-width:1.4}.bl-line{stroke:#8a4410;stroke-width:1.2;fill:none}
-.note{font:700 16px sans-serif;fill:var(--mc)}
-.mon.read .book,.mon.game .game,.mon.ball .ball,.mon.music .note{display:inline}
-.mon.read .pu,.mon.game .pu{transform:translateY(2.5px)}
+/* food: whatever they fancy */
+.mon.eat .b{transform-origin:50px 90px;animation:m-munch .5s ease-in-out infinite}
+.mon.eat .mouth{transform-origin:50px 66px;animation:m-chew .25s ease-in-out infinite alternate}
+.steam{animation:m-steam 1.6s ease-out infinite}.steam.s2{animation-delay:.8s}
+@keyframes m-munch{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(2.5px) rotate(-2deg)}60%{transform:translateY(-1px) rotate(1.5deg)}}
+@keyframes m-chew{from{transform:scaleY(1)}to{transform:scaleY(.45)}}
+@keyframes m-steam{0%{transform:translateY(4px);opacity:0}30%{opacity:.8}100%{transform:translateY(-10px);opacity:0}}
+.noodle{stroke:#f2d27a;stroke-width:2.4;fill:none;stroke-linecap:round}
+.pz{fill:#f6c453;stroke:#c8892a;stroke-width:1.2}.pz-crust{fill:#d99a3c}.pep{fill:#d9412b}.cheese-d{stroke:#f6c453;stroke-width:2.6;stroke-linecap:round;fill:none}
+.bun{fill:#e3a24a;stroke:#b0712a;stroke-width:1}.seed{fill:#fff6dc}.lettuce{fill:#6cc24a}.cheese{fill:#f7cf3b}.patty{fill:#6b3b24}
+.dough{fill:#e0a45e}.icing{fill:#f48fb1}.hole{fill:var(--card,#fff)}.spr{stroke:#fff;stroke-width:1.8;stroke-linecap:round}
+.cone{fill:#e3a24a;stroke:#b0712a;stroke-width:1}.cone-l{stroke:#b0712a;stroke-width:1}.scoop1{fill:#8fd3c4}.scoop2{fill:#f8b4c8}.cherry{fill:#d9412b}.drip{fill:#8fd3c4}
+.plate{fill:#fff;stroke:#d8cfbd;stroke-width:1.2}.rice2{fill:#fffdf6;stroke:#d8cfbd;stroke-width:.8}.salmon{fill:#ff8c5a}.salmon-l{stroke:#ffd0b5;stroke-width:1.2}
+.tamago{fill:#f7d046}.nori{fill:#22312a}
+.cake-b{fill:#f6e3c4}.cake-m{fill:#f48fb1}.cake-t{fill:#fff;stroke:#f2d9de;stroke-width:1}.straw{fill:#e5383b}.candle{fill:#7fb3ff}
+.flame{fill:#ffb703;transform-origin:41.7px 66px;animation:m-flick .3s ease-in-out infinite alternate}
+@keyframes m-flick{from{transform:scale(1,1)}to{transform:scale(.8,1.15)}}
+.meat{fill:#a8552b;stroke:#7a3a1c;stroke-width:1}.meat-hi{stroke:#d27a45;stroke-width:2;fill:none;stroke-linecap:round}.bone{stroke:#fffdf6;stroke-width:6;stroke-linecap:round}.bone-e{fill:#fffdf6}
+.bowl2{fill:#5b4a8a}.soup{fill:#7ad151}.eyeb{fill:#fff}.eyep{fill:#1d2b3a}.bub{fill:#b8f08a}
+.stick{stroke:#d8cfbd;stroke-width:2.2}.cc{fill:#ffb3d1}.cc2{fill:#fff}
+.pot2{fill:#c8643b}.cactus{fill:#4caf50;stroke:#2e7d32;stroke-width:1.2}.cactus-arm{stroke:#4caf50;stroke-width:4.5;fill:none;stroke-linecap:round}.bite{stroke:var(--card,#fff);stroke-width:3;fill:none}.prick{stroke:#e8f5e9;stroke-width:1}
+.chop{stroke:#a0672f;stroke-width:2.6;stroke-linecap:round}
+
+/* books: their own one each */
+.bk-page{fill:#fffdf6;stroke:#cbbfa8;stroke-width:1}.bk-line{stroke:#b8ad97;stroke-width:1.3;fill:none}
+.bk-panel{fill:none;stroke:#3a3f4b;stroke-width:1.2}.pow{fill:#f7d046;stroke:#e8583e;stroke-width:1}.pow-t{font:900 5px sans-serif;fill:#e8583e;text-anchor:middle}
+.rune{fill:#8b5cf6}.spark{fill:#f7d046}
+.np{fill:#f4f1ea;stroke:#a9a39a;stroke-width:1}.np-fold{stroke:#cfc8bb;stroke-width:1}.np-head{fill:#3a3f4b}.np-pic{fill:#c9d6df}.np-col{stroke:#9aa1a8;stroke-width:1.2}
+.map{fill:#f1dfb0;stroke:#b89a5c;stroke-width:1.2}.map-f{stroke:#d6bf85;stroke-width:1}.map-path{stroke:#d9412b;stroke-width:1.6;stroke-dasharray:3 2.5;fill:none}.map-x{stroke:#d9412b;stroke-width:2.4;stroke-linecap:round}
+.mon.read .pu{transform:translateY(2.5px)}
 .mon.read .b{transform-origin:50px 90px;animation:m-readsway 4s ease-in-out infinite}
-.mon.read .bk-flip{transform-origin:50px 82px;animation:m-flip 4s ease-in-out infinite}
+.bk-flip{transform-origin:50px 82px;animation:m-flip 4s ease-in-out infinite}
+.spark{transform-box:fill-box;transform-origin:center;animation:m-twinkle 1.6s ease-in-out infinite}
+.spark.sp2{animation-delay:.5s}.spark.sp3{animation-delay:1s}
+@keyframes m-twinkle{0%,100%{transform:scale(.3);opacity:.2}50%{transform:scale(1.1);opacity:1}}
 @keyframes m-readsway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
 @keyframes m-flip{0%,70%{transform:scaleX(1)}85%,100%{transform:scaleX(-1)}}
-.mon.game .b{transform-origin:50px 90px;animation:m-mash .18s ease-in-out infinite alternate}
-.mon.game .gm-screen{animation:m-screen .9s steps(1) infinite}
-@keyframes m-mash{from{transform:translate(-.8px,0)}to{transform:translate(.8px,-1.2px)}}
+
+/* free time */
+.gm-body{fill:#3a3f4b}.gm-screen{fill:#8ee6a0;animation:m-screen .9s steps(1) infinite}.gm-pad{stroke:#e9e2d4;stroke-width:3;stroke-linecap:round}.gm-btn{fill:#e8583e}.gm-btn.b2{fill:#f2c94c}
 @keyframes m-screen{0%{fill:#8ee6a0}33%{fill:#6fd3ff}66%{fill:#ffd36f}}
+.mon.game .pu{transform:translateY(2.5px)}
+.mon.game .b{transform-origin:50px 90px;animation:m-mash .18s ease-in-out infinite alternate}
+@keyframes m-mash{from{transform:translate(-.8px,0)}to{transform:translate(.8px,-1.2px)}}
+.bl{fill:#f08a24;stroke:#8a4410;stroke-width:1.4}.bl-line{stroke:#8a4410;stroke-width:1.2;fill:none}
+.dribble{animation:m-dribble .7s cubic-bezier(.4,0,.6,1) infinite}
 .mon.ball .b{transform-origin:50px 88px;animation:m-hop .7s cubic-bezier(.3,0,.4,1) infinite}
-.mon.ball .ball{animation:m-dribble .7s cubic-bezier(.4,0,.6,1) infinite}
 .mon.ball .pu{transform:translate(2px,1.5px)}
 @keyframes m-dribble{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
-.mon.music .b{transform-origin:50px 90px;animation:m-sway2 1.6s ease-in-out infinite}
-.mon.music .note{animation:m-note 2.4s ease-out infinite}
-.mon.music .note.n2{animation-delay:1.2s}
+.gtr-neck{stroke:#6b3b24;stroke-width:4;stroke-linecap:round}.gtr-head{fill:#4a2816}.gtr-body{fill:#e08a3c;stroke:#9a5420;stroke-width:1.2}.gtr-hole{fill:#3a2010}.gtr-str{stroke:#fff6dc;stroke-width:.6}
+.note{font:700 16px sans-serif;fill:var(--mc);animation:m-note 2.4s ease-out infinite}.note.n2{animation-delay:1.2s}
+.mon.guitar .b{transform-origin:50px 90px;animation:m-sway2 1.6s ease-in-out infinite}
 @keyframes m-sway2{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
 @keyframes m-note{0%{transform:translateY(6px);opacity:0}25%{opacity:1}100%{transform:translateY(-16px);opacity:0}}
+.easel{stroke:#8a5a35;stroke-width:2.4;stroke-linecap:round;fill:none}.canvas{fill:#fffdf6;stroke:#cbbfa8;stroke-width:1}
+.blob{animation:m-blob 3s ease-in-out infinite}.blob.b1{fill:#e8583e}.blob.b2{fill:#5b8def;animation-delay:1s}.blob.b3{stroke:#2fa36b;stroke-width:3;fill:none;animation-delay:2s}
+@keyframes m-blob{0%,15%{opacity:0}35%,100%{opacity:1}}
+.brush{stroke:#8a5a35;stroke-width:2.4;stroke-linecap:round;transform-origin:54px 80px;animation:m-brush .6s ease-in-out infinite alternate}.brush-tip{fill:#e8583e}
+@keyframes m-brush{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+.palette{fill:#e9cfa5;stroke:#b89a5c;stroke-width:1}.dab{fill:#e8583e}.dab.d2{fill:#5b8def}.dab.d3{fill:#f2c94c}
+.mon.paint .pu{transform:translate(2.5px,0)}
+.mon.paint .b{transform-origin:50px 90px;animation:m-readsway 2s ease-in-out infinite}
+.wand{stroke:#e8583e;stroke-width:2.2;stroke-linecap:round}.wand-ring{fill:none;stroke:#e8583e;stroke-width:2}
+.bbl{fill:rgba(180,225,255,.35);stroke:#7fb3ff;stroke-width:1.2;animation:m-bubble 2.4s ease-out infinite}.bbl.q2{animation-delay:.8s}.bbl.q3{animation-delay:1.6s}
+@keyframes m-bubble{0%{transform:translate(-6px,14px) scale(.3);opacity:0}20%{opacity:1}90%{opacity:1}100%{transform:translate(4px,-12px) scale(1.1);opacity:0}}
+.mon.bubbles .b{transform-origin:50px 90px;animation:m-sway2 2.4s ease-in-out infinite}
+.rod{stroke:#6b3b24;stroke-width:2;stroke-linecap:round}.fline{stroke:#9aa8a0;stroke-width:.8}.bobber{fill:#e5383b;animation:m-bob 1.6s ease-in-out infinite}
+.water{stroke:#5b8def;stroke-width:2;fill:none;stroke-linecap:round}.fishy{fill:#f2c94c;stroke:#c8892a;stroke-width:.8;transform-origin:87px 86px;animation:m-fishjump 3.2s ease-in-out infinite}
+.bucket{fill:#9aa8b8;stroke:#6b7685;stroke-width:1}.bucket-h{fill:none;stroke:#6b7685;stroke-width:1.2}
+@keyframes m-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+@keyframes m-fishjump{0%,55%{transform:translateY(10px) rotate(0);opacity:0}65%{opacity:1}75%{transform:translateY(-12px) rotate(-30deg)}88%{transform:translateY(6px) rotate(20deg);opacity:1}100%{transform:translateY(10px);opacity:0}}
+.mon.fish .pu{transform:translate(2px,-1.5px)}
+.pot{fill:#c8643b;stroke:#8a3f20;stroke-width:1}.stem{stroke:#2e7d32;stroke-width:2}.leaf{fill:#4caf50}.petal{fill:#f48fb1}.fl-c{fill:#f7d046}
+.flower{transform-origin:23px 84px;animation:m-grow 4s ease-in-out infinite}
+@keyframes m-grow{0%{transform:scale(.4)}60%,100%{transform:scale(1)}}
+.can-b{fill:#5b8def;stroke:#2f5fb3;stroke-width:1}.can-sp{stroke:#2f5fb3;stroke-width:3;stroke-linecap:round}.can-h{fill:none;stroke:#2f5fb3;stroke-width:2.4}
+.can{transform-origin:75px 80px;animation:m-tilt 2s ease-in-out infinite alternate}
+.drop{fill:#7fb3ff;animation:m-drop 1s ease-in infinite}.drop.dr2{animation-delay:.5s}
+@keyframes m-tilt{from{transform:rotate(0)}to{transform:rotate(-14deg)}}
+@keyframes m-drop{0%{transform:translate(0,0);opacity:0}20%{opacity:1}100%{transform:translate(-14px,16px);opacity:0}}
+.mon.garden .pu{transform:translate(-2px,2px)}
+.jb.j1{fill:#e8583e}.jb.j2{fill:#5b8def}.jb.j3{fill:#f2c94c}
+.jug{transform-origin:50px 2.5px;animation:m-juggle 1.4s linear infinite}
+@keyframes m-juggle{to{transform:rotate(360deg)}}
+.mon.juggle .pu{transform:translateY(-2.5px)}
+.mon.juggle .b{transform-origin:50px 90px;animation:m-typing .35s ease-in-out infinite alternate}
+.deck{fill:#e8583e;stroke:#9a2f1d;stroke-width:1}.wheel{fill:#3a3f4b}
+.mon.skate>svg{animation:m-glide 2.6s ease-in-out infinite}
+.mon.skate .b{transform-origin:50px 90px;animation:m-lean 2.6s ease-in-out infinite}
+@keyframes m-glide{0%,100%{transform:translateX(-10%)}50%{transform:translateX(10%)}}
+@keyframes m-lean{0%,100%{transform:rotate(6deg)}50%{transform:rotate(-6deg)}}
+.cushion{fill:#8b5cf6;opacity:.85}
+.mon.zen .b{transform-origin:50px 90px;animation:m-float 3s ease-in-out infinite}
+@keyframes m-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.pan{fill:#3a3f4b}.pan-h{stroke:#3a3f4b;stroke-width:4;stroke-linecap:round}.egg-w{fill:#fff}.egg-y{fill:#f7b32b}
+.egg{transform-origin:42px 82px;animation:m-flipegg 1.8s ease-in-out infinite}
+@keyframes m-flipegg{0%,35%,100%{transform:translateY(0) rotate(0)}60%{transform:translateY(-24px) rotate(180deg)}85%{transform:translateY(0) rotate(360deg)}}
+.mon.cook .pu{transform:translateY(-1.5px)}
+.mon.cook .b{transform-origin:50px 90px;animation:m-typing .45s ease-in-out infinite alternate}
 
 /* off: everyone dances their own way */
 .mon.dance .sh{transform-origin:50px 93px;animation:m-shadow .6s ease-in-out infinite}

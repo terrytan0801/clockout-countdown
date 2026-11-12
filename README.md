@@ -1,4 +1,4 @@
-# Clock-out Countdown · v40.0
+# Clock-out Countdown · v41.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -151,7 +151,11 @@ Every button shrinks a little the moment it's pressed. When a save takes longer 
 ## Replies and monsters' day (v40)
 
 - **Reply** to a chat message: hold it and tap Reply, or swipe it to the right (WhatsApp style). The reply carries a short copy of the message it answers (`re: {id,pid,name,color,text}`, first 120 characters), shown as a quote; tap the quote to jump to the original.
-- **Monsters' day.** Before your start time the monster is asleep (eyes shut, z's), in one of three poses picked per person per day: curled up breathing, lying flat, or nodding off. On days off it sleeps until 10 am, and everyone sleeps from 11:30 pm. Lunch as before. **Dinner** is 7:30-8:30 pm for everyone who's off. For 20 minutes after clocking out it dances; after that, and on days off, it reads, games, plays ball, listens to music or dances, changing every hour. The card's tag says what they're doing (Asleep, Dinner, Reading, Gaming, Sports, Music).
+- **Monsters' day (v40, more of it in v41).** Before your start time the monster is asleep **in its own bed** (each person has their own blanket: sky, stripes, dots, stars, hearts or checks) in one of four poses picked per person per day: sitting up breathing, lying flat, nodding off, or snoring a bubble. On days off it sleeps until 10 am, and everyone sleeps from 11:30 pm. **Lunch** and **dinner** (7:30-8:30 pm for everyone who's off) are a different food each meal: noodles, pizza, burger, donut, ice cream, sushi, cake, drumstick, eyeball soup, cotton candy or a cactus. For 20 minutes after clocking out it dances; after that, and on days off, it changes every hour between reading (a novel, comic, spellbook, newspaper, treasure map or a tiny book), gaming, basketball, guitar, painting, bubbles, fishing, gardening, juggling, skating, meditating, cooking and dancing. The props live in `public/monster-props.js` and are laid over (or behind) the monster in the same 100x100 box, so they fit every monster. The card's tag says what they're doing.
+
+## Calendar speed (v41)
+
+The Days tab shows the calendar straight away from what the phone already has (months seen this session stay in memory; this month is kept on the phone for next time), then checks with the server behind it, and only redraws if something changed. It doesn't ask the server at all if it checked in the last minute and today's clips match the board.
 
 ## Test site (dev branch)
 

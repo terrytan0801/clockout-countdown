@@ -739,7 +739,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v40.0</span>
+    <span>v41.0</span>
   </div>
 </div>
 
@@ -1041,6 +1041,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
 <script src="/monsters.js"></script>
+<script src="/monster-props.js"></script>
 <script>
 "use strict";
 /* ================= constants & helpers ================= */
@@ -1074,7 +1075,7 @@ const monIO="IntersectionObserver" in window?new IntersectionObserver(es=>es.for
 }),{rootMargin:"120px 0px"}):null;
 function monEl(i,color,mood,extra=""){
   const d=document.createElement("div");d.className=`mon ${mood} ${extra}`.trim();
-  d.style.setProperty("--mc",colorVar(color));d.innerHTML=monSvg(i);
+  d.style.setProperty("--mc",colorVar(color));d.innerHTML=monSvg(i);applyProps(d);
   if(monIO&&!/\bstill\b/.test(extra)) monIO.observe(d);
   return d;
 }
@@ -1184,7 +1185,7 @@ function applyState(d,fromCache){
     if(sig!==lastSig){lastSig=sig;buildLanes();}
   }else{lastSig="";lanesData=[];$("lanes").replaceChildren();}
   renderChrome();tick();updateBanner();updateUnread();updateRing();updateDaysDot();updatePeek();
-  if(S.cave){const cs=JSON.stringify(S.cave.clipsToday);if(cs!==lastClipSig){const had=lastClipSig;lastClipSig=cs;if(had&&view==="days") loadDays();}}
+  if(S.cave){const cs=JSON.stringify(S.cave.clipsToday);if(cs!==lastClipSig){const had=lastClipSig;lastClipSig=cs;if(had&&view==="days") loadDays(null,true);}}
   if(ssGet("clockout.film")&&S.cave){ssSet("clockout.film",null);if(view!=="board") setView("board");scrollTo(0,0);}
   if(S.cave) decorate();
   checkLevelUp();
@@ -1266,29 +1267,47 @@ function laneState(p,n,nowSec){
 // What someone's monster is doing (v40), and a short label for their card.
 // Asleep before work (and before 10 am on days off, and from 11:30 pm); lunch; dinner for everyone off at 7:30-8:30 pm;
 // a little dance right after clocking out; otherwise a free-time activity that changes every hour.
-const FUN=[["dance",null],["read","Reading"],["game","Gaming"],["ball","Sports"],["music","Music"]];
+// Free time: what they might be up to, with the card's label. Reading also picks a book; meals pick a food;
+// beds have each person's own blanket. All picked from the person, the day and the hour, so everyone differs.
+const FUN=[["dance",null],["read","Reading"],["game","Gaming"],["ball","Basketball"],["guitar","Guitar"],["paint","Painting"],
+  ["bubbles","Bubbles"],["fish","Fishing"],["garden","Gardening"],["juggle","Juggling"],["skate","Skating"],["zen","Meditating"],["cook","Cooking"]];
 function h32(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h;}
-const sleepOf=(p,n)=>"nap sv"+(1+h32(p.id+"|"+n.day)%3);
+const pickOf=(list,seed)=>list[h32(seed)%list.length];
+const sleepOf=(p,n)=>`nap sv${1+h32(p.id+"|"+n.day)%4} bd-${pickOf(MONSTER_PROPS.BLANKETS,p.id+"|bed")}`;
+const foodOf=(p,n,meal)=>"eat f-"+pickOf(MONSTER_PROPS.FOOD,`${p.id}|${n.day}|${meal}`);
 function moodFor(p,r,n,nowSec){
   const {state,o}=r;
   if(state==="ot") return {mood:"tired"};
   if(state.startsWith("before")){
     if(r.notIn) return {mood:sleepOf(p,n),label:"Asleep"};
-    return r.lunch?{mood:"eat",label:"Lunch"}:{mood:"work"};
+    return r.lunch?{mood:foodOf(p,n,"lunch"),label:"Lunch"}:{mood:"work"};
   }
   const freeDay=state==="weekend"||state==="off";
   if(nowSec>=23.5*3600||(freeDay&&nowSec<10*3600)) return {mood:sleepOf(p,n),label:"Asleep"};
-  if(nowSec>=19.5*3600&&nowSec<20.5*3600) return {mood:"eat",label:"Dinner"};
+  if(nowSec>=19.5*3600&&nowSec<20.5*3600) return {mood:foodOf(p,n,"dinner"),label:"Dinner"};
   const outAt=state==="done-ot"?o.end:state==="done"?r.offSec:null;
   if(outAt!=null&&nowSec-outAt>=0&&nowSec-outAt<20*60) return {mood:"dance"};
-  const [mood,label]=FUN[h32(p.id+"|"+n.day+"|"+Math.floor(nowSec/3600))%FUN.length];
-  return {mood,label};
+  const hour=`${p.id}|${n.day}|${Math.floor(nowSec/3600)}`;
+  const [mood,label]=pickOf(FUN,hour);
+  return {mood:mood==="read"?"read bk-"+pickOf(MONSTER_PROPS.BOOKS,hour+"|book"):mood,label};
 }
-const MOOD_CLS=["work","tired","dance","eat","nap","sv1","sv2","sv3","read","game","ball","music"];
+const MOOD_CLS=["work","tired","dance","eat","nap","sv1","sv2","sv3","sv4",...FUN.map(f=>f[0])];
+const isMoodCls=c=>MOOD_CLS.includes(c)||/^(f|bk|bd)-/.test(c);
 function setMood(mon,mood){
   const want=mood.split(" ");
-  if(MOOD_CLS.every(c=>mon.classList.contains(c)===want.includes(c))) return;
-  mon.classList.remove(...MOOD_CLS);mon.classList.add(...want);
+  const have=[...mon.classList].filter(isMoodCls);
+  if(have.length===want.length&&want.every(c=>have.includes(c))) return;
+  mon.classList.remove(...have);mon.classList.add(...want);applyProps(mon);
+}
+// Lay the mood's prop (bed, food, book, guitar…) over the monster, or take it away.
+function applyProps(mon){
+  const pr=window.monsterProps?monsterProps([...mon.classList]):null, key=pr?pr.key:"";
+  if((mon.dataset.prop||"")===key) return;
+  mon.querySelectorAll(":scope>svg.pl").forEach(x=>x.remove());
+  mon.dataset.prop=key;if(!pr) return;
+  const svg=(cls,inner)=>`<svg class="pl ${cls}" viewBox="0 0 100 100" aria-hidden="true">${inner}</svg>`;
+  if(pr.back) mon.insertAdjacentHTML("afterbegin",svg("back",pr.back));
+  if(pr.front) mon.insertAdjacentHTML("beforeend",svg("front",pr.front));
 }
 function moodOf(p){
   const n=sgNow(),ns=n.h*3600+n.m*60+n.s;
@@ -1840,10 +1859,10 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
+  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);lsSet(LS_CAL,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearTimeout(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
-  closeCam();closeDay();calData=null;calMonth=null;lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
+  closeCam();closeDay();calData=null;calMonth=null;calMonths.clear();lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
   $("banner").hidden=true;$("newsSheet").hidden=true;renderChrome();updatePeek();
   showSplashForAuth("login");
   if(msg) toast(msg);
@@ -2466,12 +2485,38 @@ function markDaysSeen(){
 /* ---- the calendar ---- */
 let calMonth=null, calData=null, lastClipSig="";
 const addMonth=(m,k)=>{const [y,mo]=m.split("-").map(Number);return new Date(Date.UTC(y,mo-1+k,1)).toISOString().slice(0,7);};
-async function loadDays(m){
+// The calendar shows at once from what this phone already has (in memory, or kept from last time), then
+// checks with the server behind it. Months seen this session are remembered, so going back and forth is instant.
+const LS_CAL="clockout.cal", calMonths=new Map();
+function keepCal(d){
+  calMonths.set(d.month,d);
+  if(d.month===S.day.slice(0,7)) try{lsSet(LS_CAL,JSON.stringify({u:S.me.id,cid:S.cave.id,d}));}catch(e){}
+}
+function knownCal(month){
+  if(calMonths.has(month)) return calMonths.get(month);
+  try{const c=JSON.parse(lsGet(LS_CAL)||"null");if(c&&c.u===S.me.id&&c.cid===S.cave.id&&c.d&&c.d.month===month){c.d._at=0;calMonths.set(month,c.d);return c.d;}}catch(e){}
+  return null;
+}
+// Is what we have still right? Today's clips are in the board's state, so a new clip shows up without asking.
+function calFresh(d){
+  if(!d||Date.now()-(d._at||0)>60000) return false;
+  if(d.month!==S.day.slice(0,7)) return true;
+  const have=((d.days[S.day]||{}).clips||[]).map(c=>c.pid+"."+c.r).sort().join();
+  const now=(S.cave.clipsToday||[]).map(c=>c.pid+"."+c.r).sort().join();
+  return have===now;
+}
+async function loadDays(m,force){
   if(!S||!S.cave) return;
   const now=S.day.slice(0,7);
   calMonth=m||calMonth||now;if(calMonth>now) calMonth=now;
-  try{const d=await api("days?month="+calMonth);d._at=Date.now();if(d.month===calMonth){calData=d;renderCal();warmToday();}}
-  catch(e){$("daysHint").textContent=e.message;}
+  const month=calMonth, known=knownCal(month);
+  if(known){calData=known;renderCal();warmToday();if(!force&&calFresh(known)) return;}
+  try{
+    const d=await api("days?month="+month);d._at=Date.now();keepCal(d);
+    if(month!==calMonth) return;
+    const changed=!known||JSON.stringify(known.days)!==JSON.stringify(d.days);
+    calData=d;if(changed){renderCal();warmToday();}
+  }catch(e){if(!known) $("daysHint").textContent=e.message;}
 }
 function renderCal(){
   const [y,mo]=calMonth.split("-").map(Number), today=S.day;
@@ -2770,7 +2815,7 @@ async function postClip(blob,thumb,dur,btn){
     if(!r.ok) throw new Error(d.error||"Couldn't post. Try again.");
     applyState(d);confetti(36);
     toast(d.me.clip&&d.me.clip.late?"Posted, marked late. You're in today's vlog.":"Posted! You're in today's vlog.");
-    if(view==="days") loadDays(S.day.slice(0,7));
+    if(view==="days") loadDays(S.day.slice(0,7),true);
     return true;
   }catch(e){
     if($("camSheet").hidden) toast(e.message);else $("camErr").textContent=e.message;
@@ -3010,12 +3055,12 @@ async function openDay(day){
   // behind the scenes and reopen the day if any came in (unless it's playing).
   let d=calData&&calData.month===day.slice(0,7)&&calData.days[day]?calData:null;
   if(!d){
-    try{d=await api("days?month="+day.slice(0,7));d._at=Date.now();}catch(e){toast(e.message);return;}
+    try{d=await api("days?month="+day.slice(0,7));d._at=Date.now();keepCal(d);}catch(e){toast(e.message);return;}
     if(view==="days"&&calMonth===d.month){calData=d;renderCal();}
   }else if(Date.now()-d._at>30000){
     const had=(d.days[day].clips||[]).map(c=>c.slot+c.at).join();
     api("days?month="+day.slice(0,7)).then(n=>{
-      n._at=Date.now();if(calMonth===n.month){calData=n;renderCal();}
+      n._at=Date.now();keepCal(n);if(calMonth===n.month){calData=n;renderCal();}
       const now=n.days[day];
       if(now&&dayCtx&&dayCtx.day===day&&!playing&&!making&&now.clips.map(c=>c.slot+c.at).join()!==had) openDay(day);
     }).catch(()=>{});
@@ -3142,15 +3187,15 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v40-reply",v:"v40.0",at:"2026-11-12T13:00",title:"Replies, and monsters with a life",changes:[
+  {id:"v40-reply",v:"v41.0",at:"2026-11-12T13:30",title:"Replies, and monsters with a life",changes:[
     "Reply to a message: hold it and tap Reply, or swipe it to the right.",
-    "Before work your monster is asleep, in one of three sleeping poses.",
-    "Dinner for everyone who's off at 7:30 to 8:30 pm.",
-    "After work and on days off, monsters read, game, play ball or listen to music."],panels:[
+    "Before work your monster is asleep in its own bed, in one of four sleeping poses.",
+    "Lunch and dinner (7:30 to 8:30 pm for everyone who's off) can be anything: pizza, sushi, cake, eyeball soup…",
+    "After work and on days off, monsters read their own books, game, play guitar, paint, fish, juggle, skate and more."],panels:[
     {art:"reply",title:"Reply",text:"Hold a message and tap Reply, or swipe it right. Your answer shows what it's replying to."},
-    {art:"nap",title:"Still asleep",text:"Not started work yet? Your monster is still in bed, curled up, flat out or nodding off."},
-    {art:"dinner",title:"Dinner time",text:"7:30 to 8:30 pm, everyone who's off sits down to eat."},
-    {art:"fun",title:"Free time",text:"After work and on days off, monsters read, game, play ball or listen to music. It changes every hour."}]},
+    {art:"nap",title:"Still in bed",text:"Not started work yet? Your monster is still in bed, under its own blanket, sleeping its own way."},
+    {art:"dinner",title:"Dinner time",text:"7:30 to 8:30 pm, everyone who's off eats. Pizza, cake, eyeball soup… they're monsters."},
+    {art:"fun",title:"Free time",text:"Guitar, spellbooks, fishing, juggling, skating, gardening… after work it changes every hour."}]},
   {id:"v35-lunch",v:"v32.0–35.0",at:"2026-11-11T12:37",title:"Lunch, reactions and a faster app",changes:[
     "Set when you start work: your bar fills from then, and before it your card says Not in yet.",
     "Set a lunch break: your card says Lunch and your monster eats.",
@@ -3287,9 +3332,9 @@ function panelArt(kind){
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
     case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
-    case "nap":add(monEl(me.monster,me.color,"nap sv1"),monEl(crew[0].monster,crew[0].color,"nap sv2"));break;
-    case "dinner":add(monEl(me.monster,me.color,"eat"),monEl(crew[0].monster,crew[0].color,"eat"),burstEl("7:30 PM",{top:"14px",left:"16px"}));break;
-    case "fun":add(monEl(me.monster,me.color,"game"),monEl(crew[0].monster,crew[0].color,"read"),monEl(crew[1]?crew[1].monster:me.monster,crew[1]?crew[1].color:"teal","ball"));break;
+    case "nap":add(monEl(me.monster,me.color,"nap sv1 bd-stars"),monEl(crew[0].monster,crew[0].color,"nap sv2 bd-stripes"));break;
+    case "dinner":add(monEl(me.monster,me.color,"eat f-pizza"),monEl(crew[0].monster,crew[0].color,"eat f-eyesoup"),burstEl("7:30 PM",{top:"14px",left:"16px"}));break;
+    case "fun":add(monEl(me.monster,me.color,"guitar"),monEl(crew[0].monster,crew[0].color,"read bk-spell"),monEl(crew[1].monster,crew[1].color,"fish"));break;
     case "reply":{const w=document.createElement("div");w.className="cbub";w.appendChild(small(me));
       const t=document.createElement("span");t.style.setProperty("--bc",softVar(me.color));
       const q=document.createElement("i");q.className="pq";q.style.setProperty("--qc",colorVar(crew[0].color));const qb=document.createElement("b");qb.textContent=crew[0].name||"Suki";q.append(qb,"Lunch?");
