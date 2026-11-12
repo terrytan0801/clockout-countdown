@@ -21,7 +21,8 @@
 .mon svg *{transform-box:view-box}
 
 /* which parts show in which mood */
-.mon .lap,.mon .lid,.mon .sweat,.mon .zz,.mon .mouth-t,.mon .food{display:none}
+.mon{position:relative}
+.mon .lap,.mon .lid,.mon .sweat,.mon .zz,.mon .mouth-t,.mon .food,.mon .book,.mon .game,.mon .ball,.mon .note{display:none}
 .mon.eat .food{display:inline}
 .mon.eat .pu{transform:translateY(2.5px)}
 .mon.work .lap,.mon.tired .lap{display:inline}
@@ -51,6 +52,46 @@
 @keyframes m-munch{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(2.5px) rotate(-2deg)}60%{transform:translateY(-1px) rotate(1.5deg)}}
 @keyframes m-chew{from{transform:scaleY(1)}to{transform:scaleY(.45)}}
 @keyframes m-steam{0%{transform:translateY(4px);opacity:0}30%{opacity:.8}100%{transform:translateY(-10px);opacity:0}}
+
+/* asleep (v40): eyes shut and z's; three ways of sleeping, picked per person per day */
+.mon.nap .b>.m-eye:not(.mouth),.mon.nap .pu,.mon.music .b>.m-eye:not(.mouth),.mon.music .pu{transform-box:fill-box;transform-origin:center;transform:scaleY(.14)}
+.mon.nap .mouth{transform-box:fill-box;transform-origin:center;transform:scale(.6)}
+.mon.nap .zz{display:inline;animation:m-zz 2.8s ease-in-out infinite}
+.mon.nap .zz.z2{animation-delay:1.4s}
+.mon.nap.sv1 .b{transform-origin:50px 90px;animation:m-breathe 3.2s ease-in-out infinite}
+.mon.nap.sv2 svg{transform:translateY(14%) rotate(-84deg) scale(.84)}
+.mon.nap.sv2 .zz,.mon.nap.sv2 .m-shadow{display:none}
+.mon.nap.sv2 .b{transform-origin:50px 90px;animation:m-breathe 3.6s ease-in-out infinite}
+.mon.nap.sv2::after{content:"z z";position:absolute;right:6%;top:4%;font:700 12px var(--f-mono,monospace);color:var(--muted);animation:m-zzz 2.8s ease-in-out infinite}
+.mon.nap.sv3 .b{transform-origin:50px 88px;animation:m-nod 3.4s ease-in-out infinite}
+@keyframes m-breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,1.06)}}
+@keyframes m-nod{0%{transform:rotate(0)}68%,80%{transform:translateY(3px) rotate(10deg)}86%{transform:rotate(-3deg)}100%{transform:rotate(0)}}
+@keyframes m-zzz{0%{transform:translate(0,4px);opacity:0}30%{opacity:1}100%{transform:translate(6px,-10px);opacity:0}}
+
+/* free time (v40): reading, gaming, playing ball, listening to music (or dancing, below) */
+.bk-cover{fill:#3d6fd6}.bk-page{fill:#fffdf6;stroke:#cbbfa8;stroke-width:1}.bk-line{stroke:#b8ad97;stroke-width:1.3;fill:none}
+.gm-body{fill:#3a3f4b}.gm-screen{fill:#8ee6a0}.gm-pad{stroke:#e9e2d4;stroke-width:3;stroke-linecap:round}.gm-btn{fill:#e8583e}.gm-btn.b2{fill:#f2c94c}
+.bl{fill:#f08a24;stroke:#8a4410;stroke-width:1.4}.bl-line{stroke:#8a4410;stroke-width:1.2;fill:none}
+.note{font:700 16px sans-serif;fill:var(--mc)}
+.mon.read .book,.mon.game .game,.mon.ball .ball,.mon.music .note{display:inline}
+.mon.read .pu,.mon.game .pu{transform:translateY(2.5px)}
+.mon.read .b{transform-origin:50px 90px;animation:m-readsway 4s ease-in-out infinite}
+.mon.read .bk-flip{transform-origin:50px 82px;animation:m-flip 4s ease-in-out infinite}
+@keyframes m-readsway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+@keyframes m-flip{0%,70%{transform:scaleX(1)}85%,100%{transform:scaleX(-1)}}
+.mon.game .b{transform-origin:50px 90px;animation:m-mash .18s ease-in-out infinite alternate}
+.mon.game .gm-screen{animation:m-screen .9s steps(1) infinite}
+@keyframes m-mash{from{transform:translate(-.8px,0)}to{transform:translate(.8px,-1.2px)}}
+@keyframes m-screen{0%{fill:#8ee6a0}33%{fill:#6fd3ff}66%{fill:#ffd36f}}
+.mon.ball .b{transform-origin:50px 88px;animation:m-hop .7s cubic-bezier(.3,0,.4,1) infinite}
+.mon.ball .ball{animation:m-dribble .7s cubic-bezier(.4,0,.6,1) infinite}
+.mon.ball .pu{transform:translate(2px,1.5px)}
+@keyframes m-dribble{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
+.mon.music .b{transform-origin:50px 90px;animation:m-sway2 1.6s ease-in-out infinite}
+.mon.music .note{animation:m-note 2.4s ease-out infinite}
+.mon.music .note.n2{animation-delay:1.2s}
+@keyframes m-sway2{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes m-note{0%{transform:translateY(6px);opacity:0}25%{opacity:1}100%{transform:translateY(-16px);opacity:0}}
 
 /* off: everyone dances their own way */
 .mon.dance .sh{transform-origin:50px 93px;animation:m-shadow .6s ease-in-out infinite}

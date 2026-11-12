@@ -51,6 +51,19 @@ const m3 = (await call("POST", "chat", { text: "ok" }, A.t)).data.message;
 g = (await call("GET", `chat?after=${last.at - 1}&last=${last.id}&rv=${rv}`, null, C.t)).data;
 assert.deepEqual(g.messages.map((m) => m.text), ["yes", "ok"]); assert.equal(g.reactions, undefined);
 
+// replies (v40): a short copy of the message answered goes with the reply
+const long = "x".repeat(300);
+const ml = (await call("POST", "chat", { text: long }, B.t)).data.message;
+const rep1 = (await call("POST", "chat", { text: "sure!", re: m1.id }, C.t)).data.message;
+assert.deepEqual(rep1.re, { id: m1.id, pid: A.id, name: "Ann", color: m1.color, text: "lunch?" });
+assert.equal((await call("POST", "chat", { text: "ok", re: ml.id }, A.t)).data.message.re.text.length, 120, "the copy is short");
+assert.equal((await call("POST", "chat", { text: "hm", re: "1794390000000-abcdef" }, A.t)).status, 404);
+assert.equal((await call("POST", "chat", { text: "hm", re: "../../vapid" }, A.t)).status, 404);
+assert.equal((await call("POST", "chat", { text: "hm", re: m1.id }, O.t)).status, 404, "not a message in your cave");
+assert.equal((await call("POST", "chat", { text: "plain" }, A.t)).data.message.re, undefined);
+const got2 = (await call("GET", "chat", null, B.t)).data.messages.find((m) => m.id === rep1.id);
+assert.equal(got2.re.id, m1.id, "replies come back with their quote");
+
 // the rules
 assert.equal((await call("POST", "chat/react", { id: m1.id, emoji: "🍕" }, A.t)).status, 400, "only the six");
 assert.equal((await call("POST", "chat/react", { id: "1794390000000-abcdef", emoji: "👍" }, A.t)).status, 404);

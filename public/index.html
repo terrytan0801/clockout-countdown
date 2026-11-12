@@ -222,6 +222,21 @@ body.calm .newsbtn .nmon{animation:none!important}
 @media (max-width:360px){.rxpick button{width:34px;height:34px;font-size:21px}}
 .rxpick .copy{font:700 12px/1 var(--f-mono);letter-spacing:.04em;color:var(--ink);width:auto;padding:0 10px;border-radius:999px;border-left:1px solid var(--line)}
 .composer{display:flex;flex-direction:row;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--card)}
+/* replies (v40) */
+.replybar{display:flex;align-items:center;gap:8px;padding:8px 10px 0;background:var(--card);border-top:1px solid var(--line)}
+.replybar+.composer{border-top:0}
+.replybar .q{flex:1;min-width:0;border-left:4px solid var(--qc,var(--ink));background:var(--track);border-radius:8px;padding:6px 10px}
+.replybar .q b{display:block;font-size:12px;color:var(--qc,var(--ink))}
+.replybar .q span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.replybar button{border:0;background:var(--track);width:32px;height:32px;border-radius:50%;font-size:16px;line-height:1;cursor:pointer;color:var(--ink);flex:none}
+.bubble .quote{display:block;border-left:3px solid var(--qc,var(--ink));background:rgba(0,0,0,.06);border-radius:6px;padding:4px 8px;margin:0 0 5px;cursor:pointer;max-width:100%}
+.bubble .quote b{display:block;font-size:11.5px;color:var(--qc,var(--ink))}
+.bubble .quote span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;opacity:.75}
+.bubble[data-id]{touch-action:pan-y}
+.bubble.swiping{transition:none}
+.bubble.flash{animation:qflash 1.2s ease}
+@keyframes qflash{0%,40%{box-shadow:0 0 0 3px var(--ink)}100%{box-shadow:0 0 0 0 transparent}}
+.swipehint{position:absolute;left:-26px;top:50%;transform:translateY(-50%);font-size:16px;opacity:0}
 .composer input{flex:1;min-width:0}
 
 /* crew */
@@ -585,6 +600,8 @@ body.sleeping *{animation-play-state:paused!important}
 .cbub .mon{width:46px!important;height:46px!important;flex:none}
 .cbub span{background:var(--bc);border-radius:12px;padding:7px 10px;font-size:13px}
 .panel-art .cbub .bw{align-items:flex-start}
+.panel-art .cbub .pq{display:block;font-style:normal;border-left:3px solid var(--qc);background:rgba(0,0,0,.06);border-radius:5px;padding:2px 6px;margin-bottom:4px;font-size:11px;opacity:.85}
+.panel-art .cbub .pq b{display:block;color:var(--qc);font-size:10.5px}
 .panel-art .cbub .rx{background:var(--card);padding:2px 7px;font-size:11px;margin:-5px 0 0 8px;border-radius:999px}
 .panel-art .cbub .rx .e{background:none;padding:0;font-size:13px}
 .cdots{display:flex;gap:6px}
@@ -683,6 +700,10 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 
   <section class="chat" id="chatView" hidden aria-label="Cave chat">
     <div class="chat-list" id="chatList" aria-live="polite"></div>
+    <div class="replybar" id="replyBar" hidden>
+      <div class="q" id="replyQ"><b id="replyWho"></b><span id="replyText"></span></div>
+      <button type="button" id="replyX" aria-label="Don't reply">✕</button>
+    </div>
     <form class="composer" id="composer" novalidate>
       <input id="chatInput" name="chatInput" maxlength="500" autocomplete="off" placeholder="Say something to the cave" aria-label="Message">
       <button class="btn" type="submit" id="chatSend">Send</button>
@@ -718,7 +739,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v39.0</span>
+    <span>v40.0</span>
   </div>
 </div>
 
@@ -1242,9 +1263,36 @@ function laneState(p,n,nowSec){
   if(o.on) return {state:"done-ot",offSec,o};
   return {state:"done",offSec,o};
 }
+// What someone's monster is doing (v40), and a short label for their card.
+// Asleep before work (and before 10 am on days off, and from 11:30 pm); lunch; dinner for everyone off at 7:30-8:30 pm;
+// a little dance right after clocking out; otherwise a free-time activity that changes every hour.
+const FUN=[["dance",null],["read","Reading"],["game","Gaming"],["ball","Sports"],["music","Music"]];
+function h32(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h;}
+const sleepOf=(p,n)=>"nap sv"+(1+h32(p.id+"|"+n.day)%3);
+function moodFor(p,r,n,nowSec){
+  const {state,o}=r;
+  if(state==="ot") return {mood:"tired"};
+  if(state.startsWith("before")){
+    if(r.notIn) return {mood:sleepOf(p,n),label:"Asleep"};
+    return r.lunch?{mood:"eat",label:"Lunch"}:{mood:"work"};
+  }
+  const freeDay=state==="weekend"||state==="off";
+  if(nowSec>=23.5*3600||(freeDay&&nowSec<10*3600)) return {mood:sleepOf(p,n),label:"Asleep"};
+  if(nowSec>=19.5*3600&&nowSec<20.5*3600) return {mood:"eat",label:"Dinner"};
+  const outAt=state==="done-ot"?o.end:state==="done"?r.offSec:null;
+  if(outAt!=null&&nowSec-outAt>=0&&nowSec-outAt<20*60) return {mood:"dance"};
+  const [mood,label]=FUN[h32(p.id+"|"+n.day+"|"+Math.floor(nowSec/3600))%FUN.length];
+  return {mood,label};
+}
+const MOOD_CLS=["work","tired","dance","eat","nap","sv1","sv2","sv3","read","game","ball","music"];
+function setMood(mon,mood){
+  const want=mood.split(" ");
+  if(MOOD_CLS.every(c=>mon.classList.contains(c)===want.includes(c))) return;
+  mon.classList.remove(...MOOD_CLS);mon.classList.add(...want);
+}
 function moodOf(p){
-  const n=sgNow(),{state,lunch}=laneState(p,n,n.h*3600+n.m*60+n.s);
-  return state==="ot"?"tired":(state.startsWith("before")?(lunch?"eat":"work"):"dance");
+  const n=sgNow(),ns=n.h*3600+n.m*60+n.s;
+  return moodFor(p,laneState(p,n,ns),n,ns).mood;
 }
 function buildLanes(){
   const lanes=$("lanes");
@@ -1309,8 +1357,8 @@ function tick(){
     el.classList.toggle("overtime",state==="ot");
     el.classList.toggle("first",r===firstLeft);
     el.classList.toggle("rainbow",isDone&&p.monster===0&&p.level>=3);
-    const mood=isDone?"dance":state==="ot"?"tired":r.lunch?"eat":"work";
-    if(!mon.classList.contains(mood)){mon.classList.remove("work","tired","dance","eat");mon.classList.add(mood);}
+    const mf=moodFor(p,r,n,nowSec);
+    setMood(mon,mf.mood);
     el.classList.toggle("lunch",!!r.lunch);
 
     if(state==="weekend"){
@@ -1323,7 +1371,7 @@ function tick(){
       if(r.lunch) sub.textContent=`🍜 Lunch till ${fmtSec(r.lunchEnd)} · ${hms(left)} to go`;
       else if(r.notIn) sub.textContent=`${hms(left)} · Starts at ${fmtSec(st)}`;
       else sub.textContent=`${hms(left)} · ${left<=1800?pick(QUIPS_NEAR):Math.floor(pct)+"% done"}`;
-      setT(tag,r.lunch?"Lunch":r.notIn?"Not in yet":state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working"));
+      setT(tag,r.lunch?"Lunch":r.notIn?"Asleep":state==="before-ot"?"OT later":(r===firstLeft?"Next out":"Working"));
       bar.style.width=pct.toFixed(1)+"%";
     }else if(state==="ot"){
       const over=nowSec-offSec;
@@ -1336,6 +1384,7 @@ function tick(){
     }else{
       setT(big,pick(HAPPY_BIG));setT(sub,`Off since ${fmt12(p.h,p.m)} · ${pick(HAPPY_SUB)}`);setT(tag,"Off");bar.style.width="100%";
     }
+    if(isDone&&mf.label) setT(tag,mf.label); // what they're up to now: Dinner, Reading, Gaming…
     if(el.dataset.state!==state) el.dataset.state=state;
 
     if(p.otBtn){
@@ -1416,7 +1465,7 @@ function gotZap(d){
 
 /* ================= views & chat ================= */
 let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false, chatReacts={}, chatRv=null;
-function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;chatReacts={};chatRv=null;closeReact();$("chatList").replaceChildren();}
+function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;chatReacts={};chatRv=null;closeReact();if(typeof endReply==="function") endReply();$("chatList").replaceChildren();}
 let lastReadSent=0;
 function setView(v){
   closeReact();view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
@@ -1529,7 +1578,14 @@ function renderChat(forceBottom){
       const t=document.createElement("time");const p=sgParts(m.at);t.textContent=fmt12(+p.hour%24,+p.minute);
       meta.append(b,t);body.appendChild(meta);group.appendChild(body);list.appendChild(group);
     }
-    const bub=document.createElement("div");bub.className="bubble"+(m.pending?" pending":"");bub.textContent=m.text;
+    const bub=document.createElement("div");bub.className="bubble"+(m.pending?" pending":"");
+    if(m.re){
+      const q=document.createElement("span");q.className="quote";q.dataset.to=m.re.id;q.style.setProperty("--qc",colorVar(m.re.color||"ink"));
+      const qb=document.createElement("b");qb.textContent=m.re.pid===S.me.id?"You":m.re.name;
+      const qs=document.createElement("span");qs.textContent=m.re.text;
+      q.append(qb,qs);bub.appendChild(q);
+    }
+    bub.appendChild(document.createTextNode(m.text));
     const bw=document.createElement("div");bw.className="bw";bw.appendChild(bub);
     if(!m.pending){
       bub.dataset.id=m.id;
@@ -1558,11 +1614,13 @@ $("composer").addEventListener("submit",async e=>{
   const input=$("chatInput"), text=input.value.trim();
   if(!text) return;
   // The message shows at once (faded until the server has it) and the box is free for the next one.
-  const tmp={id:"tmp-"+Date.now()+Math.random(),pid:S.me.id,name:S.me.name,color:S.me.color,monster:S.me.monster,text,at:clockNow(),pending:true};
-  chatMsgs.push(tmp);input.value="";renderChat(true);input.focus();
+  const re=replyTo;
+  const tmp={id:"tmp-"+Date.now()+Math.random(),pid:S.me.id,name:S.me.name,color:S.me.color,monster:S.me.monster,text,at:clockNow(),pending:true,
+    ...(re?{re:{id:re.id,pid:re.pid,name:re.name,color:re.color,text:re.text.slice(0,120)}}:{})};
+  chatMsgs.push(tmp);input.value="";endReply();renderChat(true);input.focus();
   const drop=()=>{chatMsgs=chatMsgs.filter(x=>x!==tmp);};
   try{
-    const d=await api("chat",{text});
+    const d=await api("chat",re?{text,re:re.id}:{text});
     drop();
     if(!chatMsgs.some(x=>x.id===d.message.id)) chatMsgs.push(d.message);
     chatMsgs.sort((a,b)=>(a.pending?1:0)-(b.pending?1:0)||a.at-b.at);
@@ -1571,10 +1629,48 @@ $("composer").addEventListener("submit",async e=>{
     renderChat(true);markRead();saveChat();scheduleChat();
   }catch(ex){
     drop();renderChat(true);
-    if(!input.value) input.value=text; // give the words back
+    if(!input.value){input.value=text;if(re) startReply(re);} // give the words (and the reply) back
     if(ex.status!==401) toast(ex.status?ex.message:"Couldn't send that. Check your connection and try again.",4500);
   }
 });
+
+/* ---------- replies: Reply in the hold menu, or swipe a message to the right (like WhatsApp) ---------- */
+let replyTo=null;
+function startReply(m){
+  if(!m||m.pending) return;
+  replyTo=m;
+  $("replyWho").textContent=m.pid===S.me.id?"You":m.name;$("replyText").textContent=m.text;
+  $("replyQ").style.setProperty("--qc",colorVar(m.color||"ink"));
+  $("replyBar").hidden=false;$("chatInput").focus({preventScroll:true});
+  if(navigator.vibrate) navigator.vibrate(8);
+}
+function endReply(){replyTo=null;$("replyBar").hidden=true;}
+$("replyX").addEventListener("click",()=>{endReply();$("chatInput").focus({preventScroll:true});});
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Escape"&&replyTo) endReply();});
+(function(){
+  const list=$("chatList");let sw=null;
+  list.addEventListener("pointerdown",e=>{const b=e.target.closest(".bubble[data-id]");if(b) sw={b,x:e.clientX,y:e.clientY,on:false,id:e.pointerId};});
+  list.addEventListener("pointermove",e=>{
+    if(!sw||e.pointerId!==sw.id) return;
+    const dx=e.clientX-sw.x, dy=e.clientY-sw.y;
+    if(!sw.on){if(Math.abs(dy)>12){sw=null;return;}if(dx>12&&dx>Math.abs(dy)*1.5){sw.on=true;sw.b.classList.add("swiping");clearTimeout(holdT);holdT=null;}else return;}
+    sw.b.style.transform=`translateX(${Math.max(0,Math.min(70,dx-12))}px)`;
+  });
+  const end=e=>{
+    if(!sw) return;const {b,on,x}=sw;sw=null;if(!on) return;
+    const dx=(e.clientX||x)-x;b.classList.remove("swiping");b.style.transition="transform .18s ease";b.style.transform="";
+    setTimeout(()=>{b.style.transition="";},200);
+    if(dx>60){const m=chatMsgs.find(z=>z.id===b.dataset.id);startReply(m);}
+  };
+  list.addEventListener("pointerup",end);list.addEventListener("pointercancel",end);
+  // tap a quote: jump to the message it answers
+  list.addEventListener("click",e=>{
+    const q=e.target.closest(".quote");if(!q) return;
+    const t=list.querySelector(`.bubble[data-id="${CSS.escape(q.dataset.to)}"]`);
+    if(!t){toast("That message is too far back to show.");return;}
+    t.scrollIntoView({block:"center",behavior:"smooth"});t.classList.remove("flash");void t.offsetWidth;t.classList.add("flash");
+  });
+})();
 
 /* ---------- reactions: hold a message (or right-click) to react, like WhatsApp ---------- */
 const QUICK_RX=["👍","❤️","😂","😮","😢","🙏"];
@@ -1592,6 +1688,9 @@ function openReact(bub){
     b.addEventListener("click",()=>{closeReact();react(id,e===mine?null:e);});
     p.appendChild(b);
   });
+  const rp=document.createElement("button");rp.type="button";rp.className="copy";rp.textContent="Reply";rp.setAttribute("role","menuitem");
+  rp.addEventListener("click",()=>{closeReact();startReply(m);});
+  p.appendChild(rp);
   const c=document.createElement("button");c.type="button";c.className="copy";c.textContent="Copy";c.setAttribute("role","menuitem");
   c.addEventListener("click",async()=>{closeReact();try{await navigator.clipboard.writeText(m.text);toast("Copied");}catch(e){toast("Couldn't copy on this phone.");}});
   p.appendChild(c);
@@ -3043,6 +3142,15 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v40-reply",v:"v40.0",at:"2026-11-12T13:00",title:"Replies, and monsters with a life",changes:[
+    "Reply to a message: hold it and tap Reply, or swipe it to the right.",
+    "Before work your monster is asleep, in one of three sleeping poses.",
+    "Dinner for everyone who's off at 7:30 to 8:30 pm.",
+    "After work and on days off, monsters read, game, play ball or listen to music."],panels:[
+    {art:"reply",title:"Reply",text:"Hold a message and tap Reply, or swipe it right. Your answer shows what it's replying to."},
+    {art:"nap",title:"Still asleep",text:"Not started work yet? Your monster is still in bed, curled up, flat out or nodding off."},
+    {art:"dinner",title:"Dinner time",text:"7:30 to 8:30 pm, everyone who's off sits down to eat."},
+    {art:"fun",title:"Free time",text:"After work and on days off, monsters read, game, play ball or listen to music. It changes every hour."}]},
   {id:"v35-lunch",v:"v32.0–35.0",at:"2026-11-11T12:37",title:"Lunch, reactions and a faster app",changes:[
     "Set when you start work: your bar fills from then, and before it your card says Not in yet.",
     "Set a lunch break: your card says Lunch and your monster eats.",
@@ -3179,6 +3287,13 @@ function panelArt(kind){
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
     case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
+    case "nap":add(monEl(me.monster,me.color,"nap sv1"),monEl(crew[0].monster,crew[0].color,"nap sv2"));break;
+    case "dinner":add(monEl(me.monster,me.color,"eat"),monEl(crew[0].monster,crew[0].color,"eat"),burstEl("7:30 PM",{top:"14px",left:"16px"}));break;
+    case "fun":add(monEl(me.monster,me.color,"game"),monEl(crew[0].monster,crew[0].color,"read"),monEl(crew[1]?crew[1].monster:me.monster,crew[1]?crew[1].color:"teal","ball"));break;
+    case "reply":{const w=document.createElement("div");w.className="cbub";w.appendChild(small(me));
+      const t=document.createElement("span");t.style.setProperty("--bc",softVar(me.color));
+      const q=document.createElement("i");q.className="pq";q.style.setProperty("--qc",colorVar(crew[0].color));const qb=document.createElement("b");qb.textContent=crew[0].name||"Suki";q.append(qb,"Lunch?");
+      t.append(q,"Yes! 12:30");w.appendChild(t);add(w);break;}
     case "react":{const w=document.createElement("div");w.className="cbub";w.appendChild(small(crew[0]));
       const col=document.createElement("div");col.className="bw";const t=document.createElement("span");t.textContent="Leaving at 5!";t.style.setProperty("--bc",softVar(crew[0].color));
       const rx=document.createElement("span");rx.className="rx";rx.innerHTML='<span class="e">😂</span><span class="e">❤️</span> 3';col.append(t,rx);w.appendChild(col);add(w);break;}

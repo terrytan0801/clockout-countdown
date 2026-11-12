@@ -4,6 +4,7 @@
 //   .pu       pupils (look down at the laptop)    .lid   half-closed eyelids on overtime
 //   .mouth    normal mouth                        .mouth-t  wobbly tired mouth
 //   .sweat .zz .lap   overtime sweat, sleepy z's, and the laptop      .food  lunch bowl (mood .eat)
+//   .book .game .ball .note   free-time props (moods .read .game .ball .music); mood .nap (+ .sv1-.sv3) shuts the eyes
 (function () {
   function starPoints(cx, cy, ro, ri, n) {
     const p = [];
@@ -22,11 +23,20 @@
     `<path class="chop" d="M60 56 L80 80"/><path class="chop" d="M66 54 L83 79"/>` +
     `<path class="bowl" d="M24 76 Q26 95 50 95 Q74 95 76 76Z"/><ellipse class="rice" cx="50" cy="76" rx="26" ry="5"/>` +
     `<path class="bowl-band" d="M28 84 Q50 90 72 84"/></g>`;
+  // free time (v40): a book, a game console, a ball, music notes
+  const BOOK = `<g class="book"><path class="bk-cover" d="M19 70 L50 75 L81 70 L81 93 L50 97 L19 93Z"/>` +
+    `<path class="bk-page" d="M22 69 Q37 65 50 72 L50 94 Q37 88 22 91Z"/><path class="bk-page" d="M78 69 Q63 65 50 72 L50 94 Q63 88 78 91Z"/>` +
+    `<path class="bk-line" d="M27 75 Q37 72 45 77 M27 80 Q37 77 45 82 M27 85 Q37 82 45 87 M55 77 Q63 72 73 75 M55 82 Q63 77 73 80"/>` +
+    `<path class="bk-page bk-flip" d="M78 69 Q63 65 50 72 L50 94 Q63 88 78 91Z"/></g>`;
+  const GAME = `<g class="game"><rect class="gm-body" x="21" y="70" width="58" height="24" rx="11"/><rect class="gm-screen" x="38" y="73" width="24" height="17" rx="2.5"/>` +
+    `<path class="gm-pad" d="M27 82h8M31 78v8"/><circle class="gm-btn" cx="67" cy="79" r="2.5"/><circle class="gm-btn b2" cx="72" cy="85" r="2.5"/></g>`;
+  const BALL = `<g class="ball"><circle class="bl" cx="85" cy="85" r="8.5"/><path class="bl-line" d="M76.5 85h17M85 76.5v17M79 79q6 6 0 12M91 79q-6 6 0 12"/></g>`;
+  const NOTES = `<text class="note" x="8" y="42">♪</text><text class="note n2" x="82" y="30">♫</text>`;
   const SWEAT = `<path class="sweat" d="M75 27 Q80 34 75 38 Q70 34 75 27Z"/>`;
   const ZZ = `<text class="zz" x="80" y="20">z</text><text class="zz z2" x="86" y="11">z</text>`;
   const eye = (cx, cy, r, pr, dx = 1, dy = 1) =>
     `<circle class="m-eye" cx="${cx}" cy="${cy}" r="${r}"/><circle class="m-pupil pu" cx="${cx + dx}" cy="${cy + dy}" r="${pr}"/>`;
-  const wrap = (cls, inner) => `<svg viewBox="0 0 100 100" class="${cls}" aria-hidden="true">${inner}${LAPTOP}${FOOD}${ZZ}</svg>`;
+  const wrap = (cls, inner) => `<svg viewBox="0 0 100 100" class="${cls}" aria-hidden="true">${inner}${LAPTOP}${FOOD}${BOOK}${GAME}${BALL}${NOTES}${ZZ}</svg>`;
 
   window.MONSTERS = [
     { name: "Jelly", svg: wrap("jelly", `

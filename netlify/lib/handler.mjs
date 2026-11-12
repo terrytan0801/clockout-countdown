@@ -1049,9 +1049,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (method === "POST") {
           const text = cleanText(body.text, 500);
           if (!text) return json({ error: "Type a message first." }, 400);
+          // A reply (v40) carries a short copy of the message it answers, so it shows even after that one is gone.
+          let re;
+          if (body.re != null) {
+            const rid = String(body.re);
+            const orig = /^[0-9]{13}-[0-9a-f]{6}$/.test(rid) ? await getJSON(prefix + rid) : null;
+            if (!orig) return json({ error: "The message you're replying to is gone." }, 404);
+            re = { id: orig.id, pid: orig.pid, name: orig.name, color: orig.color, text: orig.text.slice(0, 120) };
+          }
           const at = now();
           const id = `${String(at).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
-          const msg = { id, pid: me.id, name: me.name, color: me.color, monster: me.monster, text, at };
+          const msg = { id, pid: me.id, name: me.name, color: me.color, monster: me.monster, text, at, ...(re ? { re } : {}) };
           await Promise.all([store.setJSON(prefix + id, msg), store.setJSON(`chatlast/${me.cave}`, { at, pid: me.id, id })]);
           await bump(me.cave); // boards show the unread dot
           await later(ctx, Promise.all([stats.log("msg", me.id, me.cave), (async () => {

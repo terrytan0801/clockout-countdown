@@ -1,4 +1,4 @@
-# Clock-out Countdown · v39.0
+# Clock-out Countdown · v40.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -147,6 +147,11 @@ Every button shrinks a little the moment it's pressed. When a save takes longer 
 
 - **Asks more often while people are talking.** With the chat open, the phone asks for new messages every 1.5 seconds while someone has written in the last minute (or you're typing), every 3 seconds after a quiet minute, and every 6 seconds after five quiet minutes. An "anything new?" costs two small reads; Sleep stops it altogether.
 - **Kept on the phone.** The last 60 messages and their reactions are kept on the phone (`clockout.chat`, for the same person and cave), so after a restart the chat shows at once and only newer messages are fetched.
+
+## Replies and monsters' day (v40)
+
+- **Reply** to a chat message: hold it and tap Reply, or swipe it to the right (WhatsApp style). The reply carries a short copy of the message it answers (`re: {id,pid,name,color,text}`, first 120 characters), shown as a quote; tap the quote to jump to the original.
+- **Monsters' day.** Before your start time the monster is asleep (eyes shut, z's), in one of three poses picked per person per day: curled up breathing, lying flat, or nodding off. On days off it sleeps until 10 am, and everyone sleeps from 11:30 pm. Lunch as before. **Dinner** is 7:30-8:30 pm for everyone who's off. For 20 minutes after clocking out it dances; after that, and on days off, it reads, games, plays ball, listens to music or dances, changing every hour. The card's tag says what they're doing (Asleep, Dinner, Reading, Gaming, Sports, Music).
 
 ## Test site (dev branch)
 
