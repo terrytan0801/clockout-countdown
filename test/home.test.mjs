@@ -32,9 +32,24 @@ const hb = (await call("GET", "home", null, B.t)).data;
 assert.deepEqual(hb.items, h.items);
 assert.deepEqual((await call("GET", "home", null, O.t)).data.items, [], "other caves have their own home");
 
+// the phone may pick the id (so it can drag the new thing at once); a taken or odd id gets a new one
+const mine = (await call("POST", "home", { action: "add", kind: "plant", x: 10, y: 10, id: "mwd7x1abc123" }, B.t)).data;
+assert.ok(mine.items.some((i) => i.id === "mwd7x1abc123"));
+const again = (await call("POST", "home", { action: "add", kind: "plant", x: 10, y: 10, id: "mwd7x1abc123" }, B.t)).data;
+assert.equal(again.items.filter((i) => i.id === "mwd7x1abc123").length, 1, "an id already used isn't reused");
+const odd = (await call("POST", "home", { action: "add", kind: "plant", x: 10, y: 10, id: "../x" }, B.t)).data;
+assert.ok(odd.items.every((i) => i.id !== "../x"));
+for (const i of odd.items.filter((i) => i.kind === "plant")) await call("POST", "home", { action: "remove", id: i.id }, B.t);
+const hb2 = (await call("GET", "home", null, B.t)).data;
+assert.deepEqual(hb2.items.map((i) => i.id), [sofa.id]);
+// a change takes one listing
+const mv = await cost(() => call("POST", "home", { action: "move", id: sofa.id, x: 300, y: 820 }, A.t));
+assert.equal(mv.list, 1);
+const hb3 = (await call("GET", "home", null, B.t)).data;
+
 // "still the same?" costs one read and no listing
-const same = await cost(() => call("GET", "home?rv=" + hb.rv, null, B.t));
-assert.deepEqual(same.r.data, { same: true, rv: hb.rv }); assert.equal(same.list, 0);
+const same = await cost(() => call("GET", "home?rv=" + hb3.rv, null, B.t));
+assert.deepEqual(same.r.data, { same: true, rv: hb3.rv }); assert.equal(same.list, 0);
 
 // move, flip, and someone else can move it too
 h = (await call("POST", "home", { action: "move", id: sofa.id, x: 512.4, y: 1200 }, B.t)).data;
@@ -42,7 +57,7 @@ assert.deepEqual([h.items[0].x, h.items[0].y, h.items[0].by], [512, 1000, A.id],
 h = (await call("POST", "home", { action: "flip", id: sofa.id }, B.t)).data;
 assert.equal(h.items[0].flip, true);
 assert.equal([...store._m.keys()].filter((k) => k.startsWith("hi/")).length, 1, "moving doesn't leave copies behind");
-assert.notEqual(h.rv, hb.rv);
+assert.notEqual(h.rv, hb3.rv);
 
 // the rules
 assert.equal((await call("POST", "home", { action: "add", kind: "spaceship", x: 1, y: 1 }, A.t)).status, 400);

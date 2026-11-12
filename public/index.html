@@ -820,7 +820,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v42.0</span>
+    <span>v43.0</span>
   </div>
 </div>
 
@@ -1187,7 +1187,7 @@ function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;
 // The button that was just pressed. A save it starts shows a spinner on that button until the server answers.
 // (Zap, chat Send and reactions already show their result at once, so they don't need it.)
 let pressed=null;
-const NO_SPIN="#chatSend,.lbtn.zap,#rxPick button";
+const NO_SPIN="#chatSend,.lbtn.zap,#rxPick button,#trayItems button,#decoTools button,#decoBtn";
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("button");pressed=b&&!b.matches(NO_SPIN)?{b,t:Date.now()}:null;},true);
 document.addEventListener("submit",e=>{const b=e.submitter||e.target.querySelector('button[type="submit"],button:not([type])');if(b&&!b.matches(NO_SPIN)) pressed={b,t:Date.now()};},true);
 // While a save takes more than a moment, your monster shows up busy at its laptop with papers flying.
@@ -1857,6 +1857,7 @@ const sceneNight=()=>{const n=sgNow();return n.h>=19||n.h<7;};
 function drawSceneBg(force){const nt=sceneNight();if(!force&&nt===sceneNightNow) return;sceneNightNow=nt;$("sceneBg").innerHTML=CAVE_HOME.scene(nt);}
 async function loadHome(){
   if(homeBusy||homeDrag) return;
+  const pending=homeLate;if(pending){homeLate=null;setHome(pending);return;}
   try{const d=await api("home"+(homeRv?"?rv="+encodeURIComponent(homeRv):""));if(!d.same&&!homeBusy&&!homeDrag) setHome(d);}catch(e){}
 }
 function setHome(d){
@@ -1941,21 +1942,25 @@ function buildTray(){
     b.addEventListener("click",()=>addDecor(k));box.appendChild(b);
   });
 }
-// Changes show at once and go to the server behind; if the server says no, the home goes back.
-async function homeAct(body,next){
-  homeBusy++;const before=homeItems;
+// Changes show at once; the server is told behind, one change after another (so a move never overtakes the add
+// it belongs to). The server's copy is only taken once nothing else is waiting and nobody is dragging.
+let homeQ=Promise.resolve(), homeLate=null;
+function homeAct(body,next){
   if(next){homeItems=next;renderHomeDecor();}
-  try{setHome(await api("home",body));return true;}
-  catch(e){homeItems=before;renderHomeDecor();if(e.status!==401) toast(e.message||"Couldn't change the home. Try again.");return false;}
-  finally{homeBusy--;}
+  homeBusy++;
+  homeQ=homeQ.then(async()=>{
+    try{const d=await api("home",body);homeRv=d.rv;homeLate=d;}
+    catch(e){homeLate=null;homeRv=null;if(e.status!==401) toast(e.message||"Couldn't change the home. Try again.");}
+    finally{homeBusy--;if(!homeBusy&&!homeDrag){if(homeLate){const d=homeLate;homeLate=null;setHome(d);}else loadHome();}}
+  });
+  return homeQ;
 }
-async function addDecor(kind){
-  const x=260+Math.round(Math.random()*200), y=930;
-  homeSel=null;
-  const ok=await homeAct({action:"add",kind,x,y},[...homeItems,{id:"tmp"+Date.now(),kind,x,y,flip:false,by:S.me.id}]);
-  if(!ok) return;
-  const mine=homeItems.filter(i=>i.kind===kind&&i.by===S.me.id).sort((a,b)=>b.id.localeCompare(a.id))[0];
-  if(mine){homeSel=mine.id;renderHomeDecor();toast(`${CAVE_HOME.DECOR[kind].name} added. Drag it where you like.`);}
+const newHomeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+function addDecor(kind){
+  const x=260+Math.round(Math.random()*200), y=930, id=newHomeId();
+  homeSel=id;
+  homeAct({action:"add",kind,x,y,id},[...homeItems,{id,kind,x,y,flip:false,by:S.me.id}]);
+  toast(`${CAVE_HOME.DECOR[kind].name} added. Drag it where you like.`);
   $("caveScene").scrollIntoView({block:"nearest",behavior:"smooth"});
 }
 $("decoBtn").addEventListener("click",()=>setDecoEdit(!homeEdit));
@@ -1968,7 +1973,7 @@ $("decoDel").addEventListener("click",()=>{const id=homeSel;homeSel=null;homeAct
     if(!homeEdit){if(hm) showTip(hm);return;}
     const el=e.target.closest(".hd");
     if(!el){homeSel=null;renderHomeDecor();return;}
-    const it=homeItems.find(i=>i.id===el.dataset.id);if(!it||it.id.startsWith("tmp")) return;
+    const it=homeItems.find(i=>i.id===el.dataset.id);if(!it) return;
     e.preventDefault();
     homeDrag={el,it,r:$("caveScene").getBoundingClientRect(),sx:e.clientX,sy:e.clientY,nx:it.x,ny:it.y,moved:false};
     try{el.setPointerCapture(e.pointerId);}catch(x){}
@@ -1985,7 +1990,7 @@ $("decoDel").addEventListener("click",()=>{const id=homeSel;homeSel=null;homeAct
     const d=homeDrag;if(!d) return;homeDrag=null;d.el.classList.remove("dragging");
     homeSel=d.it.id;
     if(d.moved) homeAct({action:"move",id:d.it.id,x:d.nx,y:d.ny},homeItems.map(i=>i.id===d.it.id?{...i,x:d.nx,y:d.ny}:i));
-    else renderHomeDecor();
+    else{renderHomeDecor();if(!homeBusy&&homeLate){const l=homeLate;homeLate=null;setHome(l);}}
   };
   L.addEventListener("pointerup",end);L.addEventListener("pointercancel",end);
 })();

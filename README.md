@@ -1,4 +1,4 @@
-# Clock-out Countdown · v42.0
+# Clock-out Countdown · v43.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -161,7 +161,7 @@ The Days tab shows the calendar straight away from what the phone already has (m
 
 The **Home** button next to Board / Chat / Days opens the cave's home: a cutaway of the cave with a bedroom, study, living room, kitchen and a yard outside (sky by day, moon at night). Everyone's monster goes to the room for what it's doing: asleep in bed; eating or cooking in the kitchen; reading, painting or meditating in the study; fishing, gardening, basketball, skating or bubbles in the yard; everything else in the living room. Whoever is at work is on the **At work** board by the door, with how long until they're home. Tap a monster to see who it is and what it's doing.
 
-**Decorate** lets anyone in the cave put things in the home (20 kinds: sofa, rug, plant, lamp, TV, poster, beanbag, arcade, fireplace, aquarium, fairy lights, clock, trophy, disco ball, piano, cat, shelf, fridge, hammock, telescope; up to 60), drag them about, flip or remove them. Everyone sees the same home. Each decoration is one key, `hi/<cid>/<id>/<kind>/<x>/<y>/<flip>/<pid>`, so one listing draws the home and two people moving things at once never overwrite each other; `homerev/<cid>` changes on every edit so phones only fetch when something changed (they check every 8 seconds while Home is open). The art is in `public/cave-home.js`.
+**Decorate** lets anyone in the cave put things in the home (20 kinds: sofa, rug, plant, lamp, TV, poster, beanbag, arcade, fireplace, aquarium, fairy lights, clock, trophy, disco ball, piano, cat, shelf, fridge, hammock, telescope; up to 60), drag them about, flip or remove them. Everyone sees the same home. Each decoration is one key, `hi/<cid>/<id>/<kind>/<x>/<y>/<flip>/<pid>`, so one listing draws the home and two people moving things at once never overwrite each other; `homerev/<cid>` changes on every edit (since v43 the phone picks a new thing's id, so it can be dragged straight away, and changes are sent one after another behind the scenes; the server makes each change with one listing and one round of writes) so phones only fetch when something changed (they check every 8 seconds while Home is open). The art is in `public/cave-home.js`.
 
 ## Test site (dev branch)
 

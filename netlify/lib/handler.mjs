@@ -1031,32 +1031,36 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (method !== "POST") return json({ error: "Not found." }, 404);
         const pos = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1000, Math.round(v))) : null);
         const keyOf = (id, kind, x, y, flip, pid) => `hi/${cid}/${id}/${kind}/${x}/${y}/${flip ? 1 : 0}/${pid}`;
+        // One listing, then every write at once (v43): two trips to the store per change, not four.
         const items = await homeItems(cid);
-        const done = async () => {
+        const done = async (next, writes) => {
           const rv = now().toString(36) + randomBytes(2).toString("hex");
-          await store.setJSON(`homerev/${cid}`, { rv });
-          return json({ items: await homeItems(cid), rv });
+          await Promise.all([...writes, store.setJSON(`homerev/${cid}`, { rv })]);
+          return json({ items: next, rv });
         };
         if (body.action === "add") {
           const kind = String(body.kind || ""), x = pos(body.x), y = pos(body.y);
           if (!HOME_KINDS.includes(kind)) return json({ error: "That isn't something you can put in the home." }, 400);
           if (x === null || y === null) return json({ error: "Pick a spot." }, 400);
           if (items.length >= HOME_MAX) return json({ error: `The home is full (${HOME_MAX} things). Take something out first.` }, 409);
-          const id = now().toString(36) + randomBytes(3).toString("hex");
-          await store.setJSON(keyOf(id, kind, x, y, false, me.id), 0);
-          return done();
+          // The phone picks the id, so it can move the new thing before this reply comes back.
+          const want = String(body.id || "");
+          const id = /^[a-z0-9]{8,24}$/.test(want) && !items.some((i) => i.id === want) ? want : now().toString(36) + randomBytes(3).toString("hex");
+          const it = { id, kind, x, y, flip: false, by: me.id };
+          return done([...items, it], [store.setJSON(keyOf(id, kind, x, y, false, me.id), 0)]);
         }
         const it = items.find((i) => i.id === String(body.id || ""));
         if (!it) return json({ error: "That's not in the home any more." }, 404);
         const oldKey = keyOf(it.id, it.kind, it.x, it.y, it.flip, it.by);
-        if (body.action === "remove") { await store.delete(oldKey); return done(); }
+        if (body.action === "remove") return done(items.filter((i) => i !== it), [store.delete(oldKey)]);
         if (body.action === "move" || body.action === "flip") {
           const x = body.action === "move" ? pos(body.x) : it.x, y = body.action === "move" ? pos(body.y) : it.y;
           if (x === null || y === null) return json({ error: "Pick a spot." }, 400);
           const flip = body.action === "flip" ? !it.flip : it.flip;
-          const nk = keyOf(it.id, it.kind, x, y, flip, it.by);
-          if (nk !== oldKey) { await store.setJSON(nk, 0); await store.delete(oldKey); }
-          return done();
+          const nk = keyOf(it.id, it.kind, x, y, flip, it.by), moved = { ...it, x, y, flip };
+          // write the new key before taking the old one away, so the thing never disappears for anyone
+          const writes = nk === oldKey ? [] : [store.setJSON(nk, 0).then(() => store.delete(oldKey))];
+          return done(items.map((i) => (i === it ? moved : i)), writes);
         }
         return json({ error: "Unknown action." }, 400);
       }
