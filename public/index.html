@@ -130,6 +130,59 @@ body.calm .newsbtn .nmon{animation:none!important}
 
 /* Board | Chat switch */
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--track);border-radius:12px;padding:4px;max-width:360px}
+/* v42: the cave's home */
+.segrow{display:flex;align-items:stretch;gap:8px}
+.segrow .seg{flex:1}
+.homebtn{display:flex;align-items:center;gap:6px;margin-left:auto;border:2px solid var(--ink);border-radius:12px;background:var(--card);color:var(--ink);
+  font:700 14px/1 var(--f-mono);padding:0 16px;cursor:pointer;min-height:44px}
+.homebtn svg{width:20px;height:20px}
+.homebtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.home{display:flex;flex-direction:column;gap:12px}
+.home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.home-head h2{font:400 24px/1.1 var(--f-display);margin:0}
+.home-sub{margin:4px 0 0;color:var(--muted);font-size:13px}
+#decoBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.cscene{position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;border:2.5px solid var(--ink);background:#f2e2c4;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.cscene .scene-bg,.cscene .scene-bg svg,.cscene .scene-layer{position:absolute;inset:0;width:100%;height:100%}
+.hd,.hm{position:absolute;transform:translate(-50%,-100%);aspect-ratio:1}
+.hd svg{width:100%;height:100%;display:block;overflow:visible}
+.hd.flip svg{transform:scaleX(-1)}
+.cscene.editing{touch-action:none}
+.cscene.editing .hd{cursor:grab;outline:1.5px dashed rgba(0,0,0,.25);outline-offset:-1px;border-radius:6px}
+.cscene.editing .hd.sel{outline:2.5px solid var(--ink)}
+.cscene.editing .hd.dragging{cursor:grabbing;opacity:.85}
+.hm{width:11.5%;cursor:pointer}
+.hm .mon{width:100%;height:100%}
+.hm .nm{position:absolute;left:50%;top:-4%;transform:translate(-50%,-100%);font:700 9px/1.2 var(--f-mono);white-space:nowrap;max-width:130%;overflow:hidden;text-overflow:ellipsis;
+  background:rgba(255,255,255,.85);color:#1d2b25;padding:1px 4px;border-radius:6px;z-index:2}
+.cscene.editing .hm{pointer-events:none;opacity:.55}
+.hm-tip{position:absolute;z-index:3000;transform:translate(-50%,-100%);background:var(--card);color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:6px 10px;font-size:12.5px;white-space:nowrap;pointer-events:none}
+.workboard{position:absolute;right:1.5%;top:44%;z-index:2500;width:27%;background:#fffdf6;border:2px solid #7a5233;border-radius:8px;padding:5px 6px;font-size:10px;color:#3a2a1a;box-shadow:0 2px 0 #7a5233}
+.workboard b{display:block;font:700 9.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.workboard ul{list-style:none;margin:0;padding:0;display:grid;gap:2px;max-height:9.5em;overflow:auto}
+.workboard li{display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden}
+.workboard li .mon{width:16px;height:16px;flex:none}
+.workboard li span{overflow:hidden;text-overflow:ellipsis}
+.workboard li i{margin-left:auto;font-style:normal;font-family:var(--f-mono);color:#7a5233}
+.deco-tools{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:3000;display:flex;align-items:center;gap:4px;background:var(--card);border:2px solid var(--ink);border-radius:999px;padding:4px 4px 4px 12px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.2);white-space:nowrap}
+.deco-tools button{font:700 12px/1 var(--f-mono);border:0;border-radius:999px;padding:8px 10px;background:var(--track);color:var(--ink);cursor:pointer}
+.deco-tools #decoDel{background:#fbe1dc;color:#b3261e}
+.tray{border:2px dashed var(--line);border-radius:14px;padding:10px}
+.tray-hint{margin:0 0 8px;font-size:12.5px;color:var(--muted)}
+.tray-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}
+.tray-items button{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:6px 2px;cursor:pointer;font:600 10.5px/1.1 var(--f-mono);color:var(--ink)}
+.tray-items svg{width:44px;height:44px}
+/* little animations in the home */
+.fire{transform-origin:50px 96px;animation:hd-fire .5s ease-in-out infinite alternate}.fire.f2{animation-duration:.35s}
+@keyframes hd-fire{from{transform:scale(1,1)}to{transform:scale(.9,1.12)}}
+.fishswim{animation:hd-swim 4s ease-in-out infinite alternate}.fishswim.f2{animation-duration:3s;animation-direction:alternate-reverse}
+@keyframes hd-swim{from{transform:translateX(-6px)}to{transform:translateX(14px)}}
+.bulb{animation:hd-blink 1.2s steps(1) infinite}.bulb.b1{animation-delay:.4s}.bulb.b2{animation-delay:.8s}
+@keyframes hd-blink{0%{opacity:1}50%{opacity:.35}}
+.discospin{transform-origin:50px 48px;animation:hd-spin 6s linear infinite}
+@keyframes hd-spin{to{transform:rotate(360deg)}}
+.catz,.pnote{animation:m-note 2.6s ease-out infinite}
+.tvscreen{animation:hd-tv 2s steps(1) infinite}@keyframes hd-tv{0%{fill:#6fd3ff}50%{fill:#8ee6a0}}
 .seg button{font:700 14px/1 var(--f-mono);border:0;border-radius:9px;padding:11px;background:transparent;color:var(--muted);cursor:pointer;position:relative}
 .seg button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .unread{position:absolute;top:7px;right:calc(50% - 34px);width:9px;height:9px;border-radius:50%;background:var(--danger)}
@@ -650,10 +703,16 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       </div>
     </header>
 
-    <div class="seg" id="seg" role="tablist" aria-label="View" hidden data-html2canvas-ignore>
+    <div class="segrow" id="segRow" hidden data-html2canvas-ignore>
+    <div class="seg" id="seg" role="tablist" aria-label="View">
       <button id="tabBoard" role="tab" type="button" aria-selected="true">Board</button>
       <button id="tabChat" role="tab" type="button" aria-selected="false">Chat<span class="unread" id="unread" hidden></span></button>
       <button id="tabDays" role="tab" type="button" aria-selected="false">Days<span class="unread" id="daysDot" hidden></span></button>
+    </div>
+    <button class="homebtn" id="homeBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V11Q3 4 12 4Q21 4 21 11V20Z" fill="currentColor" opacity=".22"/><path d="M3 20V11Q3 4 12 4Q21 4 21 11V20H15V15Q15 12.5 12 12.5Q9 12.5 9 15V20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>Home</span>
+    </button>
     </div>
 
     <div class="banner" id="banner" hidden data-html2canvas-ignore>
@@ -710,6 +769,28 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     </form>
   </section>
 
+  <section class="home" id="homeView" hidden aria-label="Cave home">
+    <div class="home-head">
+      <div><h2 id="homeTitle">Home</h2><p class="home-sub" id="homeSub">Everyone comes home here after work.</p></div>
+      <button class="btn ghost" id="decoBtn" type="button" aria-pressed="false">Decorate</button>
+    </div>
+    <div class="cscene" id="caveScene">
+      <div class="scene-bg" id="sceneBg"></div>
+      <div class="scene-layer" id="sceneLayer"></div>
+      <div class="workboard" id="workBoard" hidden><b>At work</b><ul id="workList"></ul></div>
+      <div class="hm-tip" id="hmTip" hidden></div>
+      <div class="deco-tools" id="decoTools" hidden>
+        <span id="decoWho"></span>
+        <button type="button" id="decoFlip">Flip</button>
+        <button type="button" id="decoDel">Remove</button>
+      </div>
+    </div>
+    <div class="tray" id="tray" hidden>
+      <p class="tray-hint">Tap something to put it in the home, then drag it where you like. Everyone in the cave sees the same home.</p>
+      <div class="tray-items" id="trayItems"></div>
+    </div>
+  </section>
+
   <section class="days" id="daysView" hidden aria-label="Cave calendar">
     <div class="days-head">
       <button class="icon-btn" id="mPrev" type="button" aria-label="Previous month">‹</button>
@@ -739,7 +820,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v41.0</span>
+    <span>v42.0</span>
   </div>
 </div>
 
@@ -1042,6 +1123,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 
 <script src="/monsters.js"></script>
 <script src="/monster-props.js"></script>
+<script src="/cave-home.js"></script>
 <script>
 "use strict";
 /* ================= constants & helpers ================= */
@@ -1226,7 +1308,9 @@ function renderChrome(){
   }else chip.textContent="Log in";}
   $("caveBtn").hidden=!inCave;
   if(inCave) $("caveBtnText").textContent=`Cave · ${S.cave.members.length}`;
-  $("seg").hidden=!inCave;
+  $("segRow").hidden=!inCave;
+  $("homeBtn").setAttribute("aria-pressed",String(view==="home"));
+  $("homeView").hidden=!inCave||view!=="home";
   $("tabBoard").setAttribute("aria-selected",String(view==="board"));
   $("tabChat").setAttribute("aria-selected",String(view==="chat"));
   $("lanes").hidden=!inCave||view!=="board";
@@ -1489,6 +1573,7 @@ let lastReadSent=0;
 function setView(v){
   closeReact();view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
   if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
+  if(v==="home") openHome();else closeHomeEdit();
   clearTimeout(chatTimer);chatTimer=null;
   if(v==="chat"){
     if(restoreChat()) renderChat(true); // the messages this phone already has show at once
@@ -1531,6 +1616,7 @@ $("chatInput").addEventListener("input",()=>{const was=chatDelay();lastTyped=clo
 $("tabBoard").addEventListener("click",()=>setView("board"));
 $("tabChat").addEventListener("click",()=>setView("chat"));
 $("tabDays").addEventListener("click",()=>setView("days"));
+$("homeBtn").addEventListener("click",()=>setView(view==="home"?"board":"home"));
 const readKey=()=>`clockout.read.${S.cave.id}`;
 function markRead(){
   if(!S||!S.cave) return;
@@ -1751,6 +1837,159 @@ async function react(id,emoji){
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&rxFor) closeReact();});
 })();
 
+/* ================= the cave's home (v42) =================
+   Everyone's monster goes to the room for what it's doing (bed, kitchen, study, living room, yard); whoever is at
+   work is on the board by the door. The cave decorates the home together: Decorate, pick something, drag it. */
+let homeItems=[], homeRv=null, homeTimer=null, homeEdit=false, homeSel=null, homeMonSig="", homeBusy=0, homeDrag=null, sceneNightNow=null, tipT=null;
+const LS_HOME="clockout.home";
+function resetHome(){homeItems=[];homeRv=null;homeMonSig="";homeSel=null;closeHomeEdit();}
+function openHome(){
+  if(!homeItems.length){try{const c=JSON.parse(lsGet(LS_HOME)||"null");if(c&&c.cid===S.cave.id){homeItems=c.items||[];homeRv=c.rv||null;}}catch(e){}}
+  $("homeTitle").textContent=S.cave.name;
+  drawSceneBg(true);renderHomeDecor();renderHomeMons(true);loadHome();
+  clearInterval(homeTimer);
+  homeTimer=setInterval(()=>{
+    if(view!=="home"){clearInterval(homeTimer);homeTimer=null;return;}
+    if(awake()){loadHome();renderHomeMons();drawSceneBg();}
+  },8000);
+}
+const sceneNight=()=>{const n=sgNow();return n.h>=19||n.h<7;};
+function drawSceneBg(force){const nt=sceneNight();if(!force&&nt===sceneNightNow) return;sceneNightNow=nt;$("sceneBg").innerHTML=CAVE_HOME.scene(nt);}
+async function loadHome(){
+  if(homeBusy||homeDrag) return;
+  try{const d=await api("home"+(homeRv?"?rv="+encodeURIComponent(homeRv):""));if(!d.same&&!homeBusy&&!homeDrag) setHome(d);}catch(e){}
+}
+function setHome(d){
+  homeItems=d.items;homeRv=d.rv;
+  try{lsSet(LS_HOME,JSON.stringify({cid:S.cave.id,items:homeItems,rv:homeRv}));}catch(e){}
+  if(homeSel&&!homeItems.some(i=>i.id===homeSel)) homeSel=null;
+  renderHomeDecor();
+}
+function decorEl(it){
+  const def=CAVE_HOME.DECOR[it.kind], el=document.createElement("div");
+  el.className="hd"+(it.flip?" flip":"")+(homeSel===it.id?" sel":"");el.dataset.id=it.id;
+  el.style.left=it.x/10+"%";el.style.top=it.y/10+"%";el.style.width=def.w+"%";el.style.zIndex=it.kind==="rug"?1:10+it.y;
+  el.innerHTML=`<svg viewBox="0 0 100 100" aria-hidden="true">${def.svg}</svg>`;el.setAttribute("aria-label",def.name);
+  return el;
+}
+function renderHomeDecor(){
+  const L=$("sceneLayer");L.querySelectorAll(".hd").forEach(x=>x.remove());
+  homeItems.forEach(it=>{if(CAVE_HOME.DECOR[it.kind]) L.appendChild(decorEl(it));});
+  showDecoTools();
+}
+const MOOD_WORDS={dance:"Dancing",eat:"Eating",work:"At work",tired:"Working late"};
+function homeMembers(){
+  const n=sgNow(), ns=n.h*3600+n.m*60+n.s;
+  return members().map(p=>{
+    const r=laneState(p,n,ns), f=moodFor(p,r,n,ns);
+    const atWork=r.state==="ot"||(r.state.startsWith("before")&&!r.notIn);
+    return {p,r,f,atWork,left:r.offSec-ns};
+  });
+}
+function renderHomeMons(force){
+  const ms=homeMembers();
+  const sig=JSON.stringify(ms.map(m=>[m.p.id,m.p.name,m.p.monster,m.p.color,m.f.mood,m.atWork,m.atWork?Math.ceil(m.left/300):0]));
+  if(!force&&sig===homeMonSig) return;homeMonSig=sig;
+  const L=$("sceneLayer");L.querySelectorAll(".hm").forEach(x=>x.remove());
+  const used={}, home=ms.filter(m=>!m.atWork), work=ms.filter(m=>m.atWork);
+  home.forEach(m=>{
+    let room=CAVE_HOME.ROOM_OF[m.f.mood.split(" ")[0]]||"living";
+    if((used[room]||0)>=CAVE_HOME.ROOMS[room].spots.length) room="living";
+    const spots=CAVE_HOME.ROOMS[room].spots, i=used[room]||0;used[room]=i+1;
+    const [x,y]=spots[i%spots.length], el=document.createElement("div");
+    el.className="hm";el.dataset.pid=m.p.id;el.style.left=x/4+"%";el.style.top=y/3+"%";el.style.zIndex=10+Math.round(y/3*10);
+    el.appendChild(monEl(m.p.monster,m.p.color,m.f.mood));
+    const nm=document.createElement("span");nm.className="nm";nm.textContent=m.p.id===S.me.id?"You":m.p.name;el.appendChild(nm);
+    L.appendChild(el);
+  });
+  // the board by the door: who's still at work, and how long until they're home
+  const list=$("workList");list.replaceChildren();
+  work.sort((a,b)=>a.left-b.left).forEach(m=>{
+    const li=document.createElement("li");li.appendChild(monEl(m.p.monster,m.p.color,"work still","mini"));
+    const nm=document.createElement("span");nm.textContent=m.p.id===S.me.id?"You":m.p.name;
+    const t=document.createElement("i");t.textContent=m.r.state==="ot"?"OT":m.left>=3600?`${Math.floor(m.left/3600)}h${pad(Math.floor(m.left%3600/60))}`:`${Math.max(1,Math.ceil(m.left/60))}m`;
+    li.append(nm,t);list.appendChild(li);
+  });
+  $("workBoard").hidden=!work.length;
+  $("homeSub").textContent=`${home.length} at home · ${work.length} at work`;
+}
+function showTip(hm){
+  const m=homeMembers().find(z=>z.p.id===hm.dataset.pid);if(!m) return;
+  const tip=$("hmTip"), base=m.f.mood.split(" ")[0];
+  tip.textContent=`${m.p.id===S.me.id?"You":m.p.name} · ${m.f.label||MOOD_WORDS[base]||"Chilling"}`;
+  tip.style.left=hm.style.left;tip.style.top=`calc(${hm.style.top} - 12.5%)`;tip.hidden=false;
+  clearTimeout(tipT);tipT=setTimeout(()=>{tip.hidden=true;},2500);
+}
+function showDecoTools(){
+  const it=homeEdit&&homeSel&&homeItems.find(i=>i.id===homeSel), box=$("decoTools");
+  box.hidden=!it;if(!it) return;
+  const who=it.by===S.me.id?"you":(members().find(p=>p.id===it.by)||{}).name||"someone who left";
+  $("decoWho").textContent=`${CAVE_HOME.DECOR[it.kind].name} · by ${who}`;
+}
+function setDecoEdit(on){
+  homeEdit=on;$("caveScene").classList.toggle("editing",on);$("tray").hidden=!on;
+  $("decoBtn").setAttribute("aria-pressed",String(on));$("decoBtn").textContent=on?"Done":"Decorate";
+  if(on) buildTray();else homeSel=null;
+  renderHomeDecor();
+}
+function closeHomeEdit(){if(homeEdit) setDecoEdit(false);}
+function buildTray(){
+  const box=$("trayItems");if(box.childElementCount) return;
+  Object.entries(CAVE_HOME.DECOR).forEach(([k,d])=>{
+    const b=document.createElement("button");b.type="button";b.dataset.kind=k;
+    b.innerHTML=`<svg viewBox="0 0 100 100" aria-hidden="true">${d.svg}</svg><span></span>`;b.querySelector("span").textContent=d.name;
+    b.addEventListener("click",()=>addDecor(k));box.appendChild(b);
+  });
+}
+// Changes show at once and go to the server behind; if the server says no, the home goes back.
+async function homeAct(body,next){
+  homeBusy++;const before=homeItems;
+  if(next){homeItems=next;renderHomeDecor();}
+  try{setHome(await api("home",body));return true;}
+  catch(e){homeItems=before;renderHomeDecor();if(e.status!==401) toast(e.message||"Couldn't change the home. Try again.");return false;}
+  finally{homeBusy--;}
+}
+async function addDecor(kind){
+  const x=260+Math.round(Math.random()*200), y=930;
+  homeSel=null;
+  const ok=await homeAct({action:"add",kind,x,y},[...homeItems,{id:"tmp"+Date.now(),kind,x,y,flip:false,by:S.me.id}]);
+  if(!ok) return;
+  const mine=homeItems.filter(i=>i.kind===kind&&i.by===S.me.id).sort((a,b)=>b.id.localeCompare(a.id))[0];
+  if(mine){homeSel=mine.id;renderHomeDecor();toast(`${CAVE_HOME.DECOR[kind].name} added. Drag it where you like.`);}
+  $("caveScene").scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+$("decoBtn").addEventListener("click",()=>setDecoEdit(!homeEdit));
+$("decoFlip").addEventListener("click",()=>{const id=homeSel;homeAct({action:"flip",id},homeItems.map(i=>i.id===id?{...i,flip:!i.flip}:i));});
+$("decoDel").addEventListener("click",()=>{const id=homeSel;homeSel=null;homeAct({action:"remove",id},homeItems.filter(i=>i.id!==id));});
+(function(){
+  const L=$("sceneLayer"), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  L.addEventListener("pointerdown",e=>{
+    const hm=e.target.closest(".hm");
+    if(!homeEdit){if(hm) showTip(hm);return;}
+    const el=e.target.closest(".hd");
+    if(!el){homeSel=null;renderHomeDecor();return;}
+    const it=homeItems.find(i=>i.id===el.dataset.id);if(!it||it.id.startsWith("tmp")) return;
+    e.preventDefault();
+    homeDrag={el,it,r:$("caveScene").getBoundingClientRect(),sx:e.clientX,sy:e.clientY,nx:it.x,ny:it.y,moved:false};
+    try{el.setPointerCapture(e.pointerId);}catch(x){}
+    el.classList.add("dragging");
+  });
+  L.addEventListener("pointermove",e=>{
+    const d=homeDrag;if(!d) return;
+    const dx=(e.clientX-d.sx)/d.r.width*1000, dy=(e.clientY-d.sy)/d.r.height*1000;
+    if(!d.moved&&Math.abs(dx)+Math.abs(dy)<8) return;
+    d.moved=true;d.nx=Math.round(clamp(d.it.x+dx,0,1000));d.ny=Math.round(clamp(d.it.y+dy,60,1000));
+    d.el.style.left=d.nx/10+"%";d.el.style.top=d.ny/10+"%";if(d.it.kind!=="rug") d.el.style.zIndex=10+d.ny;
+  });
+  const end=()=>{
+    const d=homeDrag;if(!d) return;homeDrag=null;d.el.classList.remove("dragging");
+    homeSel=d.it.id;
+    if(d.moved) homeAct({action:"move",id:d.it.id,x:d.nx,y:d.ny},homeItems.map(i=>i.id===d.it.id?{...i,x:d.nx,y:d.ny}:i));
+    else renderHomeDecor();
+  };
+  L.addEventListener("pointerup",end);L.addEventListener("pointercancel",end);
+})();
+
 /* ================= lobby ================= */
 $("joinForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -1859,10 +2098,10 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);lsSet(LS_CAL,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
+  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);lsSet(LS_CAL,null);lsSet(LS_HOME,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearTimeout(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
-  closeCam();closeDay();calData=null;calMonth=null;calMonths.clear();lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
+  closeCam();closeDay();resetHome();calData=null;calMonth=null;calMonths.clear();lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
   $("banner").hidden=true;$("newsSheet").hidden=true;renderChrome();updatePeek();
   showSplashForAuth("login");
   if(msg) toast(msg);
@@ -3187,6 +3426,12 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v42-home",v:"v42.0",at:"2026-11-12T16:00",title:"Our cave has a home",changes:[
+    "Tap Home (next to Board, Chat and Days): after work everyone's monster goes home to the cave.",
+    "Each one goes to the room for what it's doing: bed, kitchen, study, living room or yard. Whoever's still at work is on the board by the door.",
+    "Decorate together: sofas, a fireplace, an arcade, a disco ball, a cat… everyone sees the same home."],panels:[
+    {art:"home",title:"Home after work",text:"Tap Home. Sleepy monsters are in bed, hungry ones in the kitchen, the rest wherever they're having fun."},
+    {art:"decor",title:"Decorate together",text:"Tap Decorate, pick something, drag it where you like. The whole cave shares one home."}]},
   {id:"v40-reply",v:"v41.0",at:"2026-11-12T13:30",title:"Replies, and monsters with a life",changes:[
     "Reply to a message: hold it and tap Reply, or swipe it to the right.",
     "Before work your monster is asleep in its own bed, in one of four sleeping poses.",
@@ -3332,6 +3577,11 @@ function panelArt(kind){
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
     case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
+    case "home":{const w=document.createElement("div");w.style.cssText="position:absolute;inset:0";w.innerHTML=CAVE_HOME.scene(false);w.firstElementChild.style.cssText="width:100%;height:100%";
+      const put=(p,mood,x,y)=>{const m=monEl(p.monster,p.color,mood);m.style.cssText+=`;position:absolute;width:24%;height:auto;aspect-ratio:1;left:${x}%;top:${y}%;transform:translate(-50%,-100%)`;w.appendChild(m);};
+      put(crew[0],"nap sv1 bd-stars",14,46);put(me,"game",30,97);put(crew[1],"eat f-cake",60,97);add(w);break;}
+    case "decor":{const w=document.createElement("div");w.style.cssText="display:flex;align-items:flex-end;gap:4px;width:100%;justify-content:center";
+      ["sofa","disco","cat","arcade"].forEach(k=>{const d=document.createElement("div");d.style.width=k==="sofa"?"34%":"20%";d.innerHTML=`<svg viewBox="0 0 100 100" style="width:100%;display:block">${CAVE_HOME.DECOR[k].svg}</svg>`;w.appendChild(d);});add(w);break;}
     case "nap":add(monEl(me.monster,me.color,"nap sv1 bd-stars"),monEl(crew[0].monster,crew[0].color,"nap sv2 bd-stripes"));break;
     case "dinner":add(monEl(me.monster,me.color,"eat f-pizza"),monEl(crew[0].monster,crew[0].color,"eat f-eyesoup"),burstEl("7:30 PM",{top:"14px",left:"16px"}));break;
     case "fun":add(monEl(me.monster,me.color,"guitar"),monEl(crew[0].monster,crew[0].color,"read bk-spell"),monEl(crew[1].monster,crew[1].color,"fish"));break;

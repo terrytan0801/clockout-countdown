@@ -1,0 +1,81 @@
+// The cave's home (v42): the scene behind everyone, the rooms monsters go to, and the things the cave can decorate with.
+// The scene is drawn in a 400x300 box; monsters and decorations are laid over it by position (per-mille of width/height).
+(function () {
+  // Bottom-centre spots in each room (scene units). A monster goes to the room for what it's doing.
+  const ROOMS = {
+    bedroom: { label: "Bedroom", spots: [[38, 132], [74, 132], [110, 132], [146, 132], [56, 118], [92, 118], [128, 118]] },
+    study: { label: "Study", spots: [[192, 132], [226, 132], [208, 120]] },
+    living: { label: "Living room", spots: [[44, 290], [82, 290], [120, 290], [158, 290], [63, 276], [101, 276], [139, 276], [177, 276]] },
+    kitchen: { label: "Kitchen", spots: [[222, 290], [252, 290], [282, 290], [237, 278], [267, 278]] },
+    yard: { label: "Yard", spots: [[344, 297], [376, 297], [360, 284]] },
+  };
+  const ROOM_OF = {
+    nap: "bedroom", read: "study", paint: "study", zen: "study",
+    eat: "kitchen", cook: "kitchen",
+    fish: "yard", garden: "yard", ball: "yard", skate: "yard", bubbles: "yard",
+    game: "living", guitar: "living", dance: "living", juggle: "living",
+  };
+
+  function scene(night) {
+    const sky = night ? ["#1d2547", "#33407a"] : ["#8fd0ff", "#d8f0ff"];
+    return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+<defs><linearGradient id="chSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>
+<pattern id="chTile" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#f4ede0"/><rect width="5" height="5" fill="#e6dccb"/><rect x="5" y="5" width="5" height="5" fill="#e6dccb"/></pattern>
+<pattern id="chWood" width="14" height="8" patternUnits="userSpaceOnUse"><rect width="14" height="8" fill="#c9965f"/><path d="M0 7.5H14M7 0V7.5" stroke="#b07d48" stroke-width="1"/></pattern></defs>
+<rect width="400" height="300" fill="url(#chSky)"/>
+${night ? `<circle cx="370" cy="38" r="13" fill="#fff6c8"/><circle cx="364" cy="34" r="13" fill="#33407a" opacity=".9"/><g fill="#fff">${[[340, 20], [390, 70], [356, 92], [384, 16], [330, 60]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2"/>`).join("")}</g>`
+      : `<circle cx="368" cy="40" r="15" fill="#ffd34d"/><g fill="#fff" opacity=".9"><ellipse cx="340" cy="78" rx="18" ry="7"/><ellipse cx="354" cy="72" rx="12" ry="8"/></g>`}
+<rect x="300" y="240" width="100" height="60" fill="#7cc46a"/><path d="M300 240 q10 -6 20 0 q10 -6 20 0 q10 -6 20 0 q10 -6 20 0 q10 -6 20 0" fill="#7cc46a"/>
+<path d="M392 240 L392 196" stroke="#7a5233" stroke-width="5"/><circle cx="392" cy="186" r="16" fill="#4caf50"/><circle cx="382" cy="196" r="11" fill="#43a047"/>
+<ellipse cx="364" cy="284" rx="28" ry="7" fill="#5b8def"/><ellipse cx="358" cy="282" rx="10" ry="2" fill="#a9c8ff"/>
+<g><circle cx="334" cy="262" r="3" fill="#f48fb1"/><circle cx="342" cy="266" r="3" fill="#f7d046"/><circle cx="327" cy="268" r="3" fill="#b18cff"/><path d="M334 265v8M342 269v6M327 271v4" stroke="#2e7d32" stroke-width="1.5"/></g>
+<path d="M0 300 L0 58 Q8 6 84 4 Q172 -4 252 10 Q326 22 334 84 L334 178 Q322 196 320 236 L320 300Z" fill="#8c7b69"/>
+<path d="M14 300 L14 70 Q20 22 86 18 Q170 10 246 24 Q308 36 314 90 L314 170 Q302 192 300 236 L300 300Z" fill="#f2e2c4"/>
+<path d="M14 70 Q20 22 86 18 Q170 10 246 24 Q308 36 314 90 L314 104 Q300 50 244 40 Q170 26 88 34 Q30 38 24 86Z" fill="#e4cfa8"/>
+<g fill="#8c7b69" opacity=".35"><circle cx="40" cy="200" r="3"/><circle cx="120" cy="60" r="2.5"/><circle cx="270" cy="200" r="2.5"/><circle cx="200" cy="80" r="2"/></g>
+<rect x="14" y="132" width="300" height="8" fill="url(#chWood)"/><rect x="14" y="139" width="300" height="3" fill="#8a5a35"/>
+<rect x="163" y="40" width="7" height="92" fill="#cdb592"/>
+<circle cx="44" cy="62" r="13" fill="url(#chSky)" stroke="#8c7b69" stroke-width="3"/><path d="M31 62H57M44 49V75" stroke="#8c7b69" stroke-width="2"/>
+<g><rect x="262" y="52" width="40" height="80" rx="3" fill="#8a5a35"/><rect x="266" y="56" width="32" height="20" fill="#5e3b1f"/><rect x="266" y="80" width="32" height="20" fill="#5e3b1f"/><rect x="266" y="104" width="32" height="24" fill="#5e3b1f"/>
+${[[268, "#e8583e"], [273, "#5b8def"], [278, "#f2c94c"], [284, "#2fa36b"], [289, "#b18cff"]].map(([x, c]) => `<rect x="${x}" y="60" width="4" height="16" fill="${c}"/><rect x="${x + 1}" y="84" width="4" height="16" fill="${c}"/>`).join("")}
+<rect x="268" y="110" width="12" height="18" fill="#f48fb1"/><rect x="282" y="116" width="14" height="12" fill="#e8583e"/></g>
+<rect x="200" y="142" width="100" height="148" fill="url(#chTile)"/>
+<g><rect x="272" y="232" width="28" height="58" fill="#e8e3da" stroke="#b9b1a3"/><rect x="274" y="226" width="24" height="7" fill="#3a3f4b"/><circle cx="280" cy="229" r="2.5" fill="#e8583e"/><circle cx="291" cy="229" r="2.5" fill="#e8583e"/><rect x="276" y="250" width="20" height="16" rx="2" fill="#3a3f4b"/></g>
+<path d="M226 178 L226 196 M236 178 L236 190 M246 178 L246 198" stroke="#7a7f88" stroke-width="1.5"/><ellipse cx="226" cy="200" rx="6" ry="3" fill="#3a3f4b"/><ellipse cx="246" cy="202" rx="5" ry="2.5" fill="#3a3f4b"/><path d="M220 178H252" stroke="#7a5233" stroke-width="3"/>
+<g><rect x="208" y="262" width="56" height="5" rx="2" fill="#a8784f"/><path d="M214 267V290M258 267V290" stroke="#7a5233" stroke-width="3"/></g>
+<rect x="14" y="288" width="286" height="12" fill="url(#chWood)"/>
+<g stroke="#8a5a35" stroke-width="3"><path d="M178 140V288M192 140V288"/></g><g stroke="#a8784f" stroke-width="2.5">${[155, 175, 195, 215, 235, 255, 275].map((y) => `<path d="M178 ${y}H192"/>`).join("")}</g>
+<path d="M300 236 Q310 226 320 236 L320 300 L300 300Z" fill="#5e4e40" opacity=".35"/>
+<g font-family="JetBrains Mono, monospace" font-size="7.5" font-weight="700" fill="#8c7b69" letter-spacing=".5">
+<text x="24" y="36">BEDROOM</text><text x="178" y="36">STUDY</text><text x="22" y="156">LIVING ROOM</text><text x="204" y="156">KITCHEN</text><text x="342" y="232" fill="#3f6b33">YARD</text></g>
+</svg>`;
+  }
+
+  /* ---------- decorations (each drawn in 100x100, sitting on the bottom edge) ---------- */
+  const D = {
+    sofa: ["Sofa", 16, `<rect x="6" y="56" width="88" height="30" rx="10" fill="#e8583e"/><rect x="14" y="40" width="72" height="26" rx="10" fill="#f07158"/><rect x="2" y="54" width="16" height="34" rx="7" fill="#d9472f"/><rect x="82" y="54" width="16" height="34" rx="7" fill="#d9472f"/><rect x="14" y="86" width="6" height="12" fill="#7a5233"/><rect x="80" y="86" width="6" height="12" fill="#7a5233"/><rect x="22" y="60" width="26" height="12" rx="5" fill="#ff8f7a"/><rect x="52" y="60" width="26" height="12" rx="5" fill="#ff8f7a"/>`],
+    rug: ["Rug", 22, `<ellipse cx="50" cy="90" rx="48" ry="9" fill="#b18cff"/><ellipse cx="50" cy="90" rx="38" ry="6.5" fill="none" stroke="#f2c94c" stroke-width="2.5"/><ellipse cx="50" cy="90" rx="22" ry="3.5" fill="#f48fb1"/>`],
+    plant: ["Plant", 8, `<path d="M30 74 L70 74 L64 98 L36 98Z" fill="#c8643b"/><path d="M50 74 Q30 40 14 46 Q34 50 46 74Z M50 74 Q70 36 88 40 Q66 48 54 74Z M50 74 Q46 30 54 14 Q60 40 52 74Z" fill="#43a047"/>`],
+    lamp: ["Lamp", 7, `<path d="M28 34 L72 34 L62 8 L38 8Z" fill="#f7d046"/><path d="M50 34V94" stroke="#3a3f4b" stroke-width="4"/><ellipse cx="50" cy="96" rx="20" ry="4" fill="#3a3f4b"/><path d="M30 34 L18 70 L82 70 L70 34Z" fill="#fff6c8" opacity=".35"/>`],
+    tv: ["TV", 11, `<rect x="6" y="20" width="88" height="56" rx="5" fill="#3a3f4b"/><rect x="12" y="26" width="76" height="44" rx="2" fill="#6fd3ff" class="tvscreen"/><path d="M22 60 L36 44 L48 56 L60 40 L78 60" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/><rect x="30" y="80" width="40" height="18" rx="3" fill="#8a5a35"/><path d="M40 6 L50 20 L60 6" stroke="#3a3f4b" stroke-width="2.5" fill="none"/>`],
+    poster: ["Poster", 8, `<rect x="16" y="10" width="68" height="84" rx="2" fill="#fff6dc" stroke="#cbbfa8" stroke-width="2"/><circle cx="50" cy="44" r="18" fill="#e8583e"/><path d="M34 44 h32" stroke="#fff6dc" stroke-width="3"/><rect x="26" y="70" width="48" height="6" fill="#3a3f4b"/><rect x="32" y="80" width="36" height="4" fill="#9aa1a8"/>`],
+    beanbag: ["Beanbag", 8, `<path d="M10 92 Q4 50 40 40 Q78 32 90 70 Q96 94 50 97 Q16 98 10 92Z" fill="#2fa36b"/><path d="M28 54 Q44 46 62 52" stroke="#5fc78e" stroke-width="4" fill="none"/>`],
+    arcade: ["Arcade", 8, `<path d="M20 98 L20 10 Q20 4 26 4 L74 4 Q80 4 80 10 L80 98Z" fill="#5b3fb5"/><rect x="28" y="14" width="44" height="32" rx="3" fill="#0d1b2a"/><path d="M34 36 l6 -10 6 10 6 -10 6 10 6 -10" stroke="#6fd3ff" stroke-width="2" fill="none" class="arcscreen"/><rect x="22" y="52" width="56" height="12" fill="#3a2a7a"/><circle cx="36" cy="58" r="3.5" fill="#e8583e"/><circle cx="62" cy="58" r="3" fill="#f2c94c"/><circle cx="70" cy="58" r="3" fill="#2fa36b"/><text x="50" y="84" text-anchor="middle" font-size="10" font-weight="900" fill="#f2c94c" font-family="sans-serif">PLAY</text>`],
+    fireplace: ["Fireplace", 13, `<rect x="4" y="30" width="92" height="68" rx="3" fill="#b5644a"/><rect x="0" y="24" width="100" height="10" rx="2" fill="#8a4a35"/><path d="M24 98 L24 58 Q50 36 76 58 L76 98Z" fill="#2b1a12"/><path class="fire" d="M38 96 Q32 80 42 70 Q42 80 48 78 Q46 64 56 56 Q56 70 64 76 Q70 86 62 96Z" fill="#ff8a00"/><path class="fire f2" d="M44 96 Q42 86 48 82 Q50 88 54 86 Q56 92 56 96Z" fill="#ffd34d"/><g fill="#c97a5e"><rect x="8" y="40" width="10" height="6"/><rect x="82" y="50" width="10" height="6"/><rect x="8" y="70" width="10" height="6"/></g>`],
+    aquarium: ["Aquarium", 10, `<rect x="6" y="20" width="88" height="56" rx="4" fill="#a9dcff" stroke="#5b8def" stroke-width="3"/><rect x="6" y="20" width="88" height="10" fill="#5b8def" opacity=".5"/><path class="fishswim" d="M28 50 Q36 42 44 50 Q36 58 28 50Z M28 50 L22 45 L22 55Z" fill="#ff8c5a"/><path class="fishswim f2" d="M64 62 Q70 56 76 62 Q70 68 64 62Z M76 62 L82 58 L82 66Z" fill="#f2c94c"/><path d="M20 76 Q18 60 24 52 M80 76 Q84 64 78 56" stroke="#2fa36b" stroke-width="3" fill="none"/><circle cx="54" cy="40" r="2" fill="#fff" class="bubble"/><rect x="18" y="76" width="64" height="22" fill="#8a5a35"/>`],
+    lights: ["Fairy lights", 18, `<path d="M2 16 Q25 34 50 16 Q75 34 98 16" stroke="#3a3f4b" stroke-width="1.5" fill="none"/>${[[10, 22, "#f2c94c"], [22, 27, "#e8583e"], [34, 25, "#6fd3ff"], [46, 18, "#2fa36b"], [58, 21, "#f48fb1"], [70, 27, "#f2c94c"], [82, 25, "#e8583e"], [92, 19, "#6fd3ff"]].map(([x, y, c], i) => `<circle class="bulb b${i % 3}" cx="${x}" cy="${y}" r="3.2" fill="${c}"/>`).join("")}`],
+    clock: ["Clock", 6.5, `<circle cx="50" cy="40" r="34" fill="#fffdf6" stroke="#8a5a35" stroke-width="6"/><path d="M50 40 L50 18" stroke="#3a3f4b" stroke-width="4" stroke-linecap="round" class="hand"/><path d="M50 40 L66 48" stroke="#e8583e" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="40" r="3" fill="#3a3f4b"/>`],
+    trophy: ["Trophy", 6.5, `<path d="M28 10 L72 10 L68 46 Q50 60 32 46Z" fill="#f2c94c"/><path d="M28 16 Q10 16 14 30 Q18 40 32 40 M72 16 Q90 16 86 30 Q82 40 68 40" stroke="#f2c94c" stroke-width="5" fill="none"/><rect x="44" y="54" width="12" height="18" fill="#d9a82e"/><rect x="28" y="72" width="44" height="12" rx="2" fill="#8a5a35"/><rect x="22" y="84" width="56" height="14" rx="2" fill="#6b4226"/><text x="50" y="36" text-anchor="middle" font-size="16" font-weight="900" fill="#fff" font-family="sans-serif">1</text>`],
+    disco: ["Disco ball", 7.5, `<path d="M50 0V22" stroke="#9aa1a8" stroke-width="2"/><g class="discospin"><circle cx="50" cy="48" r="26" fill="#c9d6df"/><path d="M24 48H76M50 22V74M30 32H70M30 64H70M37 25Q31 48 37 71M63 25Q69 48 63 71" stroke="#8a97a3" stroke-width="1.5" fill="none"/><rect x="40" y="34" width="8" height="8" fill="#fff"/><rect x="56" y="52" width="7" height="7" fill="#f48fb1"/><rect x="34" y="54" width="6" height="6" fill="#6fd3ff"/></g>`],
+    piano: ["Piano", 14, `<rect x="4" y="18" width="92" height="56" rx="4" fill="#2b2b33"/><rect x="10" y="50" width="80" height="16" fill="#fffdf6"/>${Array.from({ length: 9 }, (_, i) => `<path d="M${18 + i * 8} 50V66" stroke="#9aa1a8" stroke-width="1"/>`).join("")}${[18, 26, 42, 50, 58, 74, 82].map((x) => `<rect x="${x - 2}" y="50" width="4" height="9" fill="#2b2b33"/>`).join("")}<rect x="10" y="74" width="6" height="24" fill="#2b2b33"/><rect x="84" y="74" width="6" height="24" fill="#2b2b33"/><text class="pnote" x="70" y="14" font-size="14" fill="#5b8def">♪</text>`],
+    cat: ["Cat", 8, `<path d="M14 96 Q8 70 34 64 Q60 60 76 72 Q92 84 84 96Z" fill="#f2a65a"/><path d="M60 72 Q62 52 74 50 L76 40 L82 50 L88 40 L90 52 Q96 62 88 72Z" fill="#f2a65a"/><path d="M78 60 q2 2 4 0 M84 60 q2 2 4 0" stroke="#3a3f4b" stroke-width="1.8" fill="none"/><path d="M14 92 Q2 80 12 70" stroke="#f2a65a" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M30 76 L40 80 M44 70 L50 78" stroke="#d9823c" stroke-width="3"/><text class="catz" x="88" y="34" font-size="12" font-weight="700" fill="#8c7b69">z</text>`],
+    shelf: ["Shelf", 9, `<rect x="6" y="40" width="88" height="6" fill="#8a5a35"/><rect x="6" y="72" width="88" height="6" fill="#8a5a35"/><rect x="16" y="18" width="8" height="22" fill="#e8583e"/><rect x="26" y="22" width="7" height="18" fill="#5b8def"/><path d="M60 40 L64 26 L76 26 L80 40Z" fill="#c8643b"/><path d="M70 26 Q60 10 66 6 M70 26 Q78 12 84 14" stroke="#43a047" stroke-width="3" fill="none"/><circle cx="30" cy="62" r="9" fill="#f2c94c"/><rect x="56" y="56" width="22" height="16" rx="2" fill="#b18cff"/>`],
+    fridge: ["Fridge", 7, `<rect x="14" y="4" width="72" height="94" rx="8" fill="#e9f4f2" stroke="#9fb9b4" stroke-width="2.5"/><path d="M14 38 H86" stroke="#9fb9b4" stroke-width="2.5"/><rect x="72" y="14" width="5" height="16" rx="2" fill="#9fb9b4"/><rect x="72" y="46" width="5" height="20" rx="2" fill="#9fb9b4"/><circle cx="34" cy="24" r="5" fill="#e8583e"/><rect x="40" y="52" width="14" height="10" fill="#f2c94c" transform="rotate(-8 47 57)"/>`],
+    hammock: ["Hammock", 16, `<path d="M8 98 L8 30 M92 98 L92 30" stroke="#7a5233" stroke-width="5"/><path d="M8 40 Q50 96 92 40" stroke="#e8583e" stroke-width="10" fill="none"/><path d="M8 40 Q50 86 92 40" stroke="#f2c94c" stroke-width="3" fill="none" stroke-dasharray="6 5"/>`],
+    telescope: ["Telescope", 8, `<path d="M50 60 L28 98 M50 60 L72 98 M50 60 L50 98" stroke="#7a5233" stroke-width="4"/><g transform="rotate(-32 50 56)"><rect x="18" y="48" width="64" height="16" rx="5" fill="#5b8def"/><rect x="74" y="44" width="14" height="24" rx="3" fill="#2f5fb3"/><rect x="10" y="51" width="10" height="10" rx="2" fill="#3a3f4b"/></g>`],
+  };
+  const DECOR = {};
+  for (const [k, [name, w, svg]] of Object.entries(D)) DECOR[k] = { name, w, svg };
+
+  window.CAVE_HOME = { ROOMS, ROOM_OF, scene, DECOR };
+})();

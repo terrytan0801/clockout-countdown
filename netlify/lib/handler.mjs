@@ -30,6 +30,9 @@
 //                               gives all of a cave's reactions, and each person only ever writes their own keys
 //   chatre/<cid>                {rv} changes whenever someone reacts, so phones know to fetch reactions again
 //   mediakey                    secret for signing clip links (v34)
+//   hi/<cid>/<id>/<kind>/<x>/<y>/<flip>/<pid>   0   a decoration in the cave's home (v42). Everything is in the key:
+//                               one listing draws the whole home, and moving one deletes it and writes it again
+//   homerev/<cid>               {rv} changes whenever the home's decorations change
 import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
@@ -46,6 +49,10 @@ export const COLORS = ["orange", "red", "pink", "violet", "indigo", "blue", "cya
 export const MONSTER_COUNT = 10;
 export const MAX_MEMBERS = 30;
 export const CHAT_KEEP = 200;
+// Things that can go in the cave's home (v42). The art is in the app; the server only knows the names.
+export const HOME_KINDS = ["sofa", "rug", "plant", "lamp", "tv", "poster", "beanbag", "arcade", "fireplace", "aquarium", "lights", "clock",
+  "trophy", "disco", "piano", "cat", "shelf", "fridge", "hammock", "telescope"];
+export const HOME_MAX = 60;
 export const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]; // WhatsApp's quick six
 const emojiHex = (e) => [...e].map((c) => c.codePointAt(0).toString(16)).join("-");
 const hexEmoji = (h) => { try { return String.fromCodePoint(...h.split("-").map((x) => parseInt(x, 16))); } catch { return null; } };
@@ -234,6 +241,14 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     }
     return out;
   }
+  // The cave home's decorations, from one listing.
+  async function homeItems(cid) {
+    return (await keys(`hi/${cid}/`)).map((k) => {
+      const [, , id, kind, x, y, f, pid] = k.split("/");
+      return { id, kind, x: Number(x), y: Number(y), flip: f === "1", by: pid };
+    }).filter((i) => HOME_KINDS.includes(i.kind));
+  }
+  const homeRv = async (cid) => (await getJSON(`homerev/${cid}`))?.rv || "0";
   const chatRv = async (cid) => (await getJSON(`chatre/${cid}`))?.rv || "0";
   async function chatLatest(cid) {
     const l = await chatLast(cid);
@@ -539,7 +554,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     if (!rest.length) {
       await store.delete(`code/${cave.code}`);
       await store.delete(`cave/${cid}`);
-      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`react/${cid}/`)), `chatlast/${cid}`, `chatre/${cid}`, `ver/${cid}`].map((k) => store.delete(k)));
+      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`react/${cid}/`)), ...(await keys(`hi/${cid}/`)),
+        `chatlast/${cid}`, `chatre/${cid}`, `ver/${cid}`, `homerev/${cid}`].map((k) => store.delete(k)));
       await dropCaveClips(cid);
       return null;
     }
@@ -1001,6 +1017,48 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         const prev = await getJSON(k);
         if (at > (prev?.at || 0)) await store.setJSON(k, { at });
         return json({ ok: true });
+      }
+
+      // The cave's home (v42): everyone in the cave decorates the same place.
+      if (route === "home") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const cid = me.cave;
+        if (method === "GET") {
+          const seen = url.searchParams.get("rv"), rv = await homeRv(cid);
+          if (seen && seen === rv) return json({ same: true, rv });
+          return json({ items: await homeItems(cid), rv });
+        }
+        if (method !== "POST") return json({ error: "Not found." }, 404);
+        const pos = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1000, Math.round(v))) : null);
+        const keyOf = (id, kind, x, y, flip, pid) => `hi/${cid}/${id}/${kind}/${x}/${y}/${flip ? 1 : 0}/${pid}`;
+        const items = await homeItems(cid);
+        const done = async () => {
+          const rv = now().toString(36) + randomBytes(2).toString("hex");
+          await store.setJSON(`homerev/${cid}`, { rv });
+          return json({ items: await homeItems(cid), rv });
+        };
+        if (body.action === "add") {
+          const kind = String(body.kind || ""), x = pos(body.x), y = pos(body.y);
+          if (!HOME_KINDS.includes(kind)) return json({ error: "That isn't something you can put in the home." }, 400);
+          if (x === null || y === null) return json({ error: "Pick a spot." }, 400);
+          if (items.length >= HOME_MAX) return json({ error: `The home is full (${HOME_MAX} things). Take something out first.` }, 409);
+          const id = now().toString(36) + randomBytes(3).toString("hex");
+          await store.setJSON(keyOf(id, kind, x, y, false, me.id), 0);
+          return done();
+        }
+        const it = items.find((i) => i.id === String(body.id || ""));
+        if (!it) return json({ error: "That's not in the home any more." }, 404);
+        const oldKey = keyOf(it.id, it.kind, it.x, it.y, it.flip, it.by);
+        if (body.action === "remove") { await store.delete(oldKey); return done(); }
+        if (body.action === "move" || body.action === "flip") {
+          const x = body.action === "move" ? pos(body.x) : it.x, y = body.action === "move" ? pos(body.y) : it.y;
+          if (x === null || y === null) return json({ error: "Pick a spot." }, 400);
+          const flip = body.action === "flip" ? !it.flip : it.flip;
+          const nk = keyOf(it.id, it.kind, x, y, flip, it.by);
+          if (nk !== oldKey) { await store.setJSON(nk, 0); await store.delete(oldKey); }
+          return done();
+        }
+        return json({ error: "Unknown action." }, 400);
       }
 
       // React to a message (WhatsApp style): one reaction per person per message; the same emoji again, or none, removes it.
