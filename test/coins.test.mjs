@@ -91,22 +91,31 @@ assert.match(pushes[0].body, new RegExp(`took ${z.took} of your monster coins`))
 assert.equal((await call("GET", "state?v=" + encodeURIComponent(vA), null, A.t)).data.same, undefined, "Ann's phone sees the loss on its next check");
 assert.ok((await me(A)).coinLog.some((e) => e.why === `zapby.${B.id}` && e.amt === -z.took));
 clock += 11 * 60e3; // cooldown over
+const a2 = await coins(A);
 z = (await call("POST", "zap", { to: A.id }, B.t)).data;
-assert.equal(z.took, 0, "only the first zap of someone each day takes coins");
-assert.equal(await coins(A), a0 - (await me(B)).coinLog.find((e) => e.why === `zap.${A.id}`).amt);
+assert.ok(z.took >= Math.floor(a2 * 0.01) && z.took <= Math.floor(a2 * 0.10) && z.took > 0, "v48: every zap takes coins, not just the first of the day");
+assert.equal(await coins(A), a2 - z.took);
 // with a safe at home, half of Ann's coins are out of reach
 give(A, 100000);
 await call("POST", "home", { action: "add", kind: "safe", x: 500, y: 900 }, A.t);
 const a1 = await coins(A);
-for (let i = 0; i < 12; i++) { // 12 days of first zaps from Cat: never more than 10% of half
-  clock += 864e5;
+for (let i = 0; i < 12; i++) { // 12 zaps from Cat: never more than 10% of half
+  clock += 11 * 60e3;
   const before = await coins(A), took = (await call("POST", "zap", { to: A.id }, C.t)).data.took;
   assert.ok(took <= Math.floor(Math.floor(before * COINS.safeKeeps) * 0.10) && took >= Math.floor(Math.floor(before * COINS.safeKeeps) * 0.01), `safe: took ${took} of ${before}`);
 }
 assert.ok(a1 > 0);
-// someone with nothing loses nothing
+// someone who has never opened the app since coins came gets the 100 welcome coins when first zapped, so there's something to take
 const Z = await mk("Zed"); await call("POST", "cave", { action: "join", code: cave.code }, Z.t);
-assert.equal((await call("POST", "zap", { to: Z.id }, B.t)).data.took, 0);
+assert.equal(store._m.has(`paid/${Z.id}/welcome`), false);
+const zt = (await call("POST", "zap", { to: Z.id }, B.t)).data.took;
+assert.ok(zt >= 1 && zt <= 10, `took ${zt} of Zed's 100 welcome coins`);
+assert.equal(await coins(Z), 100 - zt);
+await open(Z); assert.equal((await me(Z)).coinLog.filter((e) => e.why === "welcome").length, 1, "opening the app later doesn't pay the welcome twice");
+// someone with nothing loses nothing
+const Y = await mk("Yan"); await call("POST", "cave", { action: "join", code: cave.code }, Y.t);
+store._m.set(`paid/${Y.id}/welcome`, "0"); // welcomed, and it's all spent
+assert.equal((await call("POST", "zap", { to: Y.id }, B.t)).data.took, 0);
 
 /* ---------- little jobs at home ---------- */
 assert.equal((await call("POST", "coins/act", { what: "water" }, B.t)).status, 404, "no plant yet");

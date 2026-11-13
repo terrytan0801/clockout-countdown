@@ -930,7 +930,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
           <li><b>+50</b> for every workday you open the app, paid from your clock-out time. Overtime pays nothing extra.</li>
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
-          <li><b>1–10%</b> of someone's coins the first time you zap them each day. They lose what you get.</li>
+          <li><b>1–10%</b> of someone's coins every time you zap them (one zap per person every 10 minutes). They lose what you get.</li>
           <li><b>Fishing</b> in the yard's pond, as often as you like. Sell your catch to Mr. Fishfish (he's in the yard 12–2 pm and 7–10 pm), from 1 coin for a boot to 200 for the golden fish, and far more for the 5 legendary fish (under 0.1% each).</li>
           <li><b>+2</b> for watering a plant, <b>+2</b> for petting the cat, <b>+3</b> from the vending machine, once a day each.</li>
           <li>Selling something gives half its price back.</li>
@@ -1018,7 +1018,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v47.0</span>
+    <span>v48.0</span>
   </div>
 </div>
 
@@ -1736,6 +1736,7 @@ async function zap(p,el,btn){
     delete pendingZaps[p.id];
     if(S&&S.cave) S.cave.zaps[p.id]=d.at;
     if(d.took){toast(`Zapped ${p.name}! You took ${d.took} of their monster coins.`,4500);refresh();}
+    else if(d.took===0&&d.sent>=1) toast(`Zapped ${p.name}! They're nearly broke, so there were no coins to take.`,4500);
     else if(d.sent<1) toast(`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
     else if(!d.buzz) toast(`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);
   }catch(e){
@@ -3984,13 +3985,19 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v48-loot",v:"v48.0",at:"2026-11-13T15:30",title:"100 coins for everyone, and every zap grabs",changes:[
+    "Everyone has their 100 welcome coins now, even if they haven't opened the app since coins came.",
+    "No more \"first zap of the day\": every zap takes 1 to 10% of their coins. One zap per person every 10 minutes, as before.",
+    "If someone's nearly broke, the app says so instead of staying quiet."],panels:[
+    {art:"gift",title:"100 for everyone",text:"Nobody starts at 0 any more: every monster has its 100 welcome coins, opened the app or not."},
+    {art:"loot",title:"Zap, grab, repeat",text:"Every zap grabs 1 to 10% of their coins. Want to keep yours? A safe at home keeps half out of reach."}]},
   {id:"v45-coins",v:"v47.0",at:"2026-11-13T14:00",title:"Monster coins, a shop and a pond",changes:[
     "Earn monster coins: 50 for every workday (paid at clock-out), a bonus every 5 days in a row, and more for filming on time.",
-    "Your first zap of someone each day takes 1 to 10% of their coins.",
+    "Every zap takes 1 to 10% of their coins.",
     "Go fishing in the yard: cast, hook, reel. 13 kinds of fish, 5 of them legendary. Sell your catch to Mr. Fishfish or keep it in an aquarium.",
     "The home is now a shop: 33 things to buy, and some of them do something."],panels:[
     {art:"payday",title:"Payday",text:"Every workday you show up pays 50 monster coins at clock-out. Tap the coin button to see your wallet."},
-    {art:"loot",title:"Zap and grab",text:"Your first zap of someone each day takes 1 to 10% of their coins. A safe at home keeps half out of reach."},
+    {art:"loot",title:"Zap and grab",text:"Every zap takes 1 to 10% of their coins. A safe at home keeps half out of reach."},
     {art:"fishing",title:"Gone fishing",text:"Tap the pond: cast, hook it when it bites, then hold to reel. Mr. Fishfish buys fish at lunch and in the evening."},
     {art:"shop",title:"The shop",text:"Spend coins on the home: a jukebox that plays, a coffee machine that raises your wage, a big fish tank…"}]},
   {id:"v42-home",v:"v42.0",at:"2026-11-12T16:00",title:"Our cave has a home",changes:[
@@ -4144,6 +4151,7 @@ function panelArt(kind){
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
     case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
+    case "gift":add(small(me),small(crew[0]),small(crew[1]),burstEl("+100 each",{top:"10px",right:"14px"}));break;
     case "payday":add(monEl(me.monster,me.color,"dance"),burstEl("+50",{top:"14px",right:"20px"}));break;
     case "loot":{const z=propEl("bolt","prop shake");z.style.color="var(--zap)";add(small(me),z,small(crew[0]),burstEl("-7%",{top:"14px",right:"16px"}));break;}
     case "fishing":{const f=document.createElement("div");f.style.width="34%";f.innerHTML=fishSvg("koi","");f.firstElementChild.style.width="100%";

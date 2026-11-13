@@ -92,7 +92,7 @@ assert.ok(store._m.has(`chatlast/${full.r.data.cave.id}`));
 pushes.length = 0;
 const z = await cost(() => call("POST", "zap", { to: B.id }, A.t));
 assert.equal(z.r.data.sent, 1); assert.equal(pushes.length, 1);
-assert.ok(z.list <= 2, "the first zap of the day looks at their coins and the home; nothing else is listed");
+assert.ok(z.list <= 2, "a zap looks at their coins and the home; nothing else is listed");
 assert.equal((await call("POST", "zap", { to: B.id }, A.t)).status, 429);
 assert.equal((await call("POST", "zap", { to: "../../vapid" }, A.t)).status, 404);
 

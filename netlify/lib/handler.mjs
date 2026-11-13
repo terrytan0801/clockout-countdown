@@ -39,7 +39,7 @@
 //                               paying the same person at once can never lose coins
 //   coinbase/<pid>              {bal, upto}  old ledger lines folded into one number (lines up to id <upto>)
 //   wv/<pid>                    changes whenever that person's coins change (part of the "still the same?" check)
-//   paid/<pid>/<day>/<what>     0   paid once: pay, streak, clip<r>, fish, water, pet, vend, zap.<pid>; paid/<pid>/welcome
+//   paid/<pid>/<day>/<what>     0   paid once: pay, streak, clip<r>, water, pet, vend; paid/<pid>/welcome
 //   work/<pid>/<day>            0   opened the app on that workday and not paid for it yet
 //   Fishing (v45):
 //   cast/<pid>                  {kind,size,at}  the fish on the line right now (decided when the line is cast)
@@ -72,12 +72,12 @@ export const SHOP = {
 export const HOME_KINDS = Object.keys(SHOP);
 // How monster coins are earned and lost. Change the numbers here to rebalance.
 export const COINS = {
-  welcome: 100,          // once, so everyone can buy something on day one
+  welcome: 100,          // once, so everyone can buy something on day one; since v48 also given the first time someone is zapped
   day: 50, coffee: 10,   // per workday you opened the app, paid from your clock-out time (+10 with your coffee machine at home)
   streakEvery: 5, streak: 50, // every 5 workdays in a row
   clip: 15, clipLate: 5, // filming a ring on time / late (the first take only)
   water: 2, pet: 2, vend: 3, // once a day each: water a plant, pet the cat, use the vending machine
-  zapMinPct: 1, zapMaxPct: 10, safeKeeps: 0.5, // your first zap of someone each day takes 1-10% of their coins (half is safe with a safe)
+  zapMinPct: 1, zapMaxPct: 10, safeKeeps: 0.5, // every zap takes 1-10% of their coins (v48; half is safe with a safe)
   refund: 0.5,           // selling gives half back
 };
 export const HOME_MAX = 60;
@@ -341,12 +341,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   // Once per person per day (or once ever): true the first time.
   const payOnce = (pid, day, what) => claimKey(`paid/${pid}/${day}/${what}`, 0);
   // Runs when the app is opened: welcome coins, today's attendance, wages that are due, and tidying a long ledger.
+  // The 100 welcome coins, once. Given when you open the app, or (v48) when someone zaps you first, so nobody is left at 0.
+  async function welcome(pid) {
+    if (cache.welcomed?.has(pid)) return;
+    if (!(await exists(`paid/${pid}/welcome`)) && (await claimKey(`paid/${pid}/welcome`, 0))) await credit(pid, COINS.welcome, "welcome");
+    (cache.welcomed ||= new Set()).add(pid);
+  }
   async function settle(me) {
     const t = now(), day = sgDay(t), sec = sgSeconds(t), offSec = me.h * 3600 + me.m * 60;
     const memo = `${day}|${sec >= offSec}`;
     if (cache.settled.get(me.id) === memo) return;
-    const [w, marks, paid, welcomed, off] = await Promise.all([wallet(me.id), keys(`work/${me.id}/`), paidToday(me.id, day), exists(`paid/${me.id}/welcome`), offFn(me)]);
-    if (!welcomed && (await claimKey(`paid/${me.id}/welcome`, 0))) await credit(me.id, COINS.welcome, "welcome");
+    const [, w, marks, paid, off] = await Promise.all([welcome(me.id), wallet(me.id), keys(`work/${me.id}/`), paidToday(me.id, day), offFn(me)]); // w is only for tidying the ledger
     const days = new Set(marks.map((k) => k.split("/")[2]));
     if (isWorkday(day, off) && !days.has(day) && !paid.has("pay")) { await store.setJSON(`work/${me.id}/${day}`, 0); days.add(day); }
     // A worked day is paid from clock-out time on; a day you only opened before clocking out is paid the next time you open.
@@ -1068,14 +1073,13 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (to.id === me.id) return json({ error: "You can't zap yourself." }, 400);
         if (last && t - last.at < ZAP_COOLDOWN_MS) return json({ error: "Cooling down.", retryInMs: ZAP_COOLDOWN_MS - (t - last.at) }, 429);
         const buzz = to.buzz !== false;
-        // The first zap of someone each day also takes 1-10% of their monster coins (a safe at home keeps half out of reach).
-        let took = 0;
-        if (await payOnce(me.id, sgDay(t), `zap.${to.id}`)) {
-          const [vw, safe] = await Promise.all([wallet(to.id), hasAtHome(me.cave, to.id, "safe")]);
-          const loot = Math.floor(Math.max(0, vw.coins) * (safe ? COINS.safeKeeps : 1));
-          took = Math.floor(loot * (COINS.zapMinPct + randomInt(COINS.zapMaxPct - COINS.zapMinPct + 1)) / 100);
-          if (took > 0) await Promise.all([credit(to.id, -took, `zapby.${me.id}`), credit(me.id, took, `zap.${to.id}`)]);
-        }
+        // Every zap takes 1-10% of their monster coins (v48: no daily limit; a safe at home keeps half out of reach).
+        // Someone who hasn't opened the app since coins came still gets their 100 welcome coins first.
+        const [, safe] = await Promise.all([welcome(to.id), hasAtHome(me.cave, to.id, "safe")]);
+        const vw = await wallet(to.id);
+        const loot = Math.floor(Math.max(0, vw.coins) * (safe ? COINS.safeKeeps : 1));
+        const took = Math.floor(loot * (COINS.zapMinPct + randomInt(COINS.zapMaxPct - COINS.zapMinPct + 1)) / 100);
+        if (took > 0) await Promise.all([credit(to.id, -took, `zapby.${me.id}`), credit(me.id, took, `zap.${to.id}`)]);
         const [, sent] = await Promise.all([store.setJSON(zk, { at: t }), sendPush(to.id, {
           title: `⚡ Zap from ${me.name}!`,
           body: (cleanText(body.message, 140) || `${me.name} zapped you.`) + (took ? ` They took ${took} of your monster coins!` : ""),

@@ -1,4 +1,4 @@
-# Clock-out Countdown · v47.0
+# Clock-out Countdown · v48.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -169,11 +169,11 @@ Everyone has a wallet of monster coins (the coin button next to Home opens it, w
 
 | How | Coins |
 |---|---|
-| Welcome gift, once | +100 |
+| Welcome gift, once (when you first open the app, or when you're first zapped, whichever comes first; v48) | +100 |
 | Each workday you open the app, paid from your clock-out time (a day you only opened before clocking out is paid the next time you open). Weekends, public holidays and days off pay nothing; overtime pays nothing extra | +50 |
 | Every 5 workdays in a row | +50 |
 | Filming a ring on time / late (first take only) | +15 / +5 |
-| Your first zap of someone each day | 1-10% of their coins, taken from them |
+| Every zap (v48; before, only the first zap of someone each day) | 1-10% of their coins, taken from them |
 | Selling fish from the pond to Mr. Fishfish (see Fishing, v45) | 1 to 390 a fish |
 | Water a plant, pet the cat, use the vending machine, once a day each | +2, +2, +3 |
 
