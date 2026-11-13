@@ -1018,7 +1018,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v48.0</span>
+    <span>v49.0</span>
   </div>
 </div>
 
@@ -1735,7 +1735,8 @@ async function zap(p,el,btn){
     const d=await api("zap",{to:p.id,message:zapMessage(p)});
     delete pendingZaps[p.id];
     if(S&&S.cave) S.cave.zaps[p.id]=d.at;
-    if(d.took){toast(`Zapped ${p.name}! You took ${d.took} of their monster coins.`,4500);refresh();}
+    if(d.took){S.me.coins=(S.me.coins||0)+d.took;renderCoins(); // the coin count moves now; the full check follows
+      toast(`Zapped ${p.name}! You took ${d.took} of their monster coins.`,4500);refresh();}
     else if(d.took===0&&d.sent>=1) toast(`Zapped ${p.name}! They're nearly broke, so there were no coins to take.`,4500);
     else if(d.sent<1) toast(`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
     else if(!d.buzz) toast(`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);

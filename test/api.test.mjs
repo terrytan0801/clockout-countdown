@@ -96,7 +96,7 @@ await call("POST", "subscribe", { subscription: sub("sukee-phone") }, sukee);
 await call("POST", "subscribe", { subscription: sub("gone1") }, sukee);
 r = await call("GET", "state", null, terry); assert.deepEqual(r.data.cave.reachable, [sukeeId]);
 r = await call("POST", "zap", { to: sukeeId, message: "88 mins to go" }, terry);
-assert.equal(r.data.sent, 1); assert.equal(r.data.buzz, false);
+assert.equal(r.data.sent, 2, "v49: phones on file, answered before the buzz goes out (the dead one is pruned while sending)"); assert.equal(r.data.buzz, false);
 assert.equal(pushed.at(-1).payload.buzz, false, "Sukee turned buzz off");
 assert.equal(pushed.at(-1).payload.title, "⚡ Zap from Terry!");
 assert.equal(JSON.parse(store._m.get(`subs/${sukeeId}`)).length, 1, "dead subscription pruned");

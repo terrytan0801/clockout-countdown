@@ -1067,26 +1067,34 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         const toId = /^[\w-]{1,40}$/.test(String(body.to || "")) ? body.to : null; // ids from v8 have other shapes; just no slashes
         const t = now();
         const zk = `zap/${me.id}/${toId}`;
-        // who they are and my cooldown: read together, then the buzz goes out while the cooldown is saved
-        const [to, last] = toId ? await Promise.all([getPerson(toId), getJSON(zk)]) : [null, null];
+        if (!toId) return json({ error: "You can only zap people in your cave." }, 404);
+        // v49: everything the zap needs is read in one go (who, cooldown, welcome, safe, coins, phones), saved in one go,
+        // and the answer goes back before the buzz is sent, so the coins taken show at once.
+        const wk = `paid/${toId}/welcome`;
+        const [to, last, welcomed, safe, vw, subs] = await Promise.all([getPerson(toId), getJSON(zk),
+          cache.welcomed?.has(toId) || exists(wk), hasAtHome(me.cave, toId, "safe"), wallet(toId), getJSON(`subs/${toId}`, [])]);
         if (!to || !me.cave || to.cave !== me.cave) return json({ error: "You can only zap people in your cave." }, 404);
         if (to.id === me.id) return json({ error: "You can't zap yourself." }, 400);
         if (last && t - last.at < ZAP_COOLDOWN_MS) return json({ error: "Cooling down.", retryInMs: ZAP_COOLDOWN_MS - (t - last.at) }, 429);
         const buzz = to.buzz !== false;
+        // Someone who hasn't opened the app since coins came gets their 100 welcome coins first (v48).
+        // (Already checked in the read above, so it's written with the rest instead of claimed in two more trips.)
+        const coins = vw.coins + (welcomed ? 0 : COINS.welcome);
+        (cache.welcomed ||= new Set()).add(to.id);
         // Every zap takes 1-10% of their monster coins (v48: no daily limit; a safe at home keeps half out of reach).
-        // Someone who hasn't opened the app since coins came still gets their 100 welcome coins first.
-        const [, safe] = await Promise.all([welcome(to.id), hasAtHome(me.cave, to.id, "safe")]);
-        const vw = await wallet(to.id);
-        const loot = Math.floor(Math.max(0, vw.coins) * (safe ? COINS.safeKeeps : 1));
+        const loot = Math.floor(Math.max(0, coins) * (safe ? COINS.safeKeeps : 1));
         const took = Math.floor(loot * (COINS.zapMinPct + randomInt(COINS.zapMaxPct - COINS.zapMinPct + 1)) / 100);
-        if (took > 0) await Promise.all([credit(to.id, -took, `zapby.${me.id}`), credit(me.id, took, `zap.${to.id}`)]);
-        const [, sent] = await Promise.all([store.setJSON(zk, { at: t }), sendPush(to.id, {
+        await Promise.all([store.setJSON(zk, { at: t }),
+          ...(welcomed ? [] : [store.setJSON(wk, 0), credit(to.id, COINS.welcome, "welcome")]),
+          ...(took > 0 ? [credit(to.id, -took, `zapby.${me.id}`), credit(me.id, took, `zap.${to.id}`)] : [])]);
+        const buzzOut = sendPush(to.id, {
           title: `⚡ Zap from ${me.name}!`,
           body: (cleanText(body.message, 140) || `${me.name} zapped you.`) + (took ? ` They took ${took} of your monster coins!` : ""),
           tag: `zap-${me.id}`, url: "/", buzz, from: me.name,
-        })]);
-        await later(ctx, stats.log("zap", me.id, to.id, sent < 1 ? "n" : buzz ? "b" : "q"));
-        return json({ ok: true, sent, at: t, buzz, took });
+        }).then((sent) => stats.log("zap", me.id, to.id, sent < 1 ? "n" : buzz ? "b" : "q"));
+        const bg = later(ctx, buzzOut);
+        if (bg) await bg; // no background on this server (tests, local): finish first
+        return json({ ok: true, sent: subs.length, at: t, buzz, took });
       }
 
       /* ---------- monster powers ---------- */
