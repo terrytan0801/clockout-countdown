@@ -1,4 +1,4 @@
-# Clock-out Countdown · v45.0
+# Clock-out Countdown · v46.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -183,7 +183,7 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 
 ## Fishing, the bag and the shop (v45)
 
-**Fishing.** Tapping the pond opens a game seen from behind your monster. Each of the day's 2 casts goes: cast, wait for the bite, tap **Hook!** within the window (too early or too late and it's gone), then hold and release the button to keep the fish inside the green band until the bar fills. Bigger fish dart more and have a narrower band. The server picks the fish when the line is cast (`fish/cast`) and the phone reports whether it was landed (`fish/land`), so a catch can't be invented, only a lost fish claimed as won.
+**Fishing.** Tapping the pond opens a full-screen game seen from behind your monster (full screen since v46, so a finger can't land on the page behind it). There's no daily limit; each cast goes: cast, wait for the bite, tap **Hook!** within the window (too early or too late and it's gone), then hold and release anywhere on the screen to keep the fish inside the green band until the bar fills. Bigger fish dart more and have a narrower band. The server picks the fish when the line is cast (`fish/cast`) and the phone reports whether it was landed (`fish/land`), so a catch can't be invented, only a lost fish claimed as won.
 
 | Fish | Size | Worth | Odds |
 |---|---|---|---|

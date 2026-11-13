@@ -36,33 +36,39 @@ assert.equal(fishmonger(SG(10, 9)).wants, fishmonger(SG(10, 20)).wants, "the sam
 
 /* ---------- casting and landing ---------- */
 let s = await st(A);
-assert.equal(s.me.casts, FISHING.casts); assert.deepEqual(s.me.bag, []); assert.equal(s.me.did.fish, false);
+assert.equal(s.me.casts, undefined, "no daily cast limit"); assert.deepEqual(s.me.bag, []);
 assert.equal(s.fishfish.from, SG(10, 12));
 assert.equal((await call("POST", "fish/cast", null, L.t)).status, 409, "no cave, no pond");
 assert.equal((await call("POST", "fish/land", { ok: true }, A.t)).status, 409, "nothing on the line");
 const vBefore = s.v;
 let c = (await call("POST", "fish/cast", null, A.t)).data;
 assert.ok(FISH[c.kind] && c.size >= FISH[c.kind].cm[0] && c.size <= FISH[c.kind].cm[1]);
-assert.equal(c.left, FISHING.casts - 1); assert.equal(c.hard, FISH[c.kind].hard);
+assert.equal(c.hard, FISH[c.kind].hard);
 let l = (await call("POST", "fish/land", { ok: true }, A.t)).data;
 assert.equal(l.kept, true); assert.deepEqual([l.fish.kind, l.fish.size], [c.kind, c.size], "what was hooked is what lands");
 assert.equal((await call("POST", "fish/land", { ok: true }, A.t)).status, 409, "one fish per cast");
 s = await st(A);
-assert.equal(s.me.casts, FISHING.casts - 1); assert.deepEqual(s.me.bag, [l.fish]);
+assert.deepEqual(s.me.bag, [l.fish]);
 assert.notEqual(s.v, vBefore, "the phone sees the new fish");
 // the one that got away
 await call("POST", "fish/cast", null, A.t);
 assert.equal((await call("POST", "fish/land", { ok: false }, A.t)).data.kept, false);
 s = await st(A);
-assert.equal(s.me.casts, 0); assert.equal(s.me.bag.length, 1); assert.equal(s.me.did.fish, true);
-assert.equal((await call("POST", "fish/cast", null, A.t)).status, 409, "two casts a day");
+assert.equal(s.me.bag.length, 1);
+// no limit: keep casting the same day
+for (let i = 0; i < 5; i++) { assert.equal((await call("POST", "fish/cast", null, A.t)).status, 200, "cast " + (i + 3)); await call("POST", "fish/land", { ok: false }, A.t); }
+// a new cast replaces a line left in the water: only the newest fish can be landed
+const c1 = (await call("POST", "fish/cast", null, A.t)).data, c2 = (await call("POST", "fish/cast", null, A.t)).data;
+const l2 = (await call("POST", "fish/land", { ok: true }, A.t)).data;
+assert.deepEqual([l2.fish.kind, l2.fish.size], [c2.kind, c2.size]); void c1;
+assert.equal((await call("POST", "fish/land", { ok: true }, A.t)).status, 409);
+for (const k of [...store._m.keys()]) if (k.startsWith(`bag/${A.id}/`) && !k.includes(l.fish.id)) store._m.delete(k);
 clock = SG(11, 9);
-assert.equal((await st(A)).me.casts, FISHING.casts, "a new day");
 // a line left for more than 10 minutes has nothing on it
 await call("POST", "fish/cast", null, A.t); clock += 11 * 60e3;
 assert.equal((await call("POST", "fish/land", { ok: true }, A.t)).status, 409);
 // the catch follows the chances; a lucky cat means no boots and more rare fish
-const tally = async (who, n) => { const seen = {}; for (let i = 0; i < n; i++) { clock += 864e5; for (let j = 0; j < FISHING.casts; j++) { const k = (await call("POST", "fish/cast", null, who.t)).data.kind; seen[k] = (seen[k] || 0) + 1; await call("POST", "fish/land", { ok: false }, who.t); } } return seen; };
+const tally = async (who, n) => { const seen = {}; for (let i = 0; i < n; i++) { clock += 864e5; for (let j = 0; j < 2; j++) { const k = (await call("POST", "fish/cast", null, who.t)).data.kind; seen[k] = (seen[k] || 0) + 1; await call("POST", "fish/land", { ok: false }, who.t); } } return seen; };
 const plain = await tally(A, 150);
 assert.ok(plain.tadpole > plain.catfish && (plain.boot || 0) > 0, JSON.stringify(plain));
 give(B, 1000); await call("POST", "home", { action: "add", kind: "luckycat", x: 100, y: 900 }, B.t);
@@ -73,8 +79,7 @@ assert.ok(rare(lucky) > rare(plain), `rare fish: ${rare(lucky)} with the cat, ${
 // a full bag
 for (let i = 0; i < FISHING.bag; i++) putInBag(B, "tadpole", 5);
 clock += 864e5;
-assert.equal((await call("POST", "fish/cast", null, B.t)).status, 409);
-assert.equal((await st(B)).me.casts, FISHING.casts, "and no cast is used up");
+assert.equal((await call("POST", "fish/cast", null, B.t)).status, 409, "a full bag");
 
 /* ---------- Mr. Fishfish ---------- */
 for (const k of [...store._m.keys()]) if (k.startsWith(`bag/${A.id}/`)) store._m.delete(k);

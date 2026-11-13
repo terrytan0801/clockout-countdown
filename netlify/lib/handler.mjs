@@ -95,7 +95,6 @@ export const FISH = {
   golden:  { w: 2,  cm: [20, 40],   coins: 150, hard: 5 },
 };
 export const FISHING = {
-  casts: 2,            // a day
   bag: 24,             // fish a bag holds
   rare: ["catfish", "shark", "golden"], // a lucky cat at home doubles the chance of these, and you never hook a boot
   tank: { aquarium: 3, bigtank: 8 },     // fish each aquarium holds
@@ -383,7 +382,6 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const t = now();
     const day = sgDay(t);
     const [lvRec, w, paid, wver, bag] = await Promise.all([getJSON(`lvl/${me.id}`), wallet(me.id), paidToday(me.id, day), getJSON(`wv/${me.id}`), bagOf(me.id)]);
-    const casts = FISHING.casts - [...paid].filter((x) => /^cast\d+$/.test(x)).length;
     const lv = levelInfo(lvRec);
     const power = POWERS[me.monster] || "jelly";
     const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
@@ -398,8 +396,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         nextReroll: sameMonth ? `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01` : null,
         cheersLeft: 0, notesLeft: 0, canPin: false, roared: false,
         coins: w.coins, coinLog: w.log.slice(-10).map(({ id, amt, why }) => ({ id, amt, why })),
-        did: { fish: casts <= 0, water: paid.has("water"), pet: paid.has("pet"), vend: paid.has("vend") },
-        casts: Math.max(0, casts), bag: bag.map((f) => ({ ...f, worth: fishPrice(f.kind, f.size, (fishmonger(t) || {}).wants) })),
+        did: { water: paid.has("water"), pet: paid.has("pet"), vend: paid.has("vend") },
+        bag: bag.map((f) => ({ ...f, worth: fishPrice(f.kind, f.size, (fishmonger(t) || {}).wants) })),
       },
       fishfish: fishmonger(t), bagMax: FISHING.bag,
       cave: null,
@@ -1163,22 +1161,20 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       }
 
       /* ---------- fishing (v45) ---------- */
-      // Cast: uses one of today's casts and decides what's on the line. The phone then plays the reeling game.
+      // Cast: decides what's on the line (as many casts as you like; a new cast replaces a line left in the water).
+      // The phone then plays the reeling game.
       if (route === "fish/cast" && method === "POST") {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
-        const t = now(), day = sgDay(t);
-        const [paid, bag] = await Promise.all([paidToday(me.id, day), bagOf(me.id)]);
+        const t = now();
+        const bag = await bagOf(me.id);
         if (bag.length >= FISHING.bag) return json({ error: "Your bag is full. Sell some fish or put them in an aquarium first." }, 409);
-        let n = 0;
-        for (let i = 1; i <= FISHING.casts && !n; i++) if (!paid.has(`cast${i}`) && (await payOnce(me.id, day, `cast${i}`))) n = i;
-        if (!n) return json({ error: "No casts left today. The fish need a rest." }, 409);
         const lucky = await hasAtHome(me.cave, me.id, "luckycat");
         const pool = Object.entries(FISH).map(([kind, f]) => [kind, lucky ? (kind === "boot" ? 0 : FISHING.rare.includes(kind) ? f.w * 2 : f.w) : f.w]);
         let roll = randomInt(pool.reduce((x, [, w]) => x + w, 0)), kind = pool[0][0];
         for (const [k, w] of pool) { if (roll < w) { kind = k; break; } roll -= w; }
         const [lo, hi] = FISH[kind].cm, size = lo + randomInt(hi - lo + 1);
-        await Promise.all([store.setJSON(`cast/${me.id}`, { kind, size, at: t }), touchWallet(me.id)]);
-        return json({ kind, size, hard: FISH[kind].hard, left: FISHING.casts - n });
+        await store.setJSON(`cast/${me.id}`, { kind, size, at: t });
+        return json({ kind, size, hard: FISH[kind].hard });
       }
       // Land (or lose) the fish on the line. Landed fish go in the bag.
       if (route === "fish/land" && method === "POST") {

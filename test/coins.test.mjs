@@ -116,7 +116,7 @@ assert.equal((await call("POST", "coins/act", { what: "water" }, B.t)).data.won,
 assert.equal((await call("POST", "coins/act", { what: "water" }, B.t)).status, 409);
 assert.equal(await coins(B), b2 + COINS.water);
 assert.equal((await call("POST", "coins/act", { what: "dance" }, B.t)).status, 400);
-assert.deepEqual((await me(B)).did, { fish: false, water: true, pet: false, vend: false });
+assert.deepEqual((await me(B)).did, { water: true, pet: false, vend: false });
 const D = await mk("Dee"); await call("POST", "cave", { action: "join", code: cave.code }, D.t);
 
 /* ---------- the shop ---------- */
