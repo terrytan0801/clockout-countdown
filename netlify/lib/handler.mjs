@@ -33,6 +33,14 @@
 //   hi/<cid>/<id>/<kind>/<x>/<y>/<flip>/<pid>   0   a decoration in the cave's home (v42). Everything is in the key:
 //                               one listing draws the whole home, and moving one deletes it and writes it again
 //   homerev/<cid>               {rv} changes whenever the home's decorations change
+//                               (v44: the key ends /<paid>, the monster coins it cost; free things from before have none)
+//   Monster coins (v44):
+//   led/<pid>/<id>/<amount>/<why>   0   one line of someone's coin ledger; the balance is the sum, so two things
+//                               paying the same person at once can never lose coins
+//   coinbase/<pid>              {bal, upto}  old ledger lines folded into one number (lines up to id <upto>)
+//   wv/<pid>                    changes whenever that person's coins change (part of the "still the same?" check)
+//   paid/<pid>/<day>/<what>     0   paid once: pay, streak, clip<r>, fish, water, pet, vend, zap.<pid>; paid/<pid>/welcome
+//   work/<pid>/<day>            0   opened the app on that workday and not paid for it yet
 import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
@@ -50,8 +58,25 @@ export const MONSTER_COUNT = 10;
 export const MAX_MEMBERS = 30;
 export const CHAT_KEEP = 200;
 // Things that can go in the cave's home (v42). The art is in the app; the server only knows the names.
-export const HOME_KINDS = ["sofa", "rug", "plant", "lamp", "tv", "poster", "beanbag", "arcade", "fireplace", "aquarium", "lights", "clock",
-  "trophy", "disco", "piano", "cat", "shelf", "fridge", "hammock", "telescope"];
+// v44: everything costs monster coins. The art, names and what each thing does are in the app (cave-home.js).
+export const SHOP = {
+  plant: 30, poster: 30, rug: 40, lamp: 40, clock: 40, lights: 60, beanbag: 70, shelf: 80, lavalamp: 80, mushlamp: 90,
+  sofa: 120, cat: 120, fridge: 130, tv: 150, hammock: 150, crystal: 150, disco: 180, vending: 180, trophy: 200, aquarium: 200,
+  coffee: 200, fireplace: 220, jukebox: 220, telescope: 250, luckycat: 250, arcade: 300, safe: 300, piano: 350, chest: 350,
+  hottub: 400, throne: 500, rocket: 600,
+};
+export const HOME_KINDS = Object.keys(SHOP);
+// How monster coins are earned and lost. Change the numbers here to rebalance.
+export const COINS = {
+  welcome: 100,          // once, so everyone can buy something on day one
+  day: 50, coffee: 10,   // per workday you opened the app, paid from your clock-out time (+10 with your coffee machine at home)
+  streakEvery: 5, streak: 50, // every 5 workdays in a row
+  clip: 15, clipLate: 5, // filming a ring on time / late (the first take only)
+  fishMin: 10, fishMax: 30, fishMiss: 5, luckyMin: 15, // fishing once a day; a lucky cat at home raises the least you get
+  water: 2, pet: 2, vend: 3, // once a day each: water a plant, pet the cat, use the vending machine
+  zapMinPct: 1, zapMaxPct: 10, safeKeeps: 0.5, // your first zap of someone each day takes 1-10% of their coins (half is safe with a safe)
+  refund: 0.5,           // selling gives half back
+};
 export const HOME_MAX = 60;
 export const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]; // WhatsApp's quick six
 const emojiHex = (e) => [...e].map((c) => c.codePointAt(0).toString(16)).join("-");
@@ -98,7 +123,7 @@ const fmt12 = (h, m) => `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 1
 // warm(url): fetches a link once so Netlify's CDN keeps it before anyone asks for it.
 export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {}, purge = async () => {}, warm = async () => {} }) {
   const stats = makeStats({ store, now, adminKey });
-  cache.sessions ||= new Map(); cache.streak ||= new Map();
+  cache.sessions ||= new Map(); cache.streak ||= new Map(); cache.settled ||= new Map();
   // Work the reply doesn't depend on (stats, tidying up). With waitUntil it runs after the reply has gone.
   const later = (ctx, p) => {
     const q = Promise.resolve(p).catch((e) => console.error("later", e));
@@ -244,9 +269,59 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   // The cave home's decorations, from one listing.
   async function homeItems(cid) {
     return (await keys(`hi/${cid}/`)).map((k) => {
-      const [, , id, kind, x, y, f, pid] = k.split("/");
-      return { id, kind, x: Number(x), y: Number(y), flip: f === "1", by: pid };
+      const [, , id, kind, x, y, f, pid, paid] = k.split("/");
+      return { id, kind, x: Number(x), y: Number(y), flip: f === "1", by: pid, paid: Number(paid) || 0 };
     }).filter((i) => HOME_KINDS.includes(i.kind));
+  }
+  const hasAtHome = async (cid, pid, kind) => !!cid && (await homeItems(cid)).some((i) => i.kind === kind && i.by === pid);
+
+  /* ---------- monster coins (v44) ---------- */
+  const rv = () => now().toString(36) + randomBytes(2).toString("hex");
+  async function credit(pid, amount, why) {
+    const amt = Math.trunc(amount);
+    if (!amt) return;
+    const id = `${String(now()).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
+    await Promise.all([store.setJSON(`led/${pid}/${id}/${amt}/${why}`, 0), store.setJSON(`wv/${pid}`, rv())]);
+  }
+  async function wallet(pid) {
+    const [base, ks] = await Promise.all([getJSON(`coinbase/${pid}`), keys(`led/${pid}/`)]);
+    const upto = (base && base.upto) || "";
+    const log = ks.map((key) => { const [, , id, amt, why] = key.split("/"); return { id, amt: Number(amt), why: why || "", key }; })
+      .filter((e) => e.id > upto && Number.isFinite(e.amt)).sort((a, b) => (a.id < b.id ? -1 : 1));
+    return { coins: ((base && base.bal) || 0) + log.reduce((n, e) => n + e.amt, 0), log, base };
+  }
+  const paidToday = async (pid, day) => new Set((await keys(`paid/${pid}/${day}/`)).map((k) => k.split("/")[3]));
+  // Once per person per day (or once ever): true the first time.
+  const payOnce = (pid, day, what) => claimKey(`paid/${pid}/${day}/${what}`, 0);
+  // Runs when the app is opened: welcome coins, today's attendance, wages that are due, and tidying a long ledger.
+  async function settle(me) {
+    const t = now(), day = sgDay(t), sec = sgSeconds(t), offSec = me.h * 3600 + me.m * 60;
+    const memo = `${day}|${sec >= offSec}`;
+    if (cache.settled.get(me.id) === memo) return;
+    const [w, marks, paid, welcomed, off] = await Promise.all([wallet(me.id), keys(`work/${me.id}/`), paidToday(me.id, day), exists(`paid/${me.id}/welcome`), offFn(me)]);
+    if (!welcomed && (await claimKey(`paid/${me.id}/welcome`, 0))) await credit(me.id, COINS.welcome, "welcome");
+    const days = new Set(marks.map((k) => k.split("/")[2]));
+    if (isWorkday(day, off) && !days.has(day) && !paid.has("pay")) { await store.setJSON(`work/${me.id}/${day}`, 0); days.add(day); }
+    // A worked day is paid from clock-out time on; a day you only opened before clocking out is paid the next time you open.
+    const due = [...days].filter((d) => d < day || sec >= offSec).sort();
+    if (due.length) {
+      const bonus = (await hasAtHome(me.cave, me.id, "coffee")) ? COINS.coffee : 0;
+      for (const d of due) {
+        if (await payOnce(me.id, d, "pay")) await credit(me.id, COINS.day + bonus, `pay.${d}`);
+        await store.delete(`work/${me.id}/${d}`);
+      }
+    }
+    // Fold old lines into one number so the ledger stays short (never the last 10, never the last minute).
+    if (w.log.length > 40) {
+      let n = 0;
+      while (n < w.log.length - 10 && Number(w.log[n].id.slice(0, 13)) < t - 60e3) n++;
+      if (n > 0) {
+        const fold = w.log.slice(0, n);
+        await store.setJSON(`coinbase/${me.id}`, { bal: ((w.base && w.base.bal) || 0) + fold.reduce((x, e) => x + e.amt, 0), upto: fold[n - 1].id });
+        await Promise.all(fold.map((e) => store.delete(e.key)));
+      }
+    }
+    cache.settled.set(me.id, memo);
   }
   const homeRv = async (cid) => (await getJSON(`homerev/${cid}`))?.rv || "0";
   const chatRv = async (cid) => (await getJSON(`chatre/${cid}`))?.rv || "0";
@@ -258,7 +333,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   async function state(me) {
     const t = now();
     const day = sgDay(t);
-    const lv = levelInfo(await getJSON(`lvl/${me.id}`));
+    const [lvRec, w, paid, wver] = await Promise.all([getJSON(`lvl/${me.id}`), wallet(me.id), paidToday(me.id, day), getJSON(`wv/${me.id}`)]);
+    const lv = levelInfo(lvRec);
     const power = POWERS[me.monster] || "jelly";
     const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
     const [yy, mm] = monthOf(t).split("-").map(Number);
@@ -271,6 +347,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         canReroll: !sameMonth,
         nextReroll: sameMonth ? `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01` : null,
         cheersLeft: 0, notesLeft: 0, canPin: false, roared: false,
+        coins: w.coins, coinLog: w.log.slice(-10).map(({ id, amt, why }) => ({ id, amt, why })),
+        did: { fish: paid.has("fish"), water: paid.has("water"), pet: paid.has("pet"), vend: paid.has("vend") },
       },
       cave: null,
     };
@@ -306,7 +384,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const mine = ring && today.find((c) => c.pid === me.id && c.r === ring.r);
     base.me.clip = mine ? { at: mine.at, late: mine.late, r: mine.r } : null;
     return {
-      ...base, v: verToken(ver, cid, day, t),
+      ...base, v: `${verToken(ver, cid, day, t)}.${wver || "0"}`,
       cave: {
         id: cave.id, name: cave.name, owner: cave.owner, code: cave.code,
         members: members.map((p) => ({ ...publicPerson(p), level: p.level, off: offOf(p) })),
@@ -473,7 +551,9 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       days.delete(today);
       rec = backfill(days, today, off);
     }
-    await store.setJSON(`lvl/${pid}`, streakUpdate(rec, today, off));
+    const next = streakUpdate(rec, today, off);
+    await store.setJSON(`lvl/${pid}`, next);
+    if (next.streak > 0 && next.streak % COINS.streakEvery === 0 && (await payOnce(pid, today, "streak"))) await credit(pid, COINS.streak, `streak.${next.streak}`);
     await bump(p.cave); // the cave sees levels
     cache.streak.set(pid, today);
   }
@@ -668,14 +748,15 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         // "Still the same?" costs one read. Cyclo watches who is online, which changes all the time, so it always reads.
         const have = url.searchParams.get("v");
         if (have && me.cave && POWERS[me.monster] !== "cyclo") {
-          const t = now(), v = verToken(await getJSON(`ver/${me.cave}`), me.cave, sgDay(t), t);
+          const t = now(), [cv, wver] = await Promise.all([getJSON(`ver/${me.cave}`), getJSON(`wv/${me.id}`)]);
+          const v = `${verToken(cv, me.cave, sgDay(t), t)}.${wver || "0"}`;
           if (v === have) return json({ same: true, now: t, v });
         }
         return json(await state(me));
       }
 
       if (route === "ping" && method === "POST") {
-        await Promise.all([stats.ping(me.id, body.open === true), touchStreak(me)]);
+        await Promise.all([stats.ping(me.id, body.open === true), touchStreak(me), settle(me)]);
         return json({ ok: true });
       }
 
@@ -702,6 +783,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           dur: Math.round(dur * 10) / 10, type, size: video.size, thumb: !!hasThumb,
         });
         await store.setJSON(`myclip/${me.id}/${me.cave}/${day}/${slot}_${video.size}`, 0);
+        if (await payOnce(me.id, day, `clip${ring.r}`)) await (t > ring.until ? credit(me.id, COINS.clipLate, "cliplate") : credit(me.id, COINS.clip, "clip"));
         // Put the new clip in the CDN now (after the reply), so the cave's first look at it is already fast.
         const links = await mediaLinks(me.cave, day, { slot, at: t, thumb: hasThumb });
         const origin = new URL(req.url).origin;
@@ -809,6 +891,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             await dropPersonClips(me.id);
             await stats.forget(me.id);
             await store.delete(`lvl/${me.id}`);
+            await Promise.all([...(await keys(`led/${me.id}/`)), ...(await keys(`paid/${me.id}/`)), ...(await keys(`work/${me.id}/`)), `coinbase/${me.id}`, `wv/${me.id}`].map((k) => store.delete(k)));
             await Promise.all((await keys(`leave/${me.id}/`)).flatMap((k) => [store.delete(k), store.delete(`dayoff/${k.split("/")[2]}/${me.id}`)]));
             const ownsName = (await getJSON(`uname/${nameKey(me.name)}`)) === me.id;
             await Promise.all([`person/${me.id}`, ...(ownsName ? [`uname/${nameKey(me.name)}`] : []), `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
@@ -936,13 +1019,21 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (to.id === me.id) return json({ error: "You can't zap yourself." }, 400);
         if (last && t - last.at < ZAP_COOLDOWN_MS) return json({ error: "Cooling down.", retryInMs: ZAP_COOLDOWN_MS - (t - last.at) }, 429);
         const buzz = to.buzz !== false;
+        // The first zap of someone each day also takes 1-10% of their monster coins (a safe at home keeps half out of reach).
+        let took = 0;
+        if (await payOnce(me.id, sgDay(t), `zap.${to.id}`)) {
+          const [vw, safe] = await Promise.all([wallet(to.id), hasAtHome(me.cave, to.id, "safe")]);
+          const loot = Math.floor(Math.max(0, vw.coins) * (safe ? COINS.safeKeeps : 1));
+          took = Math.floor(loot * (COINS.zapMinPct + randomInt(COINS.zapMaxPct - COINS.zapMinPct + 1)) / 100);
+          if (took > 0) await Promise.all([credit(to.id, -took, `zapby.${me.id}`), credit(me.id, took, `zap.${to.id}`)]);
+        }
         const [, sent] = await Promise.all([store.setJSON(zk, { at: t }), sendPush(to.id, {
           title: `⚡ Zap from ${me.name}!`,
-          body: cleanText(body.message, 140) || `${me.name} zapped you.`,
+          body: (cleanText(body.message, 140) || `${me.name} zapped you.`) + (took ? ` They took ${took} of your monster coins!` : ""),
           tag: `zap-${me.id}`, url: "/", buzz, from: me.name,
         })]);
         await later(ctx, stats.log("zap", me.id, to.id, sent < 1 ? "n" : buzz ? "b" : "q"));
-        return json({ ok: true, sent, at: t, buzz });
+        return json({ ok: true, sent, at: t, buzz, took });
       }
 
       /* ---------- monster powers ---------- */
@@ -1019,6 +1110,30 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         return json({ ok: true });
       }
 
+      // Fishing in the yard's pond, once a day. The phone says whether the hook was in time.
+      if (route === "coins/fish" && method === "POST") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const day = sgDay(now());
+        if (!(await payOnce(me.id, day, "fish"))) return json({ error: "You've already fished today. The fish need a rest." }, 409);
+        let won = COINS.fishMiss;
+        if (body.hit === true) {
+          const min = (await hasAtHome(me.cave, me.id, "luckycat")) ? COINS.luckyMin : COINS.fishMin;
+          won = min + randomInt(COINS.fishMax - min + 1);
+        }
+        await credit(me.id, won, "fish");
+        return json({ won });
+      }
+      // Little things to do at home, once a day each: water a plant, pet the cat, use the vending machine.
+      if (route === "coins/act" && method === "POST") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const what = String(body.what || ""), needs = { water: "plant", pet: "cat", vend: "vending" }[what];
+        if (!needs) return json({ error: "Unknown action." }, 400);
+        if (!(await homeItems(me.cave)).some((i) => i.kind === needs)) return json({ error: "That isn't in the home." }, 404);
+        if (!(await payOnce(me.id, sgDay(now()), what))) return json({ error: "Already done today." }, 409);
+        await credit(me.id, COINS[what], what);
+        return json({ won: COINS[what] });
+      }
+
       // The cave's home (v42): everyone in the cave decorates the same place.
       if (route === "home") {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
@@ -1026,17 +1141,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (method === "GET") {
           const seen = url.searchParams.get("rv"), rv = await homeRv(cid);
           if (seen && seen === rv) return json({ same: true, rv });
-          return json({ items: await homeItems(cid), rv });
+          return json({ items: await homeItems(cid), rv, prices: SHOP });
         }
         if (method !== "POST") return json({ error: "Not found." }, 404);
         const pos = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1000, Math.round(v))) : null);
-        const keyOf = (id, kind, x, y, flip, pid) => `hi/${cid}/${id}/${kind}/${x}/${y}/${flip ? 1 : 0}/${pid}`;
+        const keyOf = (id, kind, x, y, flip, pid, paid) => `hi/${cid}/${id}/${kind}/${x}/${y}/${flip ? 1 : 0}/${pid}${paid ? "/" + paid : ""}`;
         // One listing, then every write at once (v43): two trips to the store per change, not four.
         const items = await homeItems(cid);
         const done = async (next, writes) => {
-          const rv = now().toString(36) + randomBytes(2).toString("hex");
-          await Promise.all([...writes, store.setJSON(`homerev/${cid}`, { rv })]);
-          return json({ items: next, rv });
+          const hv = rv();
+          await Promise.all([...writes, store.setJSON(`homerev/${cid}`, { rv: hv })]);
+          return json({ items: next, rv: hv });
         };
         if (body.action === "add") {
           const kind = String(body.kind || ""), x = pos(body.x), y = pos(body.y);
@@ -1046,18 +1161,25 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           // The phone picks the id, so it can move the new thing before this reply comes back.
           const want = String(body.id || "");
           const id = /^[a-z0-9]{8,24}$/.test(want) && !items.some((i) => i.id === want) ? want : now().toString(36) + randomBytes(3).toString("hex");
-          const it = { id, kind, x, y, flip: false, by: me.id };
-          return done([...items, it], [store.setJSON(keyOf(id, kind, x, y, false, me.id), 0)]);
+          const price = SHOP[kind], have = (await wallet(me.id)).coins;
+          if (have < price) return json({ error: `You need ${price - have} more monster coins for that.` }, 402);
+          const it = { id, kind, x, y, flip: false, by: me.id, paid: price };
+          return done([...items, it], [store.setJSON(keyOf(id, kind, x, y, false, me.id, price), 0), credit(me.id, -price, `buy.${kind}`)]);
         }
         const it = items.find((i) => i.id === String(body.id || ""));
         if (!it) return json({ error: "That's not in the home any more." }, 404);
-        const oldKey = keyOf(it.id, it.kind, it.x, it.y, it.flip, it.by);
-        if (body.action === "remove") return done(items.filter((i) => i !== it), [store.delete(oldKey)]);
+        const oldKey = keyOf(it.id, it.kind, it.x, it.y, it.flip, it.by, it.paid);
+        if (body.action === "remove") {
+          // Only whoever bought it can sell it (half the price back). Things left by someone who moved out can be cleared by anyone.
+          if (it.by !== me.id && (await exists(`member/${cid}/${it.by}`))) return json({ error: "Only whoever bought that can sell it." }, 403);
+          const back = it.by === me.id ? Math.floor(it.paid * COINS.refund) : 0;
+          return done(items.filter((i) => i !== it), [store.delete(oldKey), credit(me.id, back, `sell.${it.kind}`)]);
+        }
         if (body.action === "move" || body.action === "flip") {
           const x = body.action === "move" ? pos(body.x) : it.x, y = body.action === "move" ? pos(body.y) : it.y;
           if (x === null || y === null) return json({ error: "Pick a spot." }, 400);
           const flip = body.action === "flip" ? !it.flip : it.flip;
-          const nk = keyOf(it.id, it.kind, x, y, flip, it.by), moved = { ...it, x, y, flip };
+          const nk = keyOf(it.id, it.kind, x, y, flip, it.by, it.paid), moved = { ...it, x, y, flip };
           // write the new key before taking the old one away, so the thing never disappears for anyone
           const writes = nk === oldKey ? [] : [store.setJSON(nk, 0).then(() => store.delete(oldKey))];
           return done(items.map((i) => (i === it ? moved : i)), writes);

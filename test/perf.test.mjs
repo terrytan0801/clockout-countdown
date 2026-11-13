@@ -31,7 +31,7 @@ let v = full.r.data.v;
 assert.ok(v, "the state carries a version");
 let same = await cost(() => call("GET", "state?v=" + encodeURIComponent(v), null, A.t));
 assert.deepEqual(same.r.data, { same: true, now: clock, v });
-assert.ok(same.read <= 2 && same.list === 0, `unchanged costs ${same.read} reads (was ${full.read} reads and ${full.list} lists)`);
+assert.ok(same.read <= 3 && same.list === 0, `unchanged costs ${same.read} reads (was ${full.read} reads and ${full.list} lists)`);
 assert.ok(full.read + full.list > 5 * (same.read + same.list));
 // every kind of change the board shows gives the others a new version
 const changes = [
@@ -92,7 +92,7 @@ assert.ok(store._m.has(`chatlast/${full.r.data.cave.id}`));
 pushes.length = 0;
 const z = await cost(() => call("POST", "zap", { to: B.id }, A.t));
 assert.equal(z.r.data.sent, 1); assert.equal(pushes.length, 1);
-assert.equal(z.list, 0);
+assert.ok(z.list <= 2, "the first zap of the day looks at their coins and the home; nothing else is listed");
 assert.equal((await call("POST", "zap", { to: B.id }, A.t)).status, 429);
 assert.equal((await call("POST", "zap", { to: "../../vapid" }, A.t)).status, 404);
 

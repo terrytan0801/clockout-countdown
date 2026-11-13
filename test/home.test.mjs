@@ -1,6 +1,6 @@
 // v42: the cave's home, decorated together.
 import assert from "node:assert/strict";
-import { makeApp, HOME_KINDS, HOME_MAX } from "../netlify/lib/handler.mjs";
+import { makeApp, HOME_KINDS, HOME_MAX, SHOP } from "../netlify/lib/handler.mjs";
 import { memStore } from "./mem-store.mjs";
 
 const webpush = { generateVAPIDKeys: () => ({ publicKey: "P", privateKey: "Q" }), async sendNotification() {} };
@@ -18,6 +18,9 @@ const A = await mk("Ann"), B = await mk("Ben"), O = await mk("Out"), L = await m
 const code = (await call("POST", "cave", { action: "create", name: "Cave" }, A.t)).data.cave.code;
 await call("POST", "cave", { action: "join", code }, B.t);
 await call("POST", "cave", { action: "create", name: "Other" }, O.t);
+// everything costs monster coins now (coins.test.mjs covers the money); here Ann and Ben are simply rich
+const rich = (who) => store._m.set(`led/${who.id}/0000000000001-aaaaaa/1000000/test`, "0");
+rich(A); rich(B);
 
 assert.equal((await call("GET", "home", null, L.t)).status, 409, "no cave, no home");
 let h = (await call("GET", "home", null, A.t)).data;
@@ -27,7 +30,7 @@ assert.deepEqual(h.items, []); assert.ok(h.rv);
 h = (await call("POST", "home", { action: "add", kind: "sofa", x: 300, y: 820 }, A.t)).data;
 assert.equal(h.items.length, 1);
 const sofa = h.items[0];
-assert.deepEqual({ ...sofa, id: undefined }, { id: undefined, kind: "sofa", x: 300, y: 820, flip: false, by: A.id });
+assert.deepEqual({ ...sofa, id: undefined }, { id: undefined, kind: "sofa", x: 300, y: 820, flip: false, by: A.id, paid: SHOP.sofa });
 const hb = (await call("GET", "home", null, B.t)).data;
 assert.deepEqual(hb.items, h.items);
 assert.deepEqual((await call("GET", "home", null, O.t)).data.items, [], "other caves have their own home");

@@ -1,4 +1,4 @@
-# Clock-out Countdown · v43.0
+# Clock-out Countdown · v44.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -162,6 +162,24 @@ The Days tab shows the calendar straight away from what the phone already has (m
 The **Home** button next to Board / Chat / Days opens the cave's home: a cutaway of the cave with a bedroom, study, living room, kitchen and a yard outside (sky by day, moon at night). Everyone's monster goes to the room for what it's doing: asleep in bed; eating or cooking in the kitchen; reading, painting or meditating in the study; fishing, gardening, basketball, skating or bubbles in the yard; everything else in the living room. Whoever is at work is on the **At work** board by the door, with how long until they're home. Tap a monster to see who it is and what it's doing.
 
 **Decorate** lets anyone in the cave put things in the home (20 kinds: sofa, rug, plant, lamp, TV, poster, beanbag, arcade, fireplace, aquarium, fairy lights, clock, trophy, disco ball, piano, cat, shelf, fridge, hammock, telescope; up to 60), drag them about, flip or remove them. Everyone sees the same home. Each decoration is one key, `hi/<cid>/<id>/<kind>/<x>/<y>/<flip>/<pid>`, so one listing draws the home and two people moving things at once never overwrite each other; `homerev/<cid>` changes on every edit (since v43 the phone picks a new thing's id, so it can be dragged straight away, and changes are sent one after another behind the scenes; the server makes each change with one listing and one round of writes) so phones only fetch when something changed (they check every 8 seconds while Home is open). The art is in `public/cave-home.js`.
+
+## Monster coins (v44)
+
+Everyone has a wallet of monster coins (the coin button next to Home opens it, with the last 10 lines and how to earn).
+
+| How | Coins |
+|---|---|
+| Welcome gift, once | +100 |
+| Each workday you open the app, paid from your clock-out time (a day you only opened before clocking out is paid the next time you open). Weekends, public holidays and days off pay nothing; overtime pays nothing extra | +50 |
+| Every 5 workdays in a row | +50 |
+| Filming a ring on time / late (first take only) | +15 / +5 |
+| Your first zap of someone each day | 1-10% of their coins, taken from them |
+| Fishing in the yard's pond, once a day (hook in time: 10-30; miss: 5) | +5 to +30 |
+| Water a plant, pet the cat, use the vending machine, once a day each | +2, +2, +3 |
+
+**The shop.** Everything in the home is bought with coins (32 things, 30 to 600 coins); selling gives half back. Anyone can move or flip a thing, only its buyer can sell it; things left by someone who moved out can be cleared by anyone, and things placed before v44 stay and can be removed by their owner for nothing. Some things do something while they're in the home: **coffee machine** (+10 on your wage), **safe** (zaps only reach half your coins), **lucky cat** (fishing never gives under 15), **vending machine** (+3 a day for everyone), **crystal ball** (a daily fortune), **jukebox** (plays lofi), plant and cat (+2 a day).
+
+All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs`. Each wallet is a ledger of lines (`led/<pid>/<id>/<amount>/<why>`), so the balance is a sum and two payments at once can't lose coins; old lines are folded into `coinbase/<pid>`. Once-only payments are claimed under `paid/<pid>/<day>/<what>`.
 
 ## Test site (dev branch)
 

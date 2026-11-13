@@ -137,12 +137,51 @@ body.calm .newsbtn .nmon{animation:none!important}
   font:700 14px/1 var(--f-mono);padding:0 16px;cursor:pointer;min-height:44px}
 .homebtn svg{width:20px;height:20px}
 .homebtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.mc{width:1.05em;height:1.05em;vertical-align:-.16em;flex:none}
+.coinbtn{display:flex;align-items:center;gap:5px;border:2px solid #b07d12;border-radius:12px;background:#fff8dc;color:#5a3d00;font:700 14px/1 var(--f-mono);padding:0 10px;cursor:pointer;min-height:44px}
+.coinbtn.pop{animation:coinpop .5s ease}
+@keyframes coinpop{40%{transform:scale(1.18)}}
+.wallet{border:2px solid #b07d12;background:#fff8dc;color:#3a2a00;border-radius:14px;padding:10px 12px;font-size:13px}
+.w-top{display:flex;align-items:center;justify-content:space-between}
+.w-bal{font:700 16px/1.2 var(--f-mono);display:flex;align-items:center;gap:6px}
+.w-top button{border:0;background:transparent;font-size:16px;cursor:pointer;color:inherit;padding:6px}
+.w-log{list-style:none;margin:8px 0;padding:0;display:grid;gap:3px;max-height:11.5em;overflow:auto}
+.w-log li{display:flex;justify-content:space-between;gap:10px}
+.w-log li b{font-family:var(--f-mono)}.w-log li b.neg{color:#b3261e}.w-log li b.pos{color:#1c7a45}
+.w-log li.none{color:#7a6a3a}
+.wallet summary{cursor:pointer;font-weight:700}
+.w-how{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.pond{position:absolute;left:83.5%;top:90.5%;width:15%;height:8%;z-index:2400;border:0;background:transparent;cursor:pointer;padding:0}
+.pond span{position:absolute;left:50%;top:-70%;transform:translateX(-50%);background:#fff8dc;border:2px solid #b07d12;color:#5a3d00;font:700 10px/1 var(--f-mono);padding:3px 6px;border-radius:999px;animation:pondbob 1.4s ease-in-out infinite;white-space:nowrap}
+@keyframes pondbob{50%{transform:translate(-50%,-4px)}}
+.cscene.editing .pond{display:none}
+.fishgame{position:absolute;inset:0;z-index:3500;background:rgba(20,40,70,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center}
+.fishgame p{margin:0;color:#fff;font:700 15px/1.3 var(--f-mono);min-height:2.6em;max-width:90%}
+.fg-stage{width:34%;aspect-ratio:1;position:relative}
+.fg-stage .mon{width:100%;height:100%}
+.fishgame.bite .fg-stage{animation:fgshake .12s linear infinite alternate}
+.fishgame.bite p{color:#ffd34d}
+@keyframes fgshake{from{transform:translate(-2px,0) rotate(-2deg)}to{transform:translate(2px,-1px) rotate(2deg)}}
+.hd.poke svg{animation:hdpoke .5s ease}
+@keyframes hdpoke{30%{transform:scale(1.12) rotate(-4deg)}60%{transform:scale(.96) rotate(3deg)}}
+.tray-items button .pr{display:flex;align-items:center;gap:3px;font-weight:700;color:#5a3d00}
+.tray-items button .pr svg{width:14px;height:14px}
+.tray-items button .fn{font:400 9.5px/1.25 var(--f-body,inherit);color:var(--muted);text-align:center;padding:0 2px}
+.tray-items button.poor{opacity:.5}
+/* little animations on shop things */
+.lava{animation:hd-lava 4s ease-in-out infinite alternate}.lava.l2{animation-duration:3s;animation-direction:alternate-reverse}
+@keyframes hd-lava{from{transform:translateY(8px)}to{transform:translateY(-22px)}}
+.glow{animation:hd-glow 2.4s ease-in-out infinite alternate}@keyframes hd-glow{from{filter:brightness(.95)}to{filter:brightness(1.2)}}
+.jbglow{animation:hd-tv 1.2s steps(1) infinite}
+.wave{transform-origin:70px 62px;animation:hd-wave .9s ease-in-out infinite alternate}@keyframes hd-wave{from{transform:rotate(-10deg)}to{transform:rotate(14deg)}}
+.dial{transform-origin:50px 56px;animation:hd-spin 9s linear infinite}
+.rflame{transform-origin:50px 84px;animation:hd-fire .25s ease-in-out infinite alternate}
 .home{display:flex;flex-direction:column;gap:12px}
 .home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .home-head h2{font:400 24px/1.1 var(--f-display);margin:0}
 .home-sub{margin:4px 0 0;color:var(--muted);font-size:13px}
 #decoBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
-.cscene{position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;border:2.5px solid var(--ink);background:#f2e2c4;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.cscene{position:relative;z-index:0;isolation:isolate;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;border:2.5px solid var(--ink);background:#f2e2c4;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .cscene .scene-bg,.cscene .scene-bg svg,.cscene .scene-layer{position:absolute;inset:0;width:100%;height:100%}
 .hd,.hm{position:absolute;transform:translate(-50%,-100%);aspect-ratio:1}
 .hd svg{width:100%;height:100%;display:block;overflow:visible}
@@ -156,7 +195,7 @@ body.calm .newsbtn .nmon{animation:none!important}
 .hm .nm{position:absolute;left:50%;top:-4%;transform:translate(-50%,-100%);font:700 9px/1.2 var(--f-mono);white-space:nowrap;max-width:130%;overflow:hidden;text-overflow:ellipsis;
   background:rgba(255,255,255,.85);color:#1d2b25;padding:1px 4px;border-radius:6px;z-index:2}
 .cscene.editing .hm{pointer-events:none;opacity:.55}
-.hm-tip{position:absolute;z-index:3000;transform:translate(-50%,-100%);background:var(--card);color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:6px 10px;font-size:12.5px;white-space:nowrap;pointer-events:none}
+.hm-tip{position:absolute;z-index:3000;transform:translate(-50%,-100%);background:var(--card);color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:6px 10px;font-size:12.5px;width:max-content;max-width:62%;text-align:center;pointer-events:none}
 .workboard{position:absolute;right:1.5%;top:44%;z-index:2500;width:27%;background:#fffdf6;border:2px solid #7a5233;border-radius:8px;padding:5px 6px;font-size:10px;color:#3a2a1a;box-shadow:0 2px 0 #7a5233}
 .workboard b{display:block;font:700 9.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
 .workboard ul{list-style:none;margin:0;padding:0;display:grid;gap:2px;max-height:9.5em;overflow:auto}
@@ -709,6 +748,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       <button id="tabChat" role="tab" type="button" aria-selected="false">Chat<span class="unread" id="unread" hidden></span></button>
       <button id="tabDays" role="tab" type="button" aria-selected="false">Days<span class="unread" id="daysDot" hidden></span></button>
     </div>
+    <button class="coinbtn" id="coinBtn" type="button" aria-label="Monster coins"><svg class="mc" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#f2c94c" stroke="#b07d12" stroke-width="2"/><path d="M6 14V6.5l4 5 4-5V14" fill="none" stroke="#8a5d00" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><b id="coinAmt">0</b></button>
     <button class="homebtn" id="homeBtn" type="button" aria-pressed="false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V11Q3 4 12 4Q21 4 21 11V20Z" fill="currentColor" opacity=".22"/><path d="M3 20V11Q3 4 12 4Q21 4 21 11V20H15V15Q15 12.5 12 12.5Q9 12.5 9 15V20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
       <span>Home</span>
@@ -772,13 +812,35 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
   <section class="home" id="homeView" hidden aria-label="Cave home">
     <div class="home-head">
       <div><h2 id="homeTitle">Home</h2><p class="home-sub" id="homeSub">Everyone comes home here after work.</p></div>
-      <button class="btn ghost" id="decoBtn" type="button" aria-pressed="false">Decorate</button>
+      <button class="btn ghost" id="decoBtn" type="button" aria-pressed="false">Shop</button>
+    </div>
+    <div class="wallet" id="walletPanel" hidden>
+      <div class="w-top"><span class="w-bal"><svg class="mc" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#f2c94c" stroke="#b07d12" stroke-width="2"/><path d="M6 14V6.5l4 5 4-5V14" fill="none" stroke="#8a5d00" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><b id="wBal">0</b> monster coins</span><button type="button" id="wClose" aria-label="Close">✕</button></div>
+      <ul class="w-log" id="wLog"></ul>
+      <details><summary>How to earn monster coins</summary>
+        <ul class="w-how">
+          <li><b>+50</b> for every workday you open the app, paid from your clock-out time. Overtime pays nothing extra.</li>
+          <li><b>+50</b> bonus every 5 workdays in a row.</li>
+          <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
+          <li><b>1–10%</b> of someone's coins the first time you zap them each day. They lose what you get.</li>
+          <li><b>+5 to +30</b> fishing in the yard's pond, once a day.</li>
+          <li><b>+2</b> for watering a plant, <b>+2</b> for petting the cat, <b>+3</b> from the vending machine, once a day each.</li>
+          <li>Selling something gives half its price back.</li>
+        </ul>
+      </details>
     </div>
     <div class="cscene" id="caveScene">
       <div class="scene-bg" id="sceneBg"></div>
       <div class="scene-layer" id="sceneLayer"></div>
       <div class="workboard" id="workBoard" hidden><b>At work</b><ul id="workList"></ul></div>
+      <button class="pond" id="pondBtn" type="button" aria-label="Go fishing"><span id="pondTag">Fish!</span></button>
       <div class="hm-tip" id="hmTip" hidden></div>
+      <div class="fishgame" id="fishGame" hidden>
+        <div class="fg-stage" id="fgStage"></div>
+        <p id="fgText">Wait for a bite…</p>
+        <button class="btn primary" id="fgHook" type="button">Hook!</button>
+        <button class="btn ghost" id="fgDone" type="button" hidden>Done</button>
+      </div>
       <div class="deco-tools" id="decoTools" hidden>
         <span id="decoWho"></span>
         <button type="button" id="decoFlip">Flip</button>
@@ -786,7 +848,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       </div>
     </div>
     <div class="tray" id="tray" hidden>
-      <p class="tray-hint">Tap something to put it in the home, then drag it where you like. Everyone in the cave sees the same home.</p>
+      <p class="tray-hint">Buy something with your monster coins, then drag it where you like. Everyone in the cave sees the same home. Selling gives half back.</p>
       <div class="tray-items" id="trayItems"></div>
     </div>
   </section>
@@ -820,7 +882,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v43.0</span>
+    <span>v44.0</span>
   </div>
 </div>
 
@@ -1257,7 +1319,8 @@ function savedState(){
 }
 function applyState(d,fromCache){
   const prevCave=S&&S.cave&&S.cave.id;
-  S=d;if(!fromCache){offset=d.now-Date.now();saveState();}
+  const hadCoins=S&&S.me?S.me.coins:null;
+  S=d;if(!fromCache){offset=d.now-Date.now();saveState();setTimeout(()=>coinNews(hadCoins),0);}
   if(S.cave) for(const pid in pendingZaps) S.cave.zaps[pid]=pendingZaps[pid];
   $("offline").hidden=true;
   if(!S.cave&&view!=="board") view="board";
@@ -1280,7 +1343,9 @@ function applyState(d,fromCache){
 let usageStarted=false;
 function ping(open){
   if(!token||!S) return;
-  fetch("/api/ping",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+token},body:JSON.stringify({open:!!open}),keepalive:true}).catch(()=>{});
+  // Opening the app is when wages and welcome coins are paid, so look again once the server has done that.
+  fetch("/api/ping",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+token},body:JSON.stringify({open:!!open}),keepalive:true})
+    .then(r=>{if(open&&r.ok&&S) refresh();}).catch(()=>{});
 }
 let asleep=false;
 const awake=()=>document.visibilityState==="visible"&&!asleep;
@@ -1309,6 +1374,7 @@ function renderChrome(){
   $("caveBtn").hidden=!inCave;
   if(inCave) $("caveBtnText").textContent=`Cave · ${S.cave.members.length}`;
   $("segRow").hidden=!inCave;
+  renderCoins();
   $("homeBtn").setAttribute("aria-pressed",String(view==="home"));
   $("homeView").hidden=!inCave||view!=="home";
   $("tabBoard").setAttribute("aria-selected",String(view==="board"));
@@ -1533,7 +1599,8 @@ async function zap(p,el,btn){
     const d=await api("zap",{to:p.id,message:zapMessage(p)});
     delete pendingZaps[p.id];
     if(S&&S.cave) S.cave.zaps[p.id]=d.at;
-    if(d.sent<1) toast(`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
+    if(d.took){toast(`Zapped ${p.name}! You took ${d.took} of their monster coins.`,4500);refresh();}
+    else if(d.sent<1) toast(`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
     else if(!d.buzz) toast(`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);
   }catch(e){
     undo();
@@ -1573,7 +1640,7 @@ let lastReadSent=0;
 function setView(v){
   closeReact();view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
   if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
-  if(v==="home") openHome();else closeHomeEdit();
+  if(v==="home") openHome();else{closeHomeEdit();stopJuke();closeFish();}
   clearTimeout(chatTimer);chatTimer=null;
   if(v==="chat"){
     if(restoreChat()) renderChat(true); // the messages this phone already has show at once
@@ -1842,9 +1909,9 @@ async function react(id,emoji){
    work is on the board by the door. The cave decorates the home together: Decorate, pick something, drag it. */
 let homeItems=[], homeRv=null, homeTimer=null, homeEdit=false, homeSel=null, homeMonSig="", homeBusy=0, homeDrag=null, sceneNightNow=null, tipT=null;
 const LS_HOME="clockout.home";
-function resetHome(){homeItems=[];homeRv=null;homeMonSig="";homeSel=null;closeHomeEdit();}
+function resetHome(){homeItems=[];homeRv=null;homeMonSig="";homeSel=null;closeHomeEdit();if(typeof stopJuke==="function"){stopJuke();closeFish();}}
 function openHome(){
-  if(!homeItems.length){try{const c=JSON.parse(lsGet(LS_HOME)||"null");if(c&&c.cid===S.cave.id){homeItems=c.items||[];homeRv=c.rv||null;}}catch(e){}}
+  if(!homeItems.length||!homePrices){try{const c=JSON.parse(lsGet(LS_HOME)||"null");if(c&&c.cid===S.cave.id){if(!homeItems.length){homeItems=c.items||[];homeRv=c.rv||null;}homePrices=homePrices||c.prices||null;}}catch(e){}}
   $("homeTitle").textContent=S.cave.name;
   drawSceneBg(true);renderHomeDecor();renderHomeMons(true);loadHome();
   clearInterval(homeTimer);
@@ -1858,11 +1925,12 @@ function drawSceneBg(force){const nt=sceneNight();if(!force&&nt===sceneNightNow)
 async function loadHome(){
   if(homeBusy||homeDrag) return;
   const pending=homeLate;if(pending){homeLate=null;setHome(pending);return;}
-  try{const d=await api("home"+(homeRv?"?rv="+encodeURIComponent(homeRv):""));if(!d.same&&!homeBusy&&!homeDrag) setHome(d);}catch(e){}
+  try{const d=await api("home"+(homeRv&&homePrices?"?rv="+encodeURIComponent(homeRv):""));if(!d.same&&!homeBusy&&!homeDrag) setHome(d);}catch(e){}
 }
 function setHome(d){
   homeItems=d.items;homeRv=d.rv;
-  try{lsSet(LS_HOME,JSON.stringify({cid:S.cave.id,items:homeItems,rv:homeRv}));}catch(e){}
+  if(d.prices){homePrices=d.prices;if(homeEdit) renderShop();}
+  try{lsSet(LS_HOME,JSON.stringify({cid:S.cave.id,items:homeItems,rv:homeRv,prices:homePrices}));}catch(e){}
   if(homeSel&&!homeItems.some(i=>i.id===homeSel)) homeSel=null;
   renderHomeDecor();
 }
@@ -1914,34 +1982,88 @@ function renderHomeMons(force){
   $("workBoard").hidden=!work.length;
   $("homeSub").textContent=`${home.length} at home · ${work.length} at work`;
 }
+function tipAt(el,text,lift="12.5%",ms=2800){
+  const tip=$("hmTip");tip.textContent=text;
+  tip.style.left=`clamp(32%, ${el.style.left}, 68%)`;tip.style.top=`max(14%, calc(${el.style.top} - ${lift}))`;tip.hidden=false;
+  clearTimeout(tipT);tipT=setTimeout(()=>{tip.hidden=true;},ms);
+}
 function showTip(hm){
   const m=homeMembers().find(z=>z.p.id===hm.dataset.pid);if(!m) return;
-  const tip=$("hmTip"), base=m.f.mood.split(" ")[0];
-  tip.textContent=`${m.p.id===S.me.id?"You":m.p.name} · ${m.f.label||MOOD_WORDS[base]||"Chilling"}`;
-  tip.style.left=hm.style.left;tip.style.top=`calc(${hm.style.top} - 12.5%)`;tip.hidden=false;
-  clearTimeout(tipT);tipT=setTimeout(()=>{tip.hidden=true;},2500);
+  const base=m.f.mood.split(" ")[0];
+  tipAt(hm,`${m.p.id===S.me.id?"You":m.p.name} · ${m.f.label||MOOD_WORDS[base]||"Chilling"}`);
 }
 function showDecoTools(){
   const it=homeEdit&&homeSel&&homeItems.find(i=>i.id===homeSel), box=$("decoTools");
   box.hidden=!it;if(!it) return;
-  const who=it.by===S.me.id?"you":(members().find(p=>p.id===it.by)||{}).name||"someone who left";
-  $("decoWho").textContent=`${CAVE_HOME.DECOR[it.kind].name} · by ${who}`;
+  const owner=members().find(p=>p.id===it.by), mine=it.by===S.me.id;
+  $("decoWho").textContent=`${CAVE_HOME.DECOR[it.kind].name} · ${mine?"yours":owner?owner.name+"'s":"left behind"}`;
+  // only whoever bought it can sell it; things left by someone who moved out can be cleared
+  const back=mine?Math.floor((it.paid||0)/2):0, del=$("decoDel");
+  del.hidden=!mine&&!!owner;del.textContent=mine?(back?`Sell +${back}`:"Remove"):"Clear";
 }
 function setDecoEdit(on){
   homeEdit=on;$("caveScene").classList.toggle("editing",on);$("tray").hidden=!on;
-  $("decoBtn").setAttribute("aria-pressed",String(on));$("decoBtn").textContent=on?"Done":"Decorate";
+  $("decoBtn").setAttribute("aria-pressed",String(on));$("decoBtn").textContent=on?"Done":"Shop";
   if(on) buildTray();else homeSel=null;
   renderHomeDecor();
 }
 function closeHomeEdit(){if(homeEdit) setDecoEdit(false);}
-function buildTray(){
-  const box=$("trayItems");if(box.childElementCount) return;
-  Object.entries(CAVE_HOME.DECOR).forEach(([k,d])=>{
+/* ---------- monster coins (v44) ---------- */
+const COIN_SVG='<svg class="mc" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#f2c94c" stroke="#b07d12" stroke-width="2"/><path d="M6 14V6.5l4 5 4-5V14" fill="none" stroke="#8a5d00" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+const LS_COINSEEN="clockout.coinseen";
+let homePrices=null;
+const nameOf=pid=>pid===S.me.id?"you":((members().find(p=>p.id===pid)||{}).name||"someone");
+function whyText(e){
+  const [w,arg]=e.why.split(".");
+  const thing=()=>(CAVE_HOME.DECOR[arg]||{name:arg}).name;
+  return {welcome:"Welcome gift",pay:"Wage",streak:`${arg}-day streak bonus`,clip:"Filmed on time",cliplate:"Filmed late",
+    zap:`Zapped ${nameOf(arg)}`,zapby:`${nameOf(arg)} zapped you`,fish:"Fishing",water:"Watered the plant",pet:"Petted the cat",vend:"Vending machine",
+    buy:`Bought: ${thing()}`,sell:`Sold: ${thing()}`}[w]||"Coins";
+}
+function renderCoins(){
+  if(!S||!S.me) return;
+  const n=String(S.me.coins||0);
+  if($("coinAmt").textContent!==n) $("coinAmt").textContent=n;
+  $("wBal").textContent=n;
+  const tag=$("pondTag");if(tag) tag.hidden=!!(S.me.did&&S.me.did.fish);
+}
+function renderWallet(){
+  const ul=$("wLog");ul.replaceChildren();
+  const log=(S.me.coinLog||[]).slice().reverse();
+  if(!log.length){const li=document.createElement("li");li.className="none";li.textContent="Nothing yet. Your first wage comes at clock-out time.";ul.appendChild(li);return;}
+  log.forEach(e=>{const li=document.createElement("li"),a=document.createElement("span"),b=document.createElement("b");
+    a.textContent=whyText(e);b.textContent=(e.amt>0?"+":"")+e.amt;b.className=e.amt<0?"neg":"pos";li.append(a,b);ul.appendChild(li);});
+}
+// Coins that arrived while you weren't looking (wages, bonuses, being zapped) get a toast; things you just did say so themselves.
+function coinNews(before){
+  if(!S||!S.me) return;
+  renderCoins();if(!$("walletPanel").hidden) renderWallet();
+  if(before!=null&&S.me.coins>before){const b=$("coinBtn");b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");}
+  const log=S.me.coinLog||[];if(!log.length) return;
+  const seen=lsGet(LS_COINSEEN)||"", last=log[log.length-1].id;
+  if(seen===last) return;lsSet(LS_COINSEEN,last);
+  const fresh=log.filter(e=>e.id>seen&&/^(welcome|pay|streak|clip|zapby)/.test(e.why)&&(seen||log.length<=3));
+  if(fresh.length) toast(fresh.slice(-3).map(e=>`${e.amt>0?"+":""}${e.amt} coins: ${whyText(e)}`).join("  ·  "),5500);
+}
+$("coinBtn").addEventListener("click",()=>{
+  if(view!=="home") setView("home");
+  const w=$("walletPanel");w.hidden=!w.hidden;if(!w.hidden) renderWallet();
+});
+$("wClose").addEventListener("click",()=>{$("walletPanel").hidden=true;});
+function renderShop(){
+  const box=$("trayItems");box.replaceChildren();
+  const kinds=Object.keys(CAVE_HOME.DECOR).sort((a,b)=>((homePrices||{})[a]||0)-((homePrices||{})[b]||0));
+  kinds.forEach(k=>{
+    const d=CAVE_HOME.DECOR[k], price=homePrices?homePrices[k]:null;
     const b=document.createElement("button");b.type="button";b.dataset.kind=k;
-    b.innerHTML=`<svg viewBox="0 0 100 100" aria-hidden="true">${d.svg}</svg><span></span>`;b.querySelector("span").textContent=d.name;
+    b.innerHTML=`<svg viewBox="0 0 100 100" aria-hidden="true">${d.svg}</svg><span></span><span class="pr">${COIN_SVG}<i></i></span>`;
+    b.querySelector("span").textContent=d.name;b.querySelector(".pr i").textContent=price==null?"…":price;b.querySelector(".pr i").style.fontStyle="normal";
+    if(d.fn){const f=document.createElement("span");f.className="fn";f.textContent=d.fn;b.appendChild(f);}
+    if(price!=null&&(S.me.coins||0)<price) b.classList.add("poor");
     b.addEventListener("click",()=>addDecor(k));box.appendChild(b);
   });
 }
+const buildTray=renderShop;
 // Changes show at once; the server is told behind, one change after another (so a move never overtakes the add
 // it belongs to). The server's copy is only taken once nothing else is waiting and nobody is dragging.
 let homeQ=Promise.resolve(), homeLate=null;
@@ -1949,28 +2071,102 @@ function homeAct(body,next){
   if(next){homeItems=next;renderHomeDecor();}
   homeBusy++;
   homeQ=homeQ.then(async()=>{
+    const money=body.action==="add"||body.action==="remove";
     try{const d=await api("home",body);homeRv=d.rv;homeLate=d;}
     catch(e){homeLate=null;homeRv=null;if(e.status!==401) toast(e.message||"Couldn't change the home. Try again.");}
-    finally{homeBusy--;if(!homeBusy&&!homeDrag){if(homeLate){const d=homeLate;homeLate=null;setHome(d);}else loadHome();}}
+    finally{homeBusy--;if(!homeBusy&&!homeDrag){if(homeLate){const d=homeLate;homeLate=null;setHome(d);}else loadHome();}if(money&&!homeBusy) refresh();}
   });
   return homeQ;
 }
 const newHomeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 function addDecor(kind){
+  const name=CAVE_HOME.DECOR[kind].name, price=homePrices?homePrices[kind]:null;
+  if(price==null){toast("The shop is just opening. Try again in a moment.");loadHome();return;}
+  if((S.me.coins||0)<price){toast(`You need ${price-(S.me.coins||0)} more monster coins for the ${name.toLowerCase()}.`,4000);return;}
   const x=260+Math.round(Math.random()*200), y=930, id=newHomeId();
   homeSel=id;
-  homeAct({action:"add",kind,x,y,id},[...homeItems,{id,kind,x,y,flip:false,by:S.me.id}]);
-  toast(`${CAVE_HOME.DECOR[kind].name} added. Drag it where you like.`);
+  S.me.coins-=price;renderCoins();renderShop(); // shown at once; the server has the last word
+  homeAct({action:"add",kind,x,y,id},[...homeItems,{id,kind,x,y,flip:false,by:S.me.id,paid:price}]);
+  toast(`Bought the ${name.toLowerCase()} for ${price} coins. Drag it where you like.`);
   $("caveScene").scrollIntoView({block:"nearest",behavior:"smooth"});
 }
 $("decoBtn").addEventListener("click",()=>setDecoEdit(!homeEdit));
 $("decoFlip").addEventListener("click",()=>{const id=homeSel;homeAct({action:"flip",id},homeItems.map(i=>i.id===id?{...i,flip:!i.flip}:i));});
-$("decoDel").addEventListener("click",()=>{const id=homeSel;homeSel=null;homeAct({action:"remove",id},homeItems.filter(i=>i.id!==id));});
+$("decoDel").addEventListener("click",()=>{
+  const id=homeSel, it=homeItems.find(i=>i.id===id);if(!it) return;
+  homeSel=null;
+  if(it.by===S.me.id&&it.paid){const back=Math.floor(it.paid/2);S.me.coins=(S.me.coins||0)+back;renderCoins();renderShop();toast(`Sold for ${back} coins.`);}
+  homeAct({action:"remove",id},homeItems.filter(i=>i.id!==id));
+});
+/* ---------- things to do at home: water, pet, vending machine, fortune, jukebox, fishing ---------- */
+const FORTUNES=["A snack will find you today.","Someone in the cave is thinking of zapping you.","Your clock-out will feel faster than usual.","Great day to film something silly.",
+  "A fish is waiting for you in the pond.","Beware of meetings after 4 pm.","Your monster believes in you.","Coins come to those who clock out on time.",
+  "Today's lucky furniture: the sofa.","You will hear good news at lunch.","Do not trust the vending machine's top row.","Tonight, the bed wins."];
+let juke=null;
+function stopJuke(){if(!juke) return;const j=juke;juke=null;clearTimeout(j.t);try{j.m.fadeOut(.4);}catch(e){}setTimeout(()=>j.ac.close().catch(()=>{}),700);}
+function toggleJuke(el){
+  if(juke){stopJuke();tipAt(el,"Jukebox off");return;}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC){tipAt(el,"No sound on this phone.");return;}
+  const ac=new AC(), g=ac.createGain();g.gain.value=.6;g.connect(ac.destination);
+  juke={ac,m:startLofi(ac,g,150)};juke.t=setTimeout(stopJuke,155000);
+  tipAt(el,"♫ Jukebox on. Tap it again to stop.");
+}
+async function tapDecor(it,el){
+  const def=CAVE_HOME.DECOR[it.kind], act={plant:"water",cat:"pet",vending:"vend"}[it.kind];
+  el.classList.remove("poke");void el.offsetWidth;el.classList.add("poke");
+  if(act){
+    if(S.me.did&&S.me.did[act]){tipAt(el,{water:"Already watered today. Come back tomorrow.",pet:"The cat has had enough pets for today.",vend:"You've had your snack today."}[act]);return;}
+    (S.me.did||={})[act]=true;
+    try{const d=await api("coins/act",{what:act});S.me.coins=(S.me.coins||0)+d.won;renderCoins();
+      tipAt(el,{water:"Watered!",pet:"Purrr…",vend:"Clunk! A snack."}[act]+` +${d.won} coins`);refresh();}
+    catch(e){if(e.status===409) tipAt(el,"Already done today.");else if(e.status!==401){S.me.did[act]=false;toast(e.message);}}
+    return;
+  }
+  if(it.kind==="crystal"){tipAt(el,"🔮 "+FORTUNES[h32(S.me.id+"|"+S.day)%FORTUNES.length],"12.5%",4500);return;}
+  if(it.kind==="jukebox"){toggleJuke(el);return;}
+  tipAt(el,def.name+(def.fn?" · "+def.fn:""),"12.5%",3500);
+}
+let fg=null;
+function closeFish(){if(fg){clearTimeout(fg.t);fg=null;}const g=$("fishGame");if(g){g.hidden=true;g.classList.remove("bite");}}
+function openFish(){
+  if(homeEdit) return;
+  if(S.me.did&&S.me.did.fish){tipAt($("pondBtn"),"You've fished today. The fish need a rest.","9%");return;}
+  const g=$("fishGame");g.hidden=false;g.classList.remove("bite");
+  $("fgStage").replaceChildren(monEl(S.me.monster,S.me.color,"fish"));
+  $("fgText").textContent="Wait for a bite… don't pull too early!";
+  $("fgHook").hidden=false;$("fgHook").disabled=false;$("fgDone").hidden=true;
+  fg={state:"wait"};
+  fg.t=setTimeout(()=>{
+    if(!fg) return;fg.state="bite";g.classList.add("bite");$("fgText").textContent="Something's biting! HOOK IT!";
+    if(navigator.vibrate) navigator.vibrate(40);
+    fg.t=setTimeout(()=>fishEnd(false,"Too slow… it got away."),1100);
+  },1600+Math.random()*3200);
+}
+async function fishEnd(hit,missText){
+  if(!fg||fg.state==="done") return;clearTimeout(fg.t);fg.state="done";
+  const g=$("fishGame");g.classList.remove("bite");$("fgHook").hidden=true;$("fgText").textContent="Reeling in…";
+  try{
+    const d=await api("coins/fish",{hit});
+    (S.me.did||={}).fish=true;S.me.coins=(S.me.coins||0)+d.won;renderCoins();
+    const what=!hit?"an old boot":d.won>=26?"THE GOLDEN FISH!":d.won>=20?"a shiny koi":d.won>=15?"a chubby carp":"a tiny tadpole";
+    $("fgText").textContent=(hit?`You caught ${what}`:`${missText} You fished out ${what}.`)+` +${d.won} coins`;
+    refresh();
+  }catch(e){$("fgText").textContent=e.status===409?"You've already fished today.":(e.message||"The line snapped. Try again.");if(e.status===409) (S.me.did||={}).fish=true;renderCoins();}
+  $("fgDone").hidden=false;
+}
+$("pondBtn").addEventListener("click",openFish);
+$("fgHook").addEventListener("click",()=>{if(!fg) return;if(fg.state==="wait") fishEnd(false,"Too early! You scared it off.");else if(fg.state==="bite") fishEnd(true);});
+$("fgDone").addEventListener("click",closeFish);
 (function(){
   const L=$("sceneLayer"), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   L.addEventListener("pointerdown",e=>{
     const hm=e.target.closest(".hm");
-    if(!homeEdit){if(hm) showTip(hm);return;}
+    if(!homeEdit){
+      if(hm){showTip(hm);return;}
+      const hd=e.target.closest(".hd"), it=hd&&homeItems.find(i=>i.id===hd.dataset.id);
+      if(it) tapDecor(it,hd);
+      return;
+    }
     const el=e.target.closest(".hd");
     if(!el){homeSel=null;renderHomeDecor();return;}
     const it=homeItems.find(i=>i.id===el.dataset.id);if(!it) return;
@@ -2103,7 +2299,7 @@ $("authForm").addEventListener("submit",async e=>{
 });
 async function signedOut(msg){
   try{const sub=await currentSub();if(sub) fetch("/api/unsubscribe",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});}catch(e){}
-  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);lsSet(LS_CAL,null);lsSet(LS_HOME,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
+  token=null;lsSet(LS_TOKEN,null);lsSet(LS_STATE,null);lsSet(LS_SUBSENT,null);lsSet(LS_CHAT,null);lsSet(LS_CAL,null);lsSet(LS_HOME,null);lsSet(LS_COINSEEN,null);S=null;lastSig="";usageStarted=false;prevLaneState={};seenRoars=null;lanesData=[];view="board";resetChat();
   clearTimeout(chatTimer);chatTimer=null;
   ["acctSheet","caveSheet","inviteSheet"].forEach(id=>$(id).hidden=true);
   closeCam();closeDay();resetHome();calData=null;calMonth=null;calMonths.clear();lastClipSig="";blobCache.clear();audioCache.clear();urlCache.forEach(p=>p.then(u=>URL.revokeObjectURL(u)).catch(()=>{}));urlCache.clear();
@@ -3431,6 +3627,15 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v44-coins",v:"v44.0",at:"2026-11-13T12:00",title:"Monster coins",changes:[
+    "Earn monster coins: 50 for every workday (paid at clock-out), a bonus every 5 days in a row, and more for filming on time.",
+    "Your first zap of someone each day takes 1 to 10% of their coins.",
+    "Fish in the yard's pond once a day, water the plant, pet the cat.",
+    "The home is now a shop: 32 things to buy, and some of them do something."],panels:[
+    {art:"payday",title:"Payday",text:"Every workday you show up pays 50 monster coins at clock-out. Tap the coin button to see your wallet."},
+    {art:"loot",title:"Zap and grab",text:"Your first zap of someone each day takes 1 to 10% of their coins. A safe at home keeps half out of reach."},
+    {art:"fishing",title:"Gone fishing",text:"Tap the pond in the yard once a day. Hook it in time for up to 30 coins."},
+    {art:"shop",title:"The shop",text:"Spend coins on the home: a jukebox that plays, a coffee machine that raises your wage, a rocket…"}]},
   {id:"v42-home",v:"v42.0",at:"2026-11-12T16:00",title:"Our cave has a home",changes:[
     "Tap Home (next to Board, Chat and Days): after work everyone's monster goes home to the cave.",
     "Each one goes to the room for what it's doing: bed, kitchen, study, living room or yard. Whoever's still at work is on the board by the door.",
@@ -3582,6 +3787,11 @@ function panelArt(kind){
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
     case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
+    case "payday":add(monEl(me.monster,me.color,"dance"),burstEl("+50",{top:"14px",right:"20px"}));break;
+    case "loot":{const z=propEl("bolt","prop shake");z.style.color="var(--zap)";add(small(me),z,small(crew[0]),burstEl("-7%",{top:"14px",right:"16px"}));break;}
+    case "fishing":add(monEl(me.monster,me.color,"fish"),burstEl("+27",{top:"14px",left:"16px"}));break;
+    case "shop":{const w=document.createElement("div");w.style.cssText="display:flex;align-items:flex-end;gap:4px;width:100%;justify-content:center";
+      ["jukebox","rocket","luckycat","safe"].forEach(k=>{const d=document.createElement("div");d.style.width="22%";d.innerHTML=`<svg viewBox="0 0 100 100" style="width:100%;display:block">${CAVE_HOME.DECOR[k].svg}</svg>`;w.appendChild(d);});add(w);break;}
     case "home":{const w=document.createElement("div");w.style.cssText="position:absolute;inset:0";w.innerHTML=CAVE_HOME.scene(false);w.firstElementChild.style.cssText="width:100%;height:100%";
       const put=(p,mood,x,y)=>{const m=monEl(p.monster,p.color,mood);m.style.cssText+=`;position:absolute;width:24%;height:auto;aspect-ratio:1;left:${x}%;top:${y}%;transform:translate(-50%,-100%)`;w.appendChild(m);};
       put(crew[0],"nap sv1 bd-stars",14,46);put(me,"game",30,97);put(crew[1],"eat f-cake",60,97);add(w);break;}
@@ -3776,7 +3986,7 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible"){
     if(asleep) wake(false);
     camResume();ping(true);refresh();syncSubscription();if(view==="chat") loadChat();
-  }else{stopPlayer();camPause();}
+  }else{stopPlayer();camPause();stopJuke();}
 });
 
 /* ---------- Sleep: 30 s without a touch, the screen goes black and the app stops working until tapped ---------- */
