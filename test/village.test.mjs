@@ -29,7 +29,7 @@ for (const x of [B, C]) await call("POST", "cave", { action: "join", code: cave.
 for (const x of [A, B, C]) await call("POST", "ping", { open: true }, x.t);
 
 /* ---------- donations ---------- */
-assert.deepEqual(Object.keys(BUILDINGS), ["weather", "farm", "harbor", "cinema"]);
+assert.deepEqual(Object.keys(BUILDINGS), ["weather", "farm", "harbor", "cinema", "planner"]);
 let v = (await call("GET", "village", null, A.t)).data.village;
 assert.equal(v.weather.price, 2000); assert.equal(v.weather.raised, 0); assert.equal(v.weather.openAt, null);
 assert.equal((await call("POST", "village/donate", { kind: "castle", amount: 5 }, A.t)).status, 400);
@@ -161,6 +161,46 @@ clock += BUILD_MS;
 s = await st(B);
 assert.deepEqual(Object.keys(s.cave.built).sort(), ["cinema", "farm", "harbor", "weather"]);
 assert.ok(Object.values(s.cave.built).every((at) => at <= clock));
+
+/* ---------- holiday planner (v51) ---------- */
+clock = SG(23, 9);
+await call("POST", "me", { action: "region", region: "sg" }, A.t); await call("POST", "me", { action: "region", region: "sg" }, B.t);
+assert.equal((await call("GET", "planner", null, A.t)).status, 409, "not built yet");
+give(A, 3000);
+assert.equal((await call("POST", "village/donate", { kind: "planner", amount: 2500 }, A.t)).data.gave, 2500);
+clock += BUILD_MS;
+let pl = (await call("GET", "planner", null, A.t)).data;
+assert.equal(pl.region, "sg");
+const xmas = pl.ideas.find((i) => i.from === "2026-12-24" && i.to === "2026-12-27");
+assert.ok(xmas, "take Thu 24 Dec off: Christmas becomes 4 days");
+assert.deepEqual(xmas.leave, ["2026-12-24"]); assert.equal(xmas.days, 4); assert.equal(xmas.holidays[0].name, "Christmas Day");
+assert.ok(pl.ideas.some((i) => i.from === "2026-12-25" && i.to === "2027-01-03" && i.leave.length === 4), "4 days of leave: 10 days over Christmas and New Year");
+assert.ok(pl.ideas.some((i) => i.leave.length === 0 && i.from === "2026-12-25" && i.days === 3), "the plain long weekend");
+assert.ok(pl.ideas.every((i) => i.leave.every((d) => d > "2026-11-23")), "only future leave");
+// booking it marks the days off; friends see who's taking it
+pl = (await call("POST", "planner/take", { id: xmas.id, on: true }, A.t)).data;
+assert.deepEqual(pl.planned, ["2026-12-24"]);
+assert.deepEqual(pl.ideas.find((i) => i.id === xmas.id).takers, [A.id]);
+await call("POST", "planner/take", { id: xmas.id, on: true }, B.t);
+assert.deepEqual((await call("GET", "planner", null, B.t)).data.ideas.find((i) => i.id === xmas.id).takers.sort(), [A.id, B.id].sort());
+assert.equal((await call("POST", "planner/take", { id: "nope", on: true }, A.t)).status, 404);
+clock = SG(24 + 30, 12); // Thu 24 Dec, noon: Ann's planned day off is a day off
+s = await st(A);
+assert.equal(s.me.off && s.me.off.kind, "leave");
+assert.ok(s.cave.members.find((p) => p.id === B.id).off, "and the cave sees Ben's too");
+clock = SG(25, 9); // back to November, after it opened
+pl = (await call("POST", "planner/take", { id: xmas.id, on: false }, A.t)).data;
+assert.deepEqual(pl.planned, []); assert.deepEqual(pl.ideas.find((i) => i.id === xmas.id).takers, [B.id]);
+// a tip 3 weeks before the leave day, at 10 am, once
+pushes.length = 0;
+await call("POST", "subscribe", { subscription: { endpoint: "https://push.test/a", keys: { p256dh: "k", auth: "a" } } }, A.t);
+clock = SG(3 + 30, 9, 30); assert.equal((await app.holidayTips()).sent, 0, "not before 10 am");
+clock = SG(3 + 30, 10, 5); // Thu 3 Dec = 21 days before Thu 24 Dec
+let tip = await app.holidayTips();
+assert.ok(tip.sent >= 1); assert.match(pushes.find((x) => x.tag === "holiday").title, /4 days off for 1 day of leave/);
+assert.match(pushes.find((x) => x.tag === "holiday").body, /Thu 24 Dec/);
+assert.equal((await app.holidayTips()).sent, 0, "once a day");
+clock = SG(23, 9);
 
 /* ---------- the last one out takes the village with them ---------- */
 for (const x of [A, B, C]) await call("POST", "cave", { action: "leave" }, x.t);

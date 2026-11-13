@@ -16,6 +16,7 @@
 //   built/<cid>/<building>/<openAt>           0   v50: a building that's fully funded (open from openAt)
 //   plot/<cid>/<n>/<id>/<crop>/<pid>/<at>     0   v50: a crop planted on farm plot n
 //   pw/<cid>/<cropId>/<at>/<pid>              0   v50: someone watered that crop
+//   hpush/<day>/<pid>                         0   v51: the holiday planner sent a tip that day
 //   chat/<cid>/<ts>-<rand>     {pid,name,color,monster,text,at}
 //   vapid                      {publicKey, privateKey}
 //   meta/v9                    marks the v8 -> v9 migration as done
@@ -56,6 +57,7 @@ import {
   dayStartMs, monthOf, sgSeconds, getWeather, weatherAt, dailyOf, geocode,
 } from "./powers.mjs";
 import { REGIONS, regionOf, holidayOf } from "./holidays.mjs";
+import { longBreaks } from "./planner.mjs";
 import { ringTimes, currentRing, slotKey, parseSlot, RING_COUNT, RING_FROM, RING_TO, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
@@ -139,7 +141,7 @@ export function fishmonger(t, allDay = false) {
 }
 
 /* ---------- the village (v50): buildings the cave pays for together ---------- */
-export const BUILDINGS = { weather: 2000, farm: 3000, harbor: 4000, cinema: 5000 }; // coins to build
+export const BUILDINGS = { weather: 2000, farm: 3000, harbor: 4000, cinema: 5000, planner: 2500 }; // coins to build (v51: the holiday planner)
 export const BUILD_MS = 24 * 3600e3; // building takes a day once it's paid for (a minute on the test site)
 // Farm crops: seed price, hours to grow, coins for a 1-star crop.
 export const CROPS = {
@@ -709,7 +711,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const t = now(), today = sgDay(t), nowSec = sgSeconds(t);
     if (nowSec < 15 * 60) { // once a day, tidy up old power records
       const cut = addDays(today, -14);
-      const old = (await Promise.all(["cheer/", "roar/", "rainalert/", "ringsent/", "dayoff/"].map(keys))).flat().filter((k) => k.split("/")[1] < cut);
+      const old = (await Promise.all(["cheer/", "roar/", "rainalert/", "ringsent/", "dayoff/", "hpush/"].map(keys))).flat().filter((k) => k.split("/")[1] < cut);
       old.push(...(await keys("leave/")).filter((k) => k.split("/")[2] < addDays(today, -60)));
       await Promise.all(old.map((k) => store.delete(k)));
     }
@@ -1310,6 +1312,26 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         return json({ village: v, gave: give, now: t });
       }
 
+      /* ---------- the holiday planner (v51) ---------- */
+      if (route === "planner" || route === "planner/take") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const cid = me.cave, t = now(), today = sgDay(t);
+        if (!isOpen(await builtOf(cid), "planner", t)) return json({ error: "The cave hasn't built the holiday planner yet." }, 409);
+        const region = regionOf(me), ideas = longBreaks(region, addDays(today, 1));
+        if (route === "planner/take" && method === "POST") { // book (or un-book) the leave days of one idea
+          const idea = ideas.find((i) => i.id === String(body.id || ""));
+          if (!idea || !idea.leave.length) return json({ error: "That break isn't on the list any more." }, 404);
+          if (body.on === true) await Promise.all(idea.leave.flatMap((d) => [store.setJSON(`leave/${me.id}/${d}`, 0), store.setJSON(`dayoff/${d}/${me.id}`, { at: t, planned: true })]));
+          else await Promise.all(idea.leave.flatMap((d) => [store.delete(`leave/${me.id}/${d}`), store.delete(`dayoff/${d}/${me.id}`)]));
+        }
+        // who in the cave has booked which days, so friends can line up their leave
+        const members = await caveMembers(cid);
+        const leaves = await Promise.all(members.map(async (p) => [p.id, new Set((await keys(`leave/${p.id}/`)).map((k) => k.split("/")[2]).filter((d) => d > today))]));
+        const out = ideas.map((i) => ({ ...i, takers: i.leave.length ? leaves.filter(([, set]) => i.leave.every((d) => set.has(d))).map(([pid]) => pid) : [] }));
+        const mine = [...(leaves.find(([pid]) => pid === me.id)?.[1] || [])].sort();
+        return json({ region, regionName: REGIONS[region], ideas: out, planned: mine, today });
+      }
+
       /* ---------- the farm (v50) ---------- */
       if (route === "farm" || route.startsWith("farm/")) {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
@@ -1581,5 +1603,28 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     }
   }
 
-  return { handle, rainAlerts, ringTick };
+  // v51: once a day around 10 am, the holiday planner tells people about a long break whose leave starts in 3 weeks.
+  async function holidayTips() {
+    const t = now(), today = sgDay(t), nowSec = sgSeconds(t);
+    if (nowSec < 10 * 3600 || nowSec >= 10 * 3600 + 15 * 60) return { sent: 0 };
+    const people = (await Promise.all((await keys("person/")).map((k) => getJSON(k)))).filter((p) => p && p.cave && regionOf(p) !== "none");
+    const open = new Map();
+    let sent = 0;
+    for (const p of people) {
+      if (!open.has(p.cave)) open.set(p.cave, isOpen(await builtOf(p.cave), "planner", t));
+      if (!open.get(p.cave)) continue;
+      const target = addDays(today, 21);
+      const idea = longBreaks(regionOf(p), addDays(today, 1), 60).filter((i) => i.leave.length && i.leave[0] === target).sort((a, b) => b.days / b.leave.length - a.days / a.leave.length)[0];
+      if (!idea || !(await claimKey(`hpush/${today}/${p.id}`, 0))) continue;
+      const fmt = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+      sent += await sendPush(p.id, {
+        title: `🗓 ${idea.days} days off for ${idea.leave.length} day${idea.leave.length > 1 ? "s" : ""} of leave`,
+        body: `Take ${idea.leave.map(fmt).join(", ")} off: ${fmt(idea.from)} – ${fmt(idea.to)} (${idea.holidays.map((h) => h.name).filter((n, i, a) => a.indexOf(n) === i).join(", ")}). Book it now!`,
+        tag: "holiday", url: "/", buzz: false,
+      });
+    }
+    return { sent };
+  }
+
+  return { handle, rainAlerts, ringTick, holidayTips };
 }

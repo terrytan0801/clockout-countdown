@@ -18,11 +18,11 @@ ${night ? `<g fill="#fff"><circle cx="40" cy="20" r="1.2"/><circle cx="120" cy="
 <path d="M0 170 Q100 150 200 168 Q300 186 400 160 L400 300 L0 300Z" fill="${g2}"/>
 <path d="M286 300 Q300 250 344 236 Q380 226 400 232 L400 300Z" fill="url(#vSea)"/>
 <g stroke="#fff" stroke-width="1.6" fill="none" opacity=".35" stroke-linecap="round"><path d="M330 262 q6 -3 12 0 q6 3 12 0"/><path d="M360 282 q6 -3 12 0"/><path d="M372 248 q5 -2 10 0"/></g>
-<g fill="none" stroke="${path}" stroke-width="12" stroke-linecap="round" opacity=".95"><path d="M200 128 Q150 132 92 128"/><path d="M200 128 Q250 132 310 128"/><path d="M200 132 Q190 180 110 222"/><path d="M200 132 Q220 190 300 232"/></g>
+<g fill="none" stroke="${path}" stroke-width="12" stroke-linecap="round" opacity=".95"><path d="M200 128 Q150 132 92 128"/><path d="M200 128 Q250 132 310 128"/><path d="M200 132 Q190 180 110 222"/><path d="M200 132 Q220 190 300 232"/><path d="M200 132 Q196 200 204 252"/></g>
 <g transform="translate(200 104)"><path d="M-46 30 Q-48 -22 0 -26 Q48 -22 46 30Z" fill="${night ? "#5b6170" : "#8d93a3"}"/><path d="M-36 30 Q-34 -12 -10 -18 L-22 30Z" fill="${night ? "#6b7282" : "#a3a9b8"}"/>
 <path d="M-18 30 Q-18 0 0 -2 Q18 0 18 30Z" fill="#2b2233"/><circle cx="26" cy="6" r="3.4" fill="#ffd34d"/><path d="M26 9 L26 30" stroke="#6b4a2a" stroke-width="2"/>
 <path d="M-10 8 Q0 2 10 8" stroke="#ffd34d" stroke-width="2" fill="none" opacity=".7"/></g>
-<g fill="${night ? "#1c3b28" : "#4f9e4f"}"><circle cx="18" cy="104" r="12"/><circle cx="34" cy="98" r="9"/><circle cx="380" cy="102" r="12"/><circle cx="198" cy="282" r="10"/><circle cx="214" cy="288" r="8"/><circle cx="20" cy="282" r="12"/></g>
+<g fill="${night ? "#1c3b28" : "#4f9e4f"}"><circle cx="18" cy="104" r="12"/><circle cx="34" cy="98" r="9"/><circle cx="380" cy="102" r="12"/><circle cx="140" cy="290" r="10"/><circle cx="154" cy="294" r="8"/><circle cx="20" cy="282" r="12"/></g>
 <g fill="#ff8fab"><circle cx="150" cy="160" r="2.4"/><circle cx="256" cy="158" r="2.4"/><circle cx="170" cy="250" r="2"/></g><g fill="#fff59d"><circle cx="160" cy="166" r="2"/><circle cx="244" cy="166" r="2.2"/></g>
 </svg>`;
   }
@@ -54,6 +54,13 @@ ${night ? `<g fill="#fff"><circle cx="40" cy="20" r="1.2"/><circle cx="120" cy="
       `<path d="M44 96 L44 64 Q60 54 76 64 L76 96Z" fill="#c62828"/><path d="M60 58 L60 96" stroke="#8e1b1b" stroke-width="2"/>` +
       `<rect x="20" y="52" width="18" height="24" rx="2" fill="#fff"/><rect x="82" y="52" width="18" height="24" rx="2" fill="#fff"/><path d="M23 56 l12 0 M23 62 l12 0 M85 56 l12 0 M85 62 l12 0" stroke="#6a3fa0" stroke-width="1.6"/>` +
       `<g transform="translate(60 10)"><circle r="9" fill="#2b2233"/><g fill="#9aa8b8"><circle cx="0" cy="-4.5" r="2"/><circle cx="4.3" cy="1.5" r="2"/><circle cx="-4.3" cy="1.5" r="2"/></g></g>` },
+    planner: { name: "Holiday planner", zh: "假期规划局", svg: shadow +
+      `<rect x="22" y="44" width="62" height="52" rx="3" fill="#fff3e0"/><path d="M16 46 L53 26 L90 46Z" fill="#26a69a"/><rect x="44" y="70" width="18" height="26" rx="2" fill="#26a69a"/>` +
+      `<g transform="translate(36 6)"><rect width="34" height="30" rx="4" fill="#fff" stroke="#e53935" stroke-width="2"/><rect width="34" height="9" rx="3" fill="#e53935"/>` +
+      `<text x="17" y="26" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="15" fill="#1d2b3a">31</text><path d="M9 -3 L9 4 M25 -3 L25 4" stroke="#555" stroke-width="2.4" stroke-linecap="round"/></g>` +
+      `<rect x="28" y="54" width="12" height="11" rx="2" fill="#bfe3ff"/><rect x="66" y="54" width="12" height="11" rx="2" fill="#bfe3ff"/>` +
+      `<path d="M100 96 Q98 70 104 52" stroke="#8d6e63" stroke-width="4" fill="none"/><g fill="#43a047"><path d="M104 52 Q88 44 82 54 Q94 48 104 54Z"/><path d="M104 52 Q120 42 124 54 Q112 48 104 54Z"/><path d="M104 52 Q100 36 90 36 Q100 42 104 54Z"/><path d="M104 52 Q112 36 120 38 Q110 42 104 54Z"/></g>` +
+      `<rect x="2" y="78" width="18" height="16" rx="3" fill="#ff8c5a"/><path d="M7 78 L7 74 L15 74 L15 78" stroke="#6b4a2a" stroke-width="2" fill="none"/><path d="M2 85 L20 85" stroke="#fff" stroke-width="1.6"/>` },
     lot: { name: "Empty lot", svg: `<ellipse cx="60" cy="82" rx="50" ry="14" fill="#b8915f" opacity=".75"/><g stroke="#8d6a3f" stroke-width="2.2"><path d="M14 82 L14 66 M60 70 L60 54 M106 82 L106 66"/></g>` +
       `<path d="M14 68 Q37 74 60 56 Q83 74 106 68" stroke="#fff" stroke-width="1.4" fill="none" stroke-dasharray="3 2"/>` },
     scaffold: { name: "Being built", svg: shadow + `<ellipse cx="60" cy="88" rx="50" ry="10" fill="#b8915f" opacity=".7"/>` +

@@ -25,3 +25,5 @@ const TABLES = { sg: SG, my: MY, none: {} };
 
 export const regionOf = (p) => (p && TABLES[p.region] ? p.region : "sg");
 export const holidayOf = (region, day) => (TABLES[region] || SG)[day] || null;
+// v51: the whole list for a region (the holiday planner looks ahead through it).
+export const holidayTable = (region) => TABLES[region] || SG;

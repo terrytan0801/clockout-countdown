@@ -1,4 +1,4 @@
-# Clock-out Countdown · v50.0
+# Clock-out Countdown · v51.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -191,6 +191,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 | Farm | 3,000 | 6 plots. Seeds: radish 10 (4 h), tomato 25 (1 day), pumpkin 60 (3 days), monster flower 150 (7 days). A crop not watered for 24 hours before it's ripe dies; anyone can water anyone's (+2 coins once a day per crop for helping) and clear dead ones. Only the planter picks; a pick is 1-3 stars (70/25/5%), worth 1x/1.5x/2.5x: radish 22, tomato 60, pumpkin 170, monster flower 520 for 1 star. Crops go in the bag and sell to **Mr. Veggie**, in the yard 8-10 am and 5-7 pm, double for his crop of the day |
 | Harbor | 4,000 | Fishing at sea: squid, tuna, swordfish, anglerfish and whale shark (sea only), plus sharks, puffers, golden fish and legendary fish a little likelier than in the pond (still under 0.1% each); chances in `SEA`. Mr. Fishfish lives at the harbor and buys fish all day |
 | Cinema | 5,000 | This week's (or last week's) clips played back to back on the phone: a title card, each day as in the Days player, then credits with everyone's clip count |
+
+**Holiday planner (v51, 2,500 coins).** Uses each person's holiday list (Singapore or Malaysia) to find long breaks over the next year (`netlify/lib/planner.mjs`): for each run of public holidays it offers the plain long weekend (3+ days, no leave), the best 1-day bridge (4+ days), and a longer break for 2-4 days of leave when that's at least 2.5 days off per day of leave and 3+ days longer. *I'll take it* books those leave days (`leave/<pid>/<day>` and `dayoff/<day>/<pid>`, so the app treats them as days off: no countdown, no wage, streak kept) and the cave sees who's taking which break. Around 10 am each day, people in a cave with a planner get a push for a break whose first leave day is 3 weeks away (`holidayTips`, run with the rain alerts). Malaysia's 2027 holidays still need adding to `holidays.mjs`.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
