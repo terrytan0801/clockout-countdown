@@ -41,6 +41,10 @@
 //   wv/<pid>                    changes whenever that person's coins change (part of the "still the same?" check)
 //   paid/<pid>/<day>/<what>     0   paid once: pay, streak, clip<r>, fish, water, pet, vend, zap.<pid>; paid/<pid>/welcome
 //   work/<pid>/<day>            0   opened the app on that workday and not paid for it yet
+//   Fishing (v45):
+//   cast/<pid>                  {kind,size,at}  the fish on the line right now (decided when the line is cast)
+//   bag/<pid>/<id>/<kind>/<size>          0   a fish in someone's bag
+//   tank/<cid>/<id>/<kind>/<size>/<pid>   0   a fish living in the cave's aquariums (still <pid>'s fish)
 import { createHmac, randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { makeStats } from "./stats.mjs";
 import {
@@ -63,7 +67,7 @@ export const SHOP = {
   plant: 30, poster: 30, rug: 40, lamp: 40, clock: 40, lights: 60, beanbag: 70, shelf: 80, lavalamp: 80, mushlamp: 90,
   sofa: 120, cat: 120, fridge: 130, tv: 150, hammock: 150, crystal: 150, disco: 180, vending: 180, trophy: 200, aquarium: 200,
   coffee: 200, fireplace: 220, jukebox: 220, telescope: 250, luckycat: 250, arcade: 300, safe: 300, piano: 350, chest: 350,
-  hottub: 400, throne: 500, rocket: 600,
+  hottub: 400, bigtank: 450, throne: 500, rocket: 600,
 };
 export const HOME_KINDS = Object.keys(SHOP);
 // How monster coins are earned and lost. Change the numbers here to rebalance.
@@ -72,12 +76,52 @@ export const COINS = {
   day: 50, coffee: 10,   // per workday you opened the app, paid from your clock-out time (+10 with your coffee machine at home)
   streakEvery: 5, streak: 50, // every 5 workdays in a row
   clip: 15, clipLate: 5, // filming a ring on time / late (the first take only)
-  fishMin: 10, fishMax: 30, fishMiss: 5, luckyMin: 15, // fishing once a day; a lucky cat at home raises the least you get
   water: 2, pet: 2, vend: 3, // once a day each: water a plant, pet the cat, use the vending machine
   zapMinPct: 1, zapMaxPct: 10, safeKeeps: 0.5, // your first zap of someone each day takes 1-10% of their coins (half is safe with a safe)
   refund: 0.5,           // selling gives half back
 };
 export const HOME_MAX = 60;
+// Fishing (v45). Each cast hooks one fish, decided by the server; land it and it goes in your bag.
+// w: how common (out of the total), cm: smallest and largest, coins: what Mr. Fishfish pays for a middling one,
+// hard: 1 easy .. 5 very hard to reel in (the app uses it for the reeling game).
+export const FISH = {
+  boot:    { w: 12, cm: [25, 25],   coins: 1,   hard: 1 },
+  tadpole: { w: 30, cm: [3, 8],     coins: 4,   hard: 1 },
+  carp:    { w: 24, cm: [20, 45],   coins: 9,   hard: 2 },
+  koi:     { w: 14, cm: [25, 60],   coins: 16,  hard: 2 },
+  puffer:  { w: 9,  cm: [15, 35],   coins: 24,  hard: 3 },
+  catfish: { w: 6,  cm: [50, 110],  coins: 35,  hard: 4 },
+  shark:   { w: 3,  cm: [90, 160],  coins: 70,  hard: 5 },
+  golden:  { w: 2,  cm: [20, 40],   coins: 150, hard: 5 },
+};
+export const FISHING = {
+  casts: 2,            // a day
+  bag: 24,             // fish a bag holds
+  rare: ["catfish", "shark", "golden"], // a lucky cat at home doubles the chance of these, and you never hook a boot
+  tank: { aquarium: 3, bigtank: 8 },     // fish each aquarium holds
+  visits: [[12 * 60, 14 * 60], [19 * 60, 22 * 60]], // when Mr. Fishfish is in the yard (minutes of the day, Singapore time)
+  wantsBonus: 2,       // he pays double for the fish he's after that day
+};
+// What a fish is worth: 70% to 130% of its price, by how big it is for its kind.
+export function fishPrice(kind, size, wants) {
+  const f = FISH[kind];
+  if (!f) return 0;
+  const frac = f.cm[1] > f.cm[0] ? (Math.min(f.cm[1], Math.max(f.cm[0], size)) - f.cm[0]) / (f.cm[1] - f.cm[0]) : 0.5;
+  return Math.max(1, Math.round(f.coins * (0.7 + 0.6 * frac) * (kind === wants ? FISHING.wantsBonus : 1)));
+}
+// Mr. Fishfish's visit that is on now, or the next one: { from, until, wants } (times in ms).
+export function fishmonger(t) {
+  const hash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; };
+  const wanted = Object.keys(FISH).filter((k) => k !== "boot" && k !== "golden");
+  for (let d = 0; d < 2; d++) {
+    const day = sgDay(t + d * 864e5), start = dayStartMs(day);
+    for (const [a, b] of FISHING.visits) {
+      const from = start + a * 60e3, until = start + b * 60e3;
+      if (t < until) return { from, until, wants: wanted[hash("fishfish|" + day) % wanted.length] };
+    }
+  }
+  return null;
+}
 export const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]; // WhatsApp's quick six
 const emojiHex = (e) => [...e].map((c) => c.codePointAt(0).toString(16)).join("-");
 const hexEmoji = (h) => { try { return String.fromCodePoint(...h.split("-").map((x) => parseInt(x, 16))); } catch { return null; } };
@@ -290,6 +334,11 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       .filter((e) => e.id > upto && Number.isFinite(e.amt)).sort((a, b) => (a.id < b.id ? -1 : 1));
     return { coins: ((base && base.bal) || 0) + log.reduce((n, e) => n + e.amt, 0), log, base };
   }
+  const touchWallet = (pid) => store.setJSON(`wv/${pid}`, rv());
+  const fishOf = (k, at) => { const seg = k.split("/"); return { id: seg[at], kind: seg[at + 1], size: Number(seg[at + 2]), ...(seg[at + 3] ? { by: seg[at + 3] } : {}) }; };
+  const bagOf = async (pid) => (await keys(`bag/${pid}/`)).map((k) => fishOf(k, 2)).filter((f) => FISH[f.kind]);
+  const tankOf = async (cid) => (await keys(`tank/${cid}/`)).map((k) => fishOf(k, 2)).filter((f) => FISH[f.kind]);
+  const tankRoom = (items) => items.reduce((n, i) => n + (FISHING.tank[i.kind] || 0), 0);
   const paidToday = async (pid, day) => new Set((await keys(`paid/${pid}/${day}/`)).map((k) => k.split("/")[3]));
   // Once per person per day (or once ever): true the first time.
   const payOnce = (pid, day, what) => claimKey(`paid/${pid}/${day}/${what}`, 0);
@@ -333,7 +382,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   async function state(me) {
     const t = now();
     const day = sgDay(t);
-    const [lvRec, w, paid, wver] = await Promise.all([getJSON(`lvl/${me.id}`), wallet(me.id), paidToday(me.id, day), getJSON(`wv/${me.id}`)]);
+    const [lvRec, w, paid, wver, bag] = await Promise.all([getJSON(`lvl/${me.id}`), wallet(me.id), paidToday(me.id, day), getJSON(`wv/${me.id}`), bagOf(me.id)]);
+    const casts = FISHING.casts - [...paid].filter((x) => /^cast\d+$/.test(x)).length;
     const lv = levelInfo(lvRec);
     const power = POWERS[me.monster] || "jelly";
     const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
@@ -348,8 +398,10 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         nextReroll: sameMonth ? `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01` : null,
         cheersLeft: 0, notesLeft: 0, canPin: false, roared: false,
         coins: w.coins, coinLog: w.log.slice(-10).map(({ id, amt, why }) => ({ id, amt, why })),
-        did: { fish: paid.has("fish"), water: paid.has("water"), pet: paid.has("pet"), vend: paid.has("vend") },
+        did: { fish: casts <= 0, water: paid.has("water"), pet: paid.has("pet"), vend: paid.has("vend") },
+        casts: Math.max(0, casts), bag: bag.map((f) => ({ ...f, worth: fishPrice(f.kind, f.size, (fishmonger(t) || {}).wants) })),
       },
+      fishfish: fishmonger(t), bagMax: FISHING.bag,
       cave: null,
     };
     if (!me.cave) return base;
@@ -634,7 +686,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     if (!rest.length) {
       await store.delete(`code/${cave.code}`);
       await store.delete(`cave/${cid}`);
-      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`react/${cid}/`)), ...(await keys(`hi/${cid}/`)),
+      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`react/${cid}/`)), ...(await keys(`hi/${cid}/`)), ...(await keys(`tank/${cid}/`)),
         `chatlast/${cid}`, `chatre/${cid}`, `ver/${cid}`, `homerev/${cid}`].map((k) => store.delete(k)));
       await dropCaveClips(cid);
       return null;
@@ -891,7 +943,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             await dropPersonClips(me.id);
             await stats.forget(me.id);
             await store.delete(`lvl/${me.id}`);
-            await Promise.all([...(await keys(`led/${me.id}/`)), ...(await keys(`paid/${me.id}/`)), ...(await keys(`work/${me.id}/`)), `coinbase/${me.id}`, `wv/${me.id}`].map((k) => store.delete(k)));
+            await Promise.all([...(await keys(`led/${me.id}/`)), ...(await keys(`paid/${me.id}/`)), ...(await keys(`work/${me.id}/`)), ...(await keys(`bag/${me.id}/`)), `coinbase/${me.id}`, `wv/${me.id}`, `cast/${me.id}`].map((k) => store.delete(k)));
             await Promise.all((await keys(`leave/${me.id}/`)).flatMap((k) => [store.delete(k), store.delete(`dayoff/${k.split("/")[2]}/${me.id}`)]));
             const ownsName = (await getJSON(`uname/${nameKey(me.name)}`)) === me.id;
             await Promise.all([`person/${me.id}`, ...(ownsName ? [`uname/${nameKey(me.name)}`] : []), `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
@@ -1110,18 +1162,71 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         return json({ ok: true });
       }
 
-      // Fishing in the yard's pond, once a day. The phone says whether the hook was in time.
-      if (route === "coins/fish" && method === "POST") {
+      /* ---------- fishing (v45) ---------- */
+      // Cast: uses one of today's casts and decides what's on the line. The phone then plays the reeling game.
+      if (route === "fish/cast" && method === "POST") {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
-        const day = sgDay(now());
-        if (!(await payOnce(me.id, day, "fish"))) return json({ error: "You've already fished today. The fish need a rest." }, 409);
-        let won = COINS.fishMiss;
-        if (body.hit === true) {
-          const min = (await hasAtHome(me.cave, me.id, "luckycat")) ? COINS.luckyMin : COINS.fishMin;
-          won = min + randomInt(COINS.fishMax - min + 1);
+        const t = now(), day = sgDay(t);
+        const [paid, bag] = await Promise.all([paidToday(me.id, day), bagOf(me.id)]);
+        if (bag.length >= FISHING.bag) return json({ error: "Your bag is full. Sell some fish or put them in an aquarium first." }, 409);
+        let n = 0;
+        for (let i = 1; i <= FISHING.casts && !n; i++) if (!paid.has(`cast${i}`) && (await payOnce(me.id, day, `cast${i}`))) n = i;
+        if (!n) return json({ error: "No casts left today. The fish need a rest." }, 409);
+        const lucky = await hasAtHome(me.cave, me.id, "luckycat");
+        const pool = Object.entries(FISH).map(([kind, f]) => [kind, lucky ? (kind === "boot" ? 0 : FISHING.rare.includes(kind) ? f.w * 2 : f.w) : f.w]);
+        let roll = randomInt(pool.reduce((x, [, w]) => x + w, 0)), kind = pool[0][0];
+        for (const [k, w] of pool) { if (roll < w) { kind = k; break; } roll -= w; }
+        const [lo, hi] = FISH[kind].cm, size = lo + randomInt(hi - lo + 1);
+        await Promise.all([store.setJSON(`cast/${me.id}`, { kind, size, at: t }), touchWallet(me.id)]);
+        return json({ kind, size, hard: FISH[kind].hard, left: FISHING.casts - n });
+      }
+      // Land (or lose) the fish on the line. Landed fish go in the bag.
+      if (route === "fish/land" && method === "POST") {
+        const c = await getJSON(`cast/${me.id}`);
+        if (!c || now() - c.at > 10 * 60e3) return json({ error: "There's nothing on your line." }, 409);
+        await store.delete(`cast/${me.id}`);
+        if (body.ok !== true) return json({ kept: false });
+        const id = now().toString(36) + randomBytes(3).toString("hex");
+        await Promise.all([store.setJSON(`bag/${me.id}/${id}/${c.kind}/${c.size}`, 0), touchWallet(me.id)]);
+        return json({ kept: true, fish: { id, kind: c.kind, size: c.size, worth: fishPrice(c.kind, c.size, (fishmonger(now()) || {}).wants) } });
+      }
+      // Sell fish from the bag to Mr. Fishfish, when he's in the yard.
+      if (route === "fish/sell" && method === "POST") {
+        const t = now(), v = fishmonger(t);
+        if (!v || t < v.from) return json({ error: "Mr. Fishfish isn't here right now." }, 409);
+        const want = Array.isArray(body.ids) ? new Set(body.ids.map(String).slice(0, 60)) : null;
+        const sold = (await bagOf(me.id)).filter((f) => !want || want.has(f.id));
+        if (!sold.length) return json({ error: "No fish to sell." }, 400);
+        const total = sold.reduce((n, f) => n + fishPrice(f.kind, f.size, v.wants), 0);
+        await Promise.all(sold.map((f) => store.delete(`bag/${me.id}/${f.id}/${f.kind}/${f.size}`)));
+        await credit(me.id, total, `fishsale.${sold.length}`);
+        return json({ sold: sold.length, won: total });
+      }
+      // Move one of my fish between my bag and the cave's aquariums.
+      if (route === "fish/tank" && method === "POST") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const cid = me.cave, id = String(body.id || "");
+        const bumpHome = () => store.setJSON(`homerev/${cid}`, { rv: rv() });
+        if (body.on === true) {
+          const [bag, tank, items] = await Promise.all([bagOf(me.id), tankOf(cid), homeItems(cid)]);
+          const f = bag.find((x) => x.id === id);
+          if (!f) return json({ error: "That fish isn't in your bag." }, 404);
+          if (f.kind === "boot") return json({ error: "A boot can't live in an aquarium." }, 400);
+          const room = tankRoom(items);
+          if (!room) return json({ error: "The home has no aquarium yet. Buy one in the shop." }, 409);
+          if (tank.length >= room) return json({ error: `The aquariums are full (${room} fish). A big tank holds ${FISHING.tank.bigtank}.` }, 409);
+          await store.setJSON(`tank/${cid}/${f.id}/${f.kind}/${f.size}/${me.id}`, 0);
+          await Promise.all([store.delete(`bag/${me.id}/${f.id}/${f.kind}/${f.size}`), bumpHome(), touchWallet(me.id)]);
+          return json({ ok: true });
         }
-        await credit(me.id, won, "fish");
-        return json({ won });
+        const [bag, tank] = await Promise.all([bagOf(me.id), tankOf(cid)]);
+        const f = tank.find((x) => x.id === id);
+        if (!f) return json({ error: "That fish isn't in the aquarium." }, 404);
+        if (f.by !== me.id) return json({ error: "That's someone else's fish." }, 403);
+        if (bag.length >= FISHING.bag) return json({ error: "Your bag is full." }, 409);
+        await store.setJSON(`bag/${me.id}/${f.id}/${f.kind}/${f.size}`, 0);
+        await Promise.all([store.delete(`tank/${cid}/${f.id}/${f.kind}/${f.size}/${me.id}`), bumpHome(), touchWallet(me.id)]);
+        return json({ ok: true });
       }
       // Little things to do at home, once a day each: water a plant, pet the cat, use the vending machine.
       if (route === "coins/act" && method === "POST") {
@@ -1141,7 +1246,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (method === "GET") {
           const seen = url.searchParams.get("rv"), rv = await homeRv(cid);
           if (seen && seen === rv) return json({ same: true, rv });
-          return json({ items: await homeItems(cid), rv, prices: SHOP });
+          const [items, tank] = await Promise.all([homeItems(cid), tankOf(cid)]);
+          return json({ items, tank, rv, prices: SHOP });
         }
         if (method !== "POST") return json({ error: "Not found." }, 404);
         const pos = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1000, Math.round(v))) : null);
@@ -1172,6 +1278,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (body.action === "remove") {
           // Only whoever bought it can sell it (half the price back). Things left by someone who moved out can be cleared by anyone.
           if (it.by !== me.id && (await exists(`member/${cid}/${it.by}`))) return json({ error: "Only whoever bought that can sell it." }, 403);
+          if (FISHING.tank[it.kind] && (await tankOf(cid)).length > tankRoom(items) - FISHING.tank[it.kind]) return json({ error: "There are fish living in it. Take some out first." }, 409);
           const back = it.by === me.id ? Math.floor(it.paid * COINS.refund) : 0;
           return done(items.filter((i) => i !== it), [store.delete(oldKey), credit(me.id, back, `sell.${it.kind}`)]);
         }

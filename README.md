@@ -1,4 +1,4 @@
-# Clock-out Countdown · v44.0
+# Clock-out Countdown · v45.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -174,12 +174,39 @@ Everyone has a wallet of monster coins (the coin button next to Home opens it, w
 | Every 5 workdays in a row | +50 |
 | Filming a ring on time / late (first take only) | +15 / +5 |
 | Your first zap of someone each day | 1-10% of their coins, taken from them |
-| Fishing in the yard's pond, once a day (hook in time: 10-30; miss: 5) | +5 to +30 |
+| Selling fish from the pond to Mr. Fishfish (see Fishing, v45) | 1 to 390 a fish |
 | Water a plant, pet the cat, use the vending machine, once a day each | +2, +2, +3 |
 
-**The shop.** Everything in the home is bought with coins (32 things, 30 to 600 coins); selling gives half back. Anyone can move or flip a thing, only its buyer can sell it; things left by someone who moved out can be cleared by anyone, and things placed before v44 stay and can be removed by their owner for nothing. Some things do something while they're in the home: **coffee machine** (+10 on your wage), **safe** (zaps only reach half your coins), **lucky cat** (fishing never gives under 15), **vending machine** (+3 a day for everyone), **crystal ball** (a daily fortune), **jukebox** (plays lofi), plant and cat (+2 a day).
+**The shop.** Everything in the home is bought with coins (33 things, 30 to 600 coins); selling gives half back. Anyone can move or flip a thing, only its buyer can sell it; things left by someone who moved out can be cleared by anyone, and things placed before v44 stay and can be removed by their owner for nothing. Some things do something while they're in the home: **coffee machine** (+10 on your wage), **safe** (zaps only reach half your coins), **lucky cat** (no boots on the line, rare fish twice as likely), **aquarium** and **big fish tank** (hold 3 and 8 fish), **vending machine** (+3 a day for everyone), **crystal ball** (a daily fortune), **jukebox** (plays lofi), plant and cat (+2 a day).
 
 All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs`. Each wallet is a ledger of lines (`led/<pid>/<id>/<amount>/<why>`), so the balance is a sum and two payments at once can't lose coins; old lines are folded into `coinbase/<pid>`. Once-only payments are claimed under `paid/<pid>/<day>/<what>`.
+
+## Fishing, the bag and the shop (v45)
+
+**Fishing.** Tapping the pond opens a game seen from behind your monster. Each of the day's 2 casts goes: cast, wait for the bite, tap **Hook!** within the window (too early or too late and it's gone), then hold and release the button to keep the fish inside the green band until the bar fills. Bigger fish dart more and have a narrower band. The server picks the fish when the line is cast (`fish/cast`) and the phone reports whether it was landed (`fish/land`), so a catch can't be invented, only a lost fish claimed as won.
+
+| Fish | Size | Worth | Odds |
+|---|---|---|---|
+| Old boot | - | 1 | 12% |
+| Tadpole | 3-8 cm | about 4 | 30% |
+| Carp | 20-45 cm | about 9 | 24% |
+| Koi | 25-60 cm | about 16 | 14% |
+| Pufferfish | 15-35 cm | about 24 | 9% |
+| Catfish | 50-110 cm | about 35 | 6% |
+| Shark | 90-160 cm | about 70 | 3% |
+| Golden fish | 20-40 cm | about 150 | 2% |
+
+A fish's worth grows with its size (0.7 to 1.3 times the figure above).
+
+**The bag** (button next to Shop) holds up to 24 fish. From it a fish can be sold or moved into an aquarium.
+
+**Mr. Fishfish** stands in the yard from 12 to 2 pm and 7 to 10 pm every day, and only then can fish be sold. Each day he wants one kind of fish and pays double for it.
+
+**Aquariums.** An aquarium holds 3 fish and a big fish tank 8, shared by the cave; the fish swim in it, still belong to whoever put them in, and can be taken back out. An aquarium can't be sold while it's needed for the fish in it.
+
+**The shop** shows every item as a same-sized tile, with one detail card on top for the tile you tapped (what it does, the price, Buy), and filters for things that do something and things you can afford.
+
+The numbers are in `FISH` and `FISHING` in `netlify/lib/handler.mjs`. Keys: `bag/<pid>/<id>/<kind>/<size>`, `tank/<cid>/<id>/<kind>/<size>/<pid>`, `cast/<pid>` (the fish on the line).
 
 ## Test site (dev branch)
 

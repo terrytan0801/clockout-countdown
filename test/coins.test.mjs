@@ -105,19 +105,8 @@ for (let i = 0; i < 12; i++) { // 12 days of first zaps from Cat: never more tha
 }
 assert.ok(a1 > 0);
 // someone with nothing loses nothing
-const D = await mk("Dee"); await call("POST", "cave", { action: "join", code: cave.code }, D.t);
-assert.equal((await call("POST", "zap", { to: D.id }, B.t)).data.took, 0);
-
-/* ---------- fishing ---------- */
-let f = await call("POST", "coins/fish", { hit: true }, B.t);
-assert.ok(f.data.won >= COINS.fishMin && f.data.won <= COINS.fishMax);
-assert.equal((await call("POST", "coins/fish", { hit: true }, B.t)).status, 409, "once a day");
-assert.equal((await me(B)).did.fish, true);
-f = await call("POST", "coins/fish", { hit: false }, C.t);
-assert.equal(f.data.won, COINS.fishMiss, "it got away: a consolation");
-give(D, 1000); await call("POST", "home", { action: "add", kind: "luckycat", x: 100, y: 900 }, D.t);
-for (let i = 0; i < 15; i++) { clock += 864e5; const won = (await call("POST", "coins/fish", { hit: true }, D.t)).data.won; assert.ok(won >= COINS.luckyMin && won <= COINS.fishMax, `lucky cat: ${won}`); }
-assert.equal((await me(B)).did.fish, false, "a new day");
+const Z = await mk("Zed"); await call("POST", "cave", { action: "join", code: cave.code }, Z.t);
+assert.equal((await call("POST", "zap", { to: Z.id }, B.t)).data.took, 0);
 
 /* ---------- little jobs at home ---------- */
 assert.equal((await call("POST", "coins/act", { what: "water" }, B.t)).status, 404, "no plant yet");
@@ -128,6 +117,7 @@ assert.equal((await call("POST", "coins/act", { what: "water" }, B.t)).status, 4
 assert.equal(await coins(B), b2 + COINS.water);
 assert.equal((await call("POST", "coins/act", { what: "dance" }, B.t)).status, 400);
 assert.deepEqual((await me(B)).did, { fish: false, water: true, pet: false, vend: false });
+const D = await mk("Dee"); await call("POST", "cave", { action: "join", code: cave.code }, D.t);
 
 /* ---------- the shop ---------- */
 const E = await mk("Eve"); await call("POST", "cave", { action: "join", code: cave.code }, E.t); await open(E);
