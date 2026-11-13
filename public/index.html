@@ -171,6 +171,8 @@ body.calm .newsbtn .nmon{animation:none!important}
 .bp-sub{font:700 12px/1.2 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .bp-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .bp-list li{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:5px 8px}
+.bp-list li.legend{border:2px solid #e0b53a;background:#fffaea}
+.bp-list li.legend .nm b::before{content:"✦ ";color:#b07d12}
 .bp-list li.none{display:block;border-style:dashed;color:var(--muted);padding:10px}
 .bp-list svg.fi{width:54px;height:32px}
 .bp-list .nm b{display:block;font-size:13.5px}.bp-list .nm span{font:12px var(--f-mono);color:var(--muted)}
@@ -225,6 +227,9 @@ body.fishing{overflow:hidden}
 .fz-result{position:absolute;left:10%;right:10%;top:7%;bottom:9%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,253,246,.96);border:2.5px solid #1d2b25;border-radius:16px;padding:10px;color:#1d2b25;animation:fzPop .35s cubic-bezier(.2,1.4,.4,1)}
 @keyframes fzPop{from{transform:scale(.5);opacity:0}}
 .fz-catch{flex:1;min-height:0;width:70%;display:flex;justify-content:center}.fz-catch svg{height:100%;width:auto;max-width:100%;display:block}
+.fz-result.legend{background:radial-gradient(circle at 50% 40%,#fffbe6,#ffe9a8);border-color:#b07d12;box-shadow:0 0 0 4px #ffd34d,0 0 28px 8px rgba(255,211,77,.8);animation:fzPop .35s cubic-bezier(.2,1.4,.4,1),fzGlow 1.4s ease-in-out .35s infinite alternate}
+.fz-result.legend b{color:#8a5a00;font-weight:700}
+@keyframes fzGlow{to{box-shadow:0 0 0 4px #ffd34d,0 0 44px 16px rgba(255,211,77,.95)}}
 .fz-result.lost{top:26%;bottom:auto;padding:16px 10px}
 .fz-result b{font:400 clamp(17px,5vw,22px)/1.2 var(--f-display,sans-serif)}
 .fz-result span{font:12.5px var(--f-mono);color:#5a6b64;text-align:center}
@@ -926,7 +931,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
           <li><b>1–10%</b> of someone's coins the first time you zap them each day. They lose what you get.</li>
-          <li><b>Fishing</b> in the yard's pond, twice a day. Sell your catch to Mr. Fishfish (he's in the yard 12–2 pm and 7–10 pm), from 1 coin for a boot to 200 for the golden fish.</li>
+          <li><b>Fishing</b> in the yard's pond, as often as you like. Sell your catch to Mr. Fishfish (he's in the yard 12–2 pm and 7–10 pm), from 1 coin for a boot to 200 for the golden fish, and far more for the 5 legendary fish (under 0.1% each).</li>
           <li><b>+2</b> for watering a plant, <b>+2</b> for petting the cat, <b>+3</b> from the vending machine, once a day each.</li>
           <li>Selling something gives half its price back.</li>
         </ul>
@@ -1013,7 +1018,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v46.0</span>
+    <span>v47.0</span>
   </div>
 </div>
 
@@ -2392,7 +2397,7 @@ function fishShow(kind,title,sub){
   const g=$("fishGame");g.classList.remove("bite","reel");
   $("fzMeter").hidden=true;$("fzBob").hidden=true;$("fzShadow").hidden=true;$("fzText").hidden=true;$("fzString").setAttribute("d","M262 118 L262 132");
   $("fzCatch").innerHTML=kind?fishSvg(kind,""):"";$("fzCatch").hidden=!kind;
-  $("fzName").textContent=title;$("fzSize").textContent=sub;$("fzResult").classList.toggle("lost",!kind);$("fzResult").hidden=false;
+  $("fzName").textContent=title;$("fzSize").textContent=sub;$("fzResult").classList.toggle("lost",!kind);$("fzResult").classList.toggle("legend",!!(kind&&CAVE_HOME.FISH[kind].legend));$("fzResult").hidden=false;
   const b=$("fzBtn");b.classList.remove("held");b.disabled=false;
   const more=!bagFull();fzBagLine();
   b.hidden=!more;b.textContent="Cast again";$("fzDone").hidden=false;
@@ -2407,7 +2412,8 @@ async function fishWon(){
   catch(e){if(!fz) return;fishShow(null,"The line snapped!",e.message||"Try again.");return;}
   if(!fz) return;
   const big=f.kind==="shark"||f.kind==="catfish"||f.kind==="golden";
-  fishShow(f.kind,f.kind==="boot"?"An old boot…":`${big?"WOW! ":""}${info.a==="THE"?"THE ":""}${info.name}!`,
+  if(info.legend&&navigator.vibrate) navigator.vibrate([80,40,80,40,200]);
+  fishShow(f.kind,f.kind==="boot"?"An old boot…":`${info.legend?"LEGENDARY! ":big?"WOW! ":""}${info.a==="THE"?"THE ":""}${info.name}!`,
     f.kind==="boot"?"It's in your bag. Mr. Fishfish will give you a coin for it.":`${f.size} cm · worth ${worth==null?"a few":worth} coins. It's in your bag.`);
 }
 function fishLost(msg){
@@ -2465,7 +2471,7 @@ function renderBag(){
   }
   const row=(f,acts)=>{
     const li=document.createElement("li");li.innerHTML=fishSvg(f.kind)+`<span class="nm"><b></b><span></span></span><span class="acts"></span>`;
-    li.querySelector(".nm b").textContent=CAVE_HOME.FISH[f.kind].name;
+    li.querySelector(".nm b").textContent=CAVE_HOME.FISH[f.kind].name;if(CAVE_HOME.FISH[f.kind].legend) li.classList.add("legend");
     li.querySelector(".nm span").textContent=(f.kind==="boot"?"":f.size+" cm")+(f.worth!=null?`${f.kind==="boot"?"":" · "}${f.worth} coins`:"")+(f.by&&f.by!==S.me.id?` · ${nameOf(f.by)}'s`:"");
     acts.forEach(([label,fn,cls])=>{const b=document.createElement("button");b.type="button";b.textContent=label;if(cls) b.className=cls;b.addEventListener("click",()=>fn(b));li.querySelector(".acts").appendChild(b);});
     return li;
@@ -2477,8 +2483,9 @@ function renderBag(){
     ...(f.kind!=="boot"&&room?[["Aquarium",b=>fishMove(f,true,b)]]:[]),
     ...(here?[[`Sell +${f.worth}`,b=>fishSell([f.id],b),"sell"]]:[]),
   ])));
-  const all=$("bagSellAll"), sum=bag.reduce((n,f)=>n+(f.worth||0),0);
-  all.hidden=!(here&&bag.length>1);all.textContent=`Sell all ${bag.length} for ${sum} coins`;
+  // "Sell all" leaves legendary fish alone, so one can't go by accident; they're sold one at a time
+  const plain=bag.filter(f=>!CAVE_HOME.FISH[f.kind].legend), sum=plain.reduce((n,f)=>n+(f.worth||0),0), all=$("bagSellAll");
+  all.hidden=!(here&&plain.length>1);all.textContent=`Sell all ${plain.length}${plain.length<bag.length?" (not the legendary)":""} for ${sum} coins`;
   const tl=$("tankList");tl.replaceChildren();$("tankTitle").hidden=!homeTank.length;
   if(homeTank.length) $("tankTitle").textContent=`In the aquarium · ${homeTank.length}/${room}`;
   homeTank.slice().sort((a,b)=>(a.by===S.me.id?0:1)-(b.by===S.me.id?0:1)).forEach(f=>tl.appendChild(row(f,f.by===S.me.id?[["Take out",b=>fishMove(f,false,b)]]:[])));
@@ -2505,7 +2512,7 @@ function showBag(on){
 }
 $("bagBtn").addEventListener("click",()=>showBag($("bagPanel").hidden));
 $("bagClose").addEventListener("click",()=>showBag(false));
-$("bagSellAll").addEventListener("click",e=>fishSell(null,e.currentTarget));
+$("bagSellAll").addEventListener("click",e=>fishSell((S.me.bag||[]).filter(f=>!CAVE_HOME.FISH[f.kind].legend).map(f=>f.id),e.currentTarget));
 $("fishfishBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
 (function(){
   const L=$("sceneLayer"), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -3977,10 +3984,10 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v45-coins",v:"v46.0",at:"2026-11-13T14:00",title:"Monster coins, a shop and a pond",changes:[
+  {id:"v45-coins",v:"v47.0",at:"2026-11-13T14:00",title:"Monster coins, a shop and a pond",changes:[
     "Earn monster coins: 50 for every workday (paid at clock-out), a bonus every 5 days in a row, and more for filming on time.",
     "Your first zap of someone each day takes 1 to 10% of their coins.",
-    "Go fishing in the yard: cast, hook, reel. Sell your catch to Mr. Fishfish or keep it in an aquarium.",
+    "Go fishing in the yard: cast, hook, reel. 13 kinds of fish, 5 of them legendary. Sell your catch to Mr. Fishfish or keep it in an aquarium.",
     "The home is now a shop: 33 things to buy, and some of them do something."],panels:[
     {art:"payday",title:"Payday",text:"Every workday you show up pays 50 monster coins at clock-out. Tap the coin button to see your wallet."},
     {art:"loot",title:"Zap and grab",text:"Your first zap of someone each day takes 1 to 10% of their coins. A safe at home keeps half out of reach."},

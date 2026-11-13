@@ -22,7 +22,9 @@ const cave = (await call("POST", "cave", { action: "create", name: "Cave" }, A.t
 await call("POST", "cave", { action: "join", code: cave.code }, B.t);
 
 /* ---------- prices and visits ---------- */
-assert.equal(Object.values(FISH).reduce((n, f) => n + f.w, 0), 100, "the chances add up to 100");
+assert.equal(Object.values(FISH).reduce((n, f) => n + f.w, 0), 10000, "the chances are out of 10,000");
+assert.equal(FISHING.legend.length, 5);
+for (const k of FISHING.legend) assert.ok(FISH[k] && FISH[k].w / 10000 < 0.001, k + " is under 0.1%");
 assert.equal(fishPrice("koi", 25), Math.round(16 * 0.7)); assert.equal(fishPrice("koi", 60), Math.round(16 * 1.3));
 assert.equal(fishPrice("koi", 60, "koi"), Math.round(16 * 1.3 * 2), "double for the fish he's after");
 assert.equal(fishPrice("boot", 25), 1); assert.equal(fishPrice("mermaid", 10), 0);
@@ -31,7 +33,8 @@ assert.deepEqual([v.from, v.until], [SG(10, 12), SG(10, 14)], "at 9 am the next 
 assert.equal(fishmonger(SG(10, 13)).from, SG(10, 12), "he's here at 1 pm");
 assert.deepEqual([fishmonger(SG(10, 15)).from, fishmonger(SG(10, 15)).until], [SG(10, 19), SG(10, 22)]);
 assert.equal(fishmonger(SG(10, 23)).from, SG(11, 12), "after 10 pm: tomorrow's lunch");
-assert.ok(FISH[v.wants] && v.wants !== "boot" && v.wants !== "golden");
+assert.ok(FISH[v.wants] && v.wants !== "boot" && v.wants !== "golden" && !FISHING.legend.includes(v.wants));
+for (let d = 0; d < 60; d++) assert.ok(!FISHING.legend.includes(fishmonger(SG(10, 9) + d * 864e5).wants), "he never asks for a legendary fish");
 assert.equal(fishmonger(SG(10, 9)).wants, fishmonger(SG(10, 20)).wants, "the same wish all day");
 
 /* ---------- casting and landing ---------- */

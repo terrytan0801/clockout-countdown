@@ -84,19 +84,18 @@ export const HOME_MAX = 60;
 // Fishing (v45). Each cast hooks one fish, decided by the server; land it and it goes in your bag.
 // w: how common (out of the total), cm: smallest and largest, coins: what Mr. Fishfish pays for a middling one,
 // hard: 1 easy .. 5 very hard to reel in (the app uses it for the reeling game).
-export const FISH = {
-  boot:    { w: 12, cm: [25, 25],   coins: 1,   hard: 1 },
-  tadpole: { w: 30, cm: [3, 8],     coins: 4,   hard: 1 },
-  carp:    { w: 24, cm: [20, 45],   coins: 9,   hard: 2 },
-  koi:     { w: 14, cm: [25, 60],   coins: 16,  hard: 2 },
-  puffer:  { w: 9,  cm: [15, 35],   coins: 24,  hard: 3 },
-  catfish: { w: 6,  cm: [50, 110],  coins: 35,  hard: 4 },
-  shark:   { w: 3,  cm: [90, 160],  coins: 70,  hard: 5 },
-  golden:  { w: 2,  cm: [20, 40],   coins: 150, hard: 5 },
+export const FISH = {   // w = chance out of 10,000 casts
+  boot: { w: 1200, cm: [25, 25], coins: 1, hard: 1 }, tadpole: { w: 2985, cm: [3, 8], coins: 4, hard: 1 }, carp: { w: 2400, cm: [20, 45], coins: 9, hard: 2 },
+  koi: { w: 1400, cm: [25, 60], coins: 16, hard: 2 }, puffer: { w: 900, cm: [15, 35], coins: 24, hard: 3 }, catfish: { w: 600, cm: [50, 110], coins: 35, hard: 4 },
+  shark: { w: 300, cm: [90, 160], coins: 70, hard: 5 }, golden: { w: 200, cm: [20, 40], coins: 150, hard: 5 },
+  // legendary (v47): each under 0.1%
+  dragon: { w: 5, cm: [60, 120], coins: 400, hard: 5 }, ghost: { w: 4, cm: [30, 70], coins: 500, hard: 5 }, coela: { w: 3, cm: [100, 200], coins: 700, hard: 5 },
+  kraken: { w: 2, cm: [40, 90], coins: 900, hard: 5 }, cosmic: { w: 1, cm: [50, 100], coins: 1500, hard: 5 },
 };
 export const FISHING = {
   bag: 24,             // fish a bag holds
-  rare: ["catfish", "shark", "golden"], // a lucky cat at home doubles the chance of these, and you never hook a boot
+  rare: ["catfish", "shark", "golden"],  // a lucky cat at home doubles the chance of these, and you never hook a boot
+  legend: ["dragon", "ghost", "coela", "kraken", "cosmic"],  // legendary: under 0.1% each, lucky cat or not
   tank: { aquarium: 3, bigtank: 8 },     // fish each aquarium holds
   visits: [[12 * 60, 14 * 60], [19 * 60, 22 * 60]], // when Mr. Fishfish is in the yard (minutes of the day, Singapore time)
   wantsBonus: 2,       // he pays double for the fish he's after that day
@@ -111,7 +110,7 @@ export function fishPrice(kind, size, wants) {
 // Mr. Fishfish's visit that is on now, or the next one: { from, until, wants } (times in ms).
 export function fishmonger(t) {
   const hash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; };
-  const wanted = Object.keys(FISH).filter((k) => k !== "boot" && k !== "golden");
+  const wanted = Object.keys(FISH).filter((k) => k !== "boot" && k !== "golden" && !FISHING.legend.includes(k));
   for (let d = 0; d < 2; d++) {
     const day = sgDay(t + d * 864e5), start = dayStartMs(day);
     for (const [a, b] of FISHING.visits) {

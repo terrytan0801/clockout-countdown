@@ -1,4 +1,4 @@
-# Clock-out Countdown · v46.0
+# Clock-out Countdown · v47.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -195,8 +195,13 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 | Catfish | 50-110 cm | about 35 | 6% |
 | Shark | 90-160 cm | about 70 | 3% |
 | Golden fish | 20-40 cm | about 150 | 2% |
+| **Legendary (v47):** Rainbow dragonfish | 60-120 cm | about 400 | 0.05% |
+| Ghost fish | 30-70 cm | about 500 | 0.04% |
+| Coelacanth | 100-200 cm | about 700 | 0.03% |
+| Baby kraken | 40-90 cm | about 900 | 0.02% |
+| Cosmic fish | 50-100 cm | about 1,500 | 0.01% |
 
-A fish's worth grows with its size (0.7 to 1.3 times the figure above).
+Together the legendary fish come up about once in 670 casts; a lucky cat doesn't change their odds, and Mr. Fishfish never asks for one as his fish of the day. A fish's worth grows with its size (0.7 to 1.3 times the figure above).
 
 **The bag** (button next to Shop) holds up to 24 fish. From it a fish can be sold or moved into an aquarium.
 
