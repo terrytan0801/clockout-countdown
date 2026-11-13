@@ -21,6 +21,8 @@ const give = (who, n) => store._m.set(`led/${who.id}/${String(clock).padStart(13
 const A = await mk("Ann"), B = await mk("Ben"), C = await mk("Cat");
 const cave = (await call("POST", "cave", { action: "create", name: "Cave" }, A.t)).data.cave;
 for (const x of [B, C]) await call("POST", "cave", { action: "join", code: cave.code }, x.t);
+// Monsters are random at sign-up; a Fluff's Cloud Shield (v50) would change the zap numbers, so nobody here is a Fluff.
+for (const x of [A, B, C]) { const p = JSON.parse(store._m.get(`person/${x.id}`)); p.monster = 0; store._m.set(`person/${x.id}`, JSON.stringify(p)); }
 
 /* ---------- welcome coins, then wages ---------- */
 assert.equal(await coins(A), 0, "nothing until the app has been opened");

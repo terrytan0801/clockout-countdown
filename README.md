@@ -1,4 +1,4 @@
-# Clock-out Countdown · v49.0
+# Clock-out Countdown · v50.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -46,7 +46,7 @@ Every monster has a power that levels up with a streak of **workdays** (Mon–Fr
 | Cyclo | All-Seeing Eye | see who's in the app now | see who read the chat | see who left last this week |
 | Tako | Ink Notes | 1 note on the cave board | 2 notes | 3 notes, pin one for a week |
 | Mush | Spore Cheer | 1 cheer a day, mushrooms on their card | 3 a day | 5 a day, bigger mushrooms |
-| Fluff | Weather Eye | weather at your clock-out time (set your city) | rain alert push 25–45 min before you leave | 3-day forecast |
+| Fluff | Cloud Shield (v50) + Weather Eye | zaps take 20% less of your coins; weather at your clock-out time (set your city) | 40% less; rain alert push 25–45 min before you leave | first grab each day blocked; 3-day forecast |
 | Dino | Roar | roar to the cave when you leave (push + banner) | write your own roar | roar with sound |
 | Noodle, Spike, Bun, Chomp | coming soon | | | |
 
@@ -180,6 +180,21 @@ Everyone has a wallet of monster coins (the coin button next to Home opens it, w
 **The shop.** Everything in the home is bought with coins (33 things, 30 to 600 coins); selling gives half back. Anyone can move or flip a thing, only its buyer can sell it; things left by someone who moved out can be cleared by anyone, and things placed before v44 stay and can be removed by their owner for nothing. Some things do something while they're in the home: **coffee machine** (+10 on your wage), **safe** (zaps only reach half your coins), **lucky cat** (no boots on the line, rare fish twice as likely), **aquarium** and **big fish tank** (hold 3 and 8 fish), **vending machine** (+3 a day for everyone), **crystal ball** (a daily fortune), **jukebox** (plays lofi), plant and cat (+2 a day).
 
 All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs`. Each wallet is a ledger of lines (`led/<pid>/<id>/<amount>/<why>`), so the balance is a sum and two payments at once can't lose coins; old lines are folded into `coinbase/<pid>`. Once-only payments are claimed under `paid/<pid>/<day>/<what>`.
+
+## The village (v50)
+
+**Village** (next to Bag on the Home screen) opens a map: the cave in the middle and four lots around it. Each building is paid for by the whole cave together: anyone chips in any amount (`village/donate`), and once it's fully paid for it takes a day to build (a minute on the test site), then it's open for everyone in the cave. Donations are listed on the building, biggest first.
+
+| Building | Coins | What it does |
+|---|---|---|
+| Weather station | 2,000 | Everyone who sets a city gets the weather: at their clock-out time on their card, a rain alert 25-45 min before they leave, and a 3-day forecast (Fluff's old Weather Eye, for everyone) |
+| Farm | 3,000 | 6 plots. Seeds: radish 10 (4 h), tomato 25 (1 day), pumpkin 60 (3 days), monster flower 150 (7 days). A crop not watered for 24 hours before it's ripe dies; anyone can water anyone's (+2 coins once a day per crop for helping) and clear dead ones. Only the planter picks; a pick is 1-3 stars (70/25/5%), worth 1x/1.5x/2.5x: radish 22, tomato 60, pumpkin 170, monster flower 520 for 1 star. Crops go in the bag and sell to **Mr. Veggie**, in the yard 8-10 am and 5-7 pm, double for his crop of the day |
+| Harbor | 4,000 | Fishing at sea: squid, tuna, swordfish, anglerfish and whale shark (sea only), plus sharks, puffers, golden fish and legendary fish a little likelier than in the pond (still under 0.1% each); chances in `SEA`. Mr. Fishfish lives at the harbor and buys fish all day |
+| Cinema | 5,000 | This week's (or last week's) clips played back to back on the phone: a title card, each day as in the Days player, then credits with everyone's clip count |
+
+**Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
+
+Keys: `don/<cid>/<building>/<id>/<pid>/<coins>`, `built/<cid>/<building>/<openAt>`, `plot/<cid>/<n>/<id>/<crop>/<pid>/<plantedAt>`, `pw/<cid>/<cropId>/<at>/<pid>`; crops share the bag with fish (`bag/<pid>/<id>/<crop>/<stars>`). The test site also has a **+5000** coins button. Tests: `test/village.test.mjs`.
 
 **Zap speed (v49).** A zap reads everything it needs in one go (who, cooldown, welcome, safe, their coins, their phones), saves in one go and answers; the buzz is sent after the answer (in the background). With the functions in the US and the data in Singapore that's about 3 trips instead of about 8: roughly 0.7 s instead of 3 s or more before the phone shows the coins taken. `sent` in the answer is now the number of phones on file rather than the number the buzz reached.
 

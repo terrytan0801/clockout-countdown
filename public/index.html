@@ -160,6 +160,68 @@ body.calm .newsbtn .nmon{animation:none!important}
 .fishfish{position:absolute;left:79.5%;top:87.5%;width:11.5%;aspect-ratio:1;transform:translate(-50%,-100%);z-index:2390;border:0;background:transparent;padding:0;cursor:pointer}
 .fishfish svg{width:100%;height:100%;display:block;animation:ffbob 2s ease-in-out infinite}
 .fishfish span{top:-22%}
+.fishfish.veg{left:66%;top:89%}
+.cscene.editing .fishfish.veg{display:none}
+/* v50: the village */
+.village{display:grid;gap:10px}
+.vscene{position:relative;aspect-ratio:4/3;border:2px solid var(--ink);border-radius:16px;overflow:hidden;isolation:isolate;background:#7cc96a}
+.vbg,.vbg svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.vlot{position:absolute;width:26%;aspect-ratio:1.2;transform:translate(-50%,-78%);border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vlot svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 0 rgba(0,0,0,.08))}
+.vlot.sel svg{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 6px #ffd34d)}
+.vlot b{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);white-space:nowrap;font:700 10px/1 var(--f-mono);background:#fff;border:1.5px solid var(--ink);color:var(--ink);padding:3px 6px;border-radius:999px}
+.vlot i{position:absolute;left:12%;right:12%;bottom:14px;height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden;font-style:normal}
+.vlot i u{position:absolute;left:0;top:0;bottom:0;background:#ffd34d;text-decoration:none}
+.vlot.open b{background:#ffd34d}
+.vlot.building b{background:#ffe0b2}
+.vcard{border:2px solid var(--ink);background:var(--card);border-radius:14px;padding:12px;display:grid;gap:10px;font-size:13.5px}
+.vcard h3{margin:0;font:400 20px/1.1 var(--f-display)}
+.vcard .vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.vcard .vtop button{border:0;background:transparent;font-size:16px;cursor:pointer;color:var(--ink);padding:2px 4px}
+.vcard p{margin:0}
+.vcard .vwhat{color:var(--muted)}
+.vbar{height:14px;border-radius:7px;background:var(--line);overflow:hidden;position:relative}
+.vbar u{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffd34d,#f2a900);text-decoration:none}
+.vnums{display:flex;justify-content:space-between;font:700 12px/1.2 var(--f-mono)}
+.vgive{display:flex;flex-wrap:wrap;gap:6px}
+.vgive button,.vgive input{font:700 13px/1 var(--f-mono);border:1.5px solid var(--ink);border-radius:999px;background:#fff8dc;color:#5a3d00;padding:9px 12px;cursor:pointer}
+.vgive input{width:6.5em;background:var(--card);color:var(--ink);cursor:text}
+.vgive button.go{background:var(--ink);color:var(--card)}
+.vdonors{list-style:none;margin:0;padding:0;display:grid;gap:4px;font:12.5px/1.3 var(--f-mono)}
+.vdonors li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:2px 0}
+.vdonors li:first-child b::before{content:"👑 "}
+.vacts{display:flex;flex-wrap:wrap;gap:8px}
+.vwx{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.vwx div{border:1.5px solid var(--line);border-radius:10px;padding:6px;text-align:center;font:12px/1.3 var(--f-mono)}
+.vwx b{display:block;font-size:14px}
+.vwx svg{width:30px;height:30px;display:block;margin:0 auto}
+/* the farm */
+.farm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.plot{border:1.5px solid var(--line);border-radius:12px;background:#f3ead9;padding:4px 4px 6px;display:grid;gap:3px;justify-items:center;text-align:center;font:11.5px/1.2 var(--f-mono);cursor:pointer;color:var(--ink)}
+.plot svg{width:100%;max-width:84px;aspect-ratio:1;display:block}
+.plot.sel{border-color:var(--ink);box-shadow:0 0 0 2px #ffd34d}
+.plot.thirsty{background:#fde7d3}
+.plot.ripe{background:#e8f5d8}
+.plot.dead{background:#e6e0dc;color:var(--muted)}
+.plot small{color:var(--muted);font-size:10.5px}
+.seeds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seeds button{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:6px;text-align:left;border:1.5px solid var(--ink);border-radius:10px;background:var(--card);color:var(--ink);padding:5px 8px;cursor:pointer;font:12px/1.25 var(--f-mono)}
+.seeds button svg{width:44px;height:27px}
+.seeds button:disabled{opacity:.45;cursor:default}
+.bp-ff.veg{background:#eef7e3;color:#33531a}
+.bp-ff.veg.here{background:#fff8dc;color:#5a3d00;border:1.5px solid #b07d12}
+/* the cinema */
+.cine{position:fixed;inset:0;z-index:9100;background:#120d18;color:#fff;display:flex;flex-direction:column;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px max(14px,env(safe-area-inset-bottom))}
+.cine-top{display:flex;justify-content:space-between;align-items:center}
+.cine-top b{font:400 20px/1.1 var(--f-display)}
+.cine-top button{border:0;background:rgba(255,255,255,.14);color:#fff;width:40px;height:40px;border-radius:50%;font-size:16px;cursor:pointer}
+.cine-screen{position:relative;flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
+.cine-screen canvas{max-width:100%;max-height:100%;aspect-ratio:9/16;border-radius:12px;background:#000;box-shadow:0 0 0 3px #3a2a4a,0 10px 40px rgba(0,0,0,.6)}
+.cine-play{position:absolute;left:50%;top:76%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:50%;border:3px solid #fff;background:rgba(198,40,40,.9);color:#fff;font-size:32px;cursor:pointer}
+.cine-sub{margin:0;text-align:center;font:12.5px/1.4 var(--f-mono);color:#d8cfe6;min-height:1.4em}
+.cine-tabs{display:flex;justify-content:center;gap:8px}
+.cine-tabs button{font:700 13px/1 var(--f-mono);border:1.5px solid #fff;border-radius:999px;background:transparent;color:#fff;padding:9px 14px;cursor:pointer}
+.cine-tabs button[aria-pressed="true"]{background:#fff;color:#120d18}
 @keyframes ffbob{50%{transform:translateY(-3%) rotate(2deg)}}
 .home-btns{display:flex;gap:8px}
 #bagBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
@@ -910,6 +972,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <div class="home-head">
       <div><h2 id="homeTitle">Home</h2><p class="home-sub" id="homeSub">Everyone comes home here after work.</p></div>
       <div class="home-btns">
+        <button class="btn ghost" id="villBtn" type="button" aria-pressed="false">Village</button>
         <button class="btn ghost" id="bagBtn" type="button" aria-pressed="false">Bag<span id="bagCount"></span></button>
         <button class="btn ghost" id="decoBtn" type="button" aria-pressed="false">Shop</button>
       </div>
@@ -917,8 +980,10 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <div class="bagpanel" id="bagPanel" hidden>
       <div class="w-top"><b class="bp-title" id="bagTitle">Bag</b><button type="button" id="bagClose" aria-label="Close">✕</button></div>
       <p class="bp-ff" id="bagFishfish"></p>
+      <p class="bp-ff veg" id="bagVeggie" hidden></p>
       <ul class="bp-list" id="bagList"></ul>
       <button class="btn primary" id="bagSellAll" type="button" hidden>Sell all</button>
+      <button class="btn primary" id="bagSellCrops" type="button" hidden>Sell all crops</button>
       <b class="bp-sub" id="tankTitle" hidden>In the aquarium</b>
       <ul class="bp-list" id="tankList"></ul>
     </div>
@@ -937,6 +1002,10 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
         </ul>
       </details>
     </div>
+    <div class="village" id="villView" hidden>
+      <div class="vscene" id="villScene"><div class="vbg" id="villBg"></div><div id="villLots"></div></div>
+      <div class="vcard" id="villCard" hidden></div>
+    </div>
     <div class="cscene" id="caveScene">
       <div class="scene-bg" id="sceneBg"></div>
       <div class="scene-layer" id="sceneLayer"></div>
@@ -944,6 +1013,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       <button class="pond" id="pondBtn" type="button" aria-label="Go fishing"><span id="pondTag">Fish!</span></button>
       <div class="hm-tip" id="hmTip" hidden></div>
       <button class="fishfish" id="fishfishBtn" type="button" aria-label="Mr. Fishfish buys fish" hidden><span>Fish?</span></button>
+      <button class="fishfish veg" id="veggieBtn" type="button" aria-label="Mr. Veggie buys crops" hidden><span>Veggies?</span></button>
       <div class="fishgame" id="fishGame" hidden>
         <div class="fz-top"><span id="fzCasts"></span><button type="button" id="fzClose" aria-label="Stop fishing">✕</button></div>
         <div class="fz-stage">
@@ -1018,7 +1088,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v49.0</span>
+    <span>v50.0</span>
   </div>
 </div>
 
@@ -1316,12 +1386,19 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="busymon" id="busyMon" role="status" aria-live="polite" hidden><div class="stage" id="busyStage"></div><b id="busyText">Saving<i>…</i></b></div>
 <div class="rxpick" id="rxPick" role="menu" aria-label="React to this message" hidden></div>
-<div class="devpill" data-html2canvas-ignore><span>DEV · test site</span><button type="button" id="devRing">Ring now</button></div>
+<div class="devpill" data-html2canvas-ignore><span>DEV · test site</span><button type="button" id="devRing">Ring now</button><button type="button" id="devCoins">+5000</button></div>
+<div class="cine" id="cineView" hidden>
+  <div class="cine-top"><b id="cineTitle">This week's movie</b><button type="button" id="cineClose" aria-label="Leave the cinema">✕</button></div>
+  <div class="cine-screen"><canvas id="cineCv" width="720" height="1280"></canvas><button type="button" class="cine-play" id="cinePlay" aria-label="Play">▶</button></div>
+  <p class="cine-sub" id="cineSub"></p>
+  <div class="cine-tabs" id="cineTabs"><button type="button" data-w="0" aria-pressed="true">This week</button><button type="button" data-w="1" aria-pressed="false">Last week</button></div>
+</div>
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
 <script src="/monsters.js"></script>
 <script src="/monster-props.js"></script>
 <script src="/cave-home.js"></script>
+<script src="/village.js"></script>
 <script>
 "use strict";
 /* ================= constants & helpers ================= */
@@ -1736,7 +1813,8 @@ async function zap(p,el,btn){
     delete pendingZaps[p.id];
     if(S&&S.cave) S.cave.zaps[p.id]=d.at;
     if(d.took){S.me.coins=(S.me.coins||0)+d.took;renderCoins(); // the coin count moves now; the full check follows
-      toast(`Zapped ${p.name}! You took ${d.took} of their monster coins.`,4500);refresh();}
+      toast(`Zapped ${p.name}! You took ${d.took} of their monster coins.${d.shield?` Their cloud shield saved ${d.shield}.`:""}`,4500);refresh();}
+    else if(d.shield) toast(`Zapped ${p.name}! Their cloud shield blocked the grab.`,4500);
     else if(d.took===0&&d.sent>=1) toast(`Zapped ${p.name}! They're nearly broke, so there were no coins to take.`,4500);
     else if(d.sent<1) toast(`${p.name} hasn't turned on zaps yet, so nothing buzzed.`);
     else if(!d.buzz) toast(`Zapped ${p.name}. They turned buzzing off, so it arrived quietly.`);
@@ -2055,7 +2133,7 @@ function openHome(){
   clearInterval(homeTimer);
   homeTimer=setInterval(()=>{
     if(view!=="home"){clearInterval(homeTimer);homeTimer=null;return;}
-    if(awake()){loadHome();renderHomeMons();drawSceneBg();renderBag();}
+    if(awake()){loadHome();renderHomeMons();drawSceneBg();renderBag();if(!$("villView").hidden) loadVillage(true);}
   },8000);
 }
 const sceneNight=()=>{const n=sgNow();return n.h>=19||n.h<7;};
@@ -2157,6 +2235,7 @@ function showDecoTools(){
   del.hidden=!mine&&!!owner;del.textContent=mine?(back?`Sell +${back}`:"Remove"):"Clear";
 }
 function setDecoEdit(on){
+  if(on&&!$("villView").hidden) showVillage(false);
   homeEdit=on;$("caveScene").classList.toggle("editing",on);$("tray").hidden=!on;
   $("decoBtn").setAttribute("aria-pressed",String(on));$("decoBtn").textContent=on?"Done":"Shop";
   if(on) buildTray();else homeSel=null;
@@ -2332,14 +2411,15 @@ function closeFish(){
   }
   fz=null;g.hidden=true;document.body.classList.remove("fishing");refresh();
 }
-function openFish(){
-  if(homeEdit) return;
+function openFish(spot){
+  if(homeEdit&&spot!=="sea") return;
+  spot=spot==="sea"?"sea":"pond";
   if((S.me.bag||[]).length>=(S.bagMax||24)){tipAt($("pondBtn"),"Your bag is full. Sell some fish or put them in an aquarium.","9%",4000);return;}
   const g=$("fishGame");if(g.parentNode!==document.body) document.body.appendChild(g); // out of the cave card: full screen
   g.className="fishgame"+(sceneNight()?" night":"");g.hidden=false;document.body.classList.add("fishing");
-  $("fzBg").innerHTML=CAVE_HOME.pond(sceneNight());
+  $("fzBg").innerHTML=spot==="sea"?VILLAGE.sea(sceneNight()):CAVE_HOME.pond(sceneNight());
   $("fzMon").replaceChildren(monEl(S.me.monster,S.me.color,"","back"));
-  fz={state:"idle"};fishIdle("Cast your line into the pond.");
+  fz={state:"idle",spot};fishIdle(spot==="sea"?"Cast your line into the sea.":"Cast your line into the pond.");
 }
 const bagFull=()=>(S.me.bag||[]).length>=(S.bagMax||24);
 function fzBagLine(){$("fzCasts").textContent=`Bag ${(S.me.bag||[]).length}/${S.bagMax||24}`;}
@@ -2356,7 +2436,7 @@ function fishIdle(text){
 async function fishCast(){
   fz.state="casting";const b=$("fzBtn");b.disabled=true;$("fzText").textContent="Casting…";$("fzResult").hidden=true;$("fzText").hidden=false;$("fzDone").hidden=true;
   let d;
-  try{d=await api("fish/cast",{});}
+  try{d=await api("fish/cast",{spot:fz.spot});}
   catch(e){if(!fz) return;fz.state="over";$("fzText").textContent=e.message||"The line tangled. Try again.";b.hidden=true;$("fzDone").hidden=false;return;}
   if(!fz) return;
   fz.fish=d;$("fzHint").textContent="Tap anywhere when the float dips.";
@@ -2449,7 +2529,7 @@ function fishLost(msg){
   document.addEventListener("keydown",e=>{if(fz&&!$("fishGame").hidden&&(e.code==="Space"||e.key==="Enter")&&!e.repeat){press(e);}});
   document.addEventListener("keyup",e=>{if(fz&&(e.code==="Space"||e.key==="Enter")) release();});
 })();
-$("pondBtn").addEventListener("click",openFish);
+$("pondBtn").addEventListener("click",()=>openFish("pond"));
 $("fzClose").addEventListener("click",closeFish);
 $("fzDone").addEventListener("click",closeFish);
 
@@ -2461,10 +2541,19 @@ function renderBag(){
   const bag=S.me.bag||[], here=ffHere(), ff=S.fishfish;
   $("bagCount").textContent=bag.length?" · "+bag.length:"";
   const fb=$("fishfishBtn");if(fb){if(here&&!fb.firstElementChild.matches("svg")) fb.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 100 100" aria-hidden="true">${CAVE_HOME.FISHFISH}</svg>`);fb.hidden=!here;}
+  const crops=bag.filter(f=>f.crop), vh=vegHere(), farmOn=isBuilt("farm")||crops.length>0, vb=$("veggieBtn");
+  if(vb){if(vh&&farmOn&&!vb.firstElementChild.matches("svg")) vb.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 100 100" aria-hidden="true">${VILLAGE.VEGGIE}</svg>`);vb.hidden=!(vh&&farmOn);}
   if($("bagPanel").hidden) return;
-  $("bagTitle").textContent=`Bag · ${bag.length}/${S.bagMax||24} fish`;
+  $("bagTitle").textContent=`Bag · ${bag.length}/${S.bagMax||24}`;
+  const vl=$("bagVeggie"), vg=S.veggie;vl.hidden=!farmOn;vl.classList.toggle("here",vh);
+  if(farmOn&&vg){
+    const vw=VILLAGE.CROPS[vg.wants]?VILLAGE.CROPS[vg.wants].name.toLowerCase():"";
+    vl.textContent=vh?(vg.allDay?`Mr. Veggie is in the yard all day. Today he pays double for ${vw}.`:`Mr. Veggie is in the yard until ${sgClock(vg.until)}. Today he pays double for ${vw}.`)
+      :`Mr. Veggie buys crops. He's next in the yard at ${sgClock(vg.from)}${sgParts(vg.from).day!==sgParts(clockNow()).day?" tomorrow":""} (8–10 am and 5–7 pm every day).`;
+  }
   const line=$("bagFishfish");line.classList.toggle("here",here);
   if(!ff) line.textContent="Mr. Fishfish buys fish when he visits the yard.";
+  else if(ff.allDay&&isBuilt("harbor")) line.textContent=`Mr. Fishfish lives at the harbor now and buys fish all day. Today he pays double for ${CAVE_HOME.FISH[ff.wants]?CAVE_HOME.FISH[ff.wants].name.toLowerCase():"fish"}.`;
   else{
     const want=CAVE_HOME.FISH[ff.wants]?CAVE_HOME.FISH[ff.wants].name.toLowerCase():"";
     const tomorrow=sgParts(ff.from).day!==sgParts(clockNow()).day;
@@ -2472,22 +2561,27 @@ function renderBag(){
       :`Mr. Fishfish buys fish. He's next in the yard at ${sgClock(ff.from)}${tomorrow?" tomorrow":""} (12–2 pm and 7–10 pm every day).`;
   }
   const row=(f,acts)=>{
-    const li=document.createElement("li");li.innerHTML=fishSvg(f.kind)+`<span class="nm"><b></b><span></span></span><span class="acts"></span>`;
-    li.querySelector(".nm b").textContent=CAVE_HOME.FISH[f.kind].name;if(CAVE_HOME.FISH[f.kind].legend) li.classList.add("legend");
-    li.querySelector(".nm span").textContent=(f.kind==="boot"?"":f.size+" cm")+(f.worth!=null?`${f.kind==="boot"?"":" · "}${f.worth} coins`:"")+(f.by&&f.by!==S.me.id?` · ${nameOf(f.by)}'s`:"");
+    const crop=!!VILLAGE.CROPS[f.kind]&&!CAVE_HOME.FISH[f.kind];
+    const li=document.createElement("li");li.innerHTML=(crop?cropSvg(f.kind):fishSvg(f.kind))+`<span class="nm"><b></b><span></span></span><span class="acts"></span>`;
+    li.querySelector(".nm b").textContent=crop?VILLAGE.CROPS[f.kind].name:CAVE_HOME.FISH[f.kind].name;if(!crop&&CAVE_HOME.FISH[f.kind].legend) li.classList.add("legend");
+    li.querySelector(".nm span").textContent=crop?`${"★".repeat(f.size)} · ${f.worth} coins`:(f.kind==="boot"?"":f.size+" cm")+(f.worth!=null?`${f.kind==="boot"?"":" · "}${f.worth} coins`:"")+(f.by&&f.by!==S.me.id?` · ${nameOf(f.by)}'s`:"");
     acts.forEach(([label,fn,cls])=>{const b=document.createElement("button");b.type="button";b.textContent=label;if(cls) b.className=cls;b.addEventListener("click",()=>fn(b));li.querySelector(".acts").appendChild(b);});
     return li;
   };
   const room=homeItems.reduce((n,i)=>n+(TANK_ROOM[i.kind]||0),0);
   const list=$("bagList");list.replaceChildren();
-  if(!bag.length){const li=document.createElement("li");li.className="none";li.textContent="No fish yet. Tap the pond in the yard to go fishing.";list.appendChild(li);}
-  bag.slice().sort((a,b)=>(b.worth||0)-(a.worth||0)).forEach(f=>list.appendChild(row(f,[
+  if(!bag.length){const li=document.createElement("li");li.className="none";li.textContent=farmOn?"Nothing yet. Fish in the pond, or grow crops on the village farm.":"No fish yet. Tap the pond in the yard to go fishing.";list.appendChild(li);}
+  bag.slice().sort((a,b)=>(b.worth||0)-(a.worth||0)).forEach(f=>list.appendChild(row(f,f.crop?[
+    ...(vh?[[`Sell +${f.worth}`,b=>cropSell([f.id],b),"sell"]]:[]),
+  ]:[
     ...(f.kind!=="boot"&&room?[["Aquarium",b=>fishMove(f,true,b)]]:[]),
     ...(here?[[`Sell +${f.worth}`,b=>fishSell([f.id],b),"sell"]]:[]),
   ])));
   // "Sell all" leaves legendary fish alone, so one can't go by accident; they're sold one at a time
-  const plain=bag.filter(f=>!CAVE_HOME.FISH[f.kind].legend), sum=plain.reduce((n,f)=>n+(f.worth||0),0), all=$("bagSellAll");
-  all.hidden=!(here&&plain.length>1);all.textContent=`Sell all ${plain.length}${plain.length<bag.length?" (not the legendary)":""} for ${sum} coins`;
+  const fishes=bag.filter(f=>!f.crop), plain=fishes.filter(f=>!CAVE_HOME.FISH[f.kind].legend), sum=plain.reduce((n,f)=>n+(f.worth||0),0), all=$("bagSellAll");
+  all.hidden=!(here&&plain.length>1);all.textContent=`Sell all ${plain.length}${plain.length<fishes.length?" (not the legendary)":""} fish for ${sum} coins`;
+  const ca=$("bagSellCrops"), csum=crops.reduce((n,f)=>n+(f.worth||0),0);
+  ca.hidden=!(vh&&crops.length>1);ca.textContent=`Sell all ${crops.length} crops for ${csum} coins`;
   const tl=$("tankList");tl.replaceChildren();$("tankTitle").hidden=!homeTank.length;
   if(homeTank.length) $("tankTitle").textContent=`In the aquarium · ${homeTank.length}/${room}`;
   homeTank.slice().sort((a,b)=>(a.by===S.me.id?0:1)-(b.by===S.me.id?0:1)).forEach(f=>tl.appendChild(row(f,f.by===S.me.id?[["Take out",b=>fishMove(f,false,b)]]:[])));
@@ -2514,8 +2608,268 @@ function showBag(on){
 }
 $("bagBtn").addEventListener("click",()=>showBag($("bagPanel").hidden));
 $("bagClose").addEventListener("click",()=>showBag(false));
-$("bagSellAll").addEventListener("click",e=>fishSell((S.me.bag||[]).filter(f=>!CAVE_HOME.FISH[f.kind].legend).map(f=>f.id),e.currentTarget));
+$("bagSellAll").addEventListener("click",e=>fishSell((S.me.bag||[]).filter(f=>!f.crop&&!CAVE_HOME.FISH[f.kind].legend).map(f=>f.id),e.currentTarget));
 $("fishfishBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
+
+/* ================= the village (v50): buildings the cave pays for together ================= */
+const BUILD_INFO={
+  weather:"Weather for everyone in the cave: the forecast at your clock-out time on your card, a rain alert before you leave, and 3 days ahead. Set your city in your account.",
+  farm:"Six plots for the whole cave. Buy seeds, plant them and keep them watered: a day without water and they die. Watering someone else's crop pays 2 coins. Sell what you pick to Mr. Veggie.",
+  harbor:"Fish at sea: squid, tuna, swordfish, anglerfish and the huge whale shark, and better odds on legendary fish. Mr. Fishfish moves in and buys fish all day.",
+  cinema:"Every week's clips played back to back as one movie, with a title card and credits.",
+};
+const LOT_AT={weather:[24,45],cinema:[76,45],farm:[27,77],harbor:[83,88]};
+let village=null, villSel=null, farm=null, farmSel=null;
+const SEED_PRICE={radish:10,tomato:25,pumpkin:60,monflower:150}; // same as CROPS on the server
+const mkEl=(tag,cls,text)=>{const e=document.createElement(tag);if(cls) e.className=cls;if(text!=null) e.textContent=text;return e;};
+const builtAt=k=>(S&&S.cave&&S.cave.built&&S.cave.built[k])||(village&&village[k]&&village[k].openAt)||null;
+const isBuilt=k=>{const at=builtAt(k);return !!at&&at<=clockNow();};
+const lotState=k=>isBuilt(k)?"open":builtAt(k)?"building":"fund";
+const durText=ms=>{const m=Math.max(1,Math.ceil(ms/60000)),h=Math.floor(m/60),d=Math.floor(h/24);return d>=2?`${d} days`:h?`${h}h ${m%60}m`:`${m}m`;};
+function showVillage(on){
+  if(on&&homeEdit) setDecoEdit(false);
+  $("villView").hidden=!on;$("caveScene").hidden=on;$("villBtn").setAttribute("aria-pressed",String(on));
+  if(on){showBag(false);$("walletPanel").hidden=true;$("villBg").innerHTML=VILLAGE.map(sceneNight());renderVillage();loadVillage();}
+  else{villSel=null;farmSel=null;$("villCard").hidden=true;}
+}
+$("villBtn").addEventListener("click",()=>showVillage($("villView").hidden));
+async function loadVillage(quiet){
+  try{const d=await api("village");village=d.village;renderVillage();if(villSel==="farm"&&isBuilt("farm")) loadFarm(true);}
+  catch(e){if(!quiet&&e.status!==401) toast(e.message);}
+}
+function renderVillage(){
+  if($("villView").hidden) return;
+  const box=$("villLots");box.replaceChildren();
+  Object.keys(BUILD_INFO).forEach(k=>{
+    const st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD;
+    const el=mkEl("button","vlot "+st+(villSel===k?" sel":""));el.type="button";el.setAttribute("aria-label",B[k].name);
+    el.style.left=LOT_AT[k][0]+"%";el.style.top=LOT_AT[k][1]+"%";
+    el.innerHTML=`<svg viewBox="0 0 120 100" aria-hidden="true">${(st==="open"?B[k]:st==="building"?B.scaffold:B.lot).svg}</svg>`;
+    if(st==="fund"){const i=mkEl("i"),u=mkEl("u");u.style.width=(b?Math.min(100,b.raised/b.price*100):0)+"%";i.appendChild(u);el.appendChild(i);}
+    const short={weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema"}[k];
+    el.appendChild(mkEl("b","",st==="open"?short:st==="building"?`${short} 🚧`:`${short} ${b?Math.floor(b.raised/b.price*100):0}%`));
+    el.addEventListener("click",()=>{villSel=villSel===k?null:k;farmSel=null;renderVillage();if(villSel==="farm"&&isBuilt("farm")) loadFarm();
+      if(villSel) requestAnimationFrame(()=>$("villCard").scrollIntoView({block:"nearest",behavior:"smooth"}));});
+    box.appendChild(el);
+  });
+  renderVillCard();
+}
+function renderVillCard(){
+  const card=$("villCard");
+  if(!villSel||$("villView").hidden){card.hidden=true;return;}
+  const k=villSel, st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD[k];
+  card.hidden=false;card.replaceChildren();
+  const top=mkEl("div","vtop");top.appendChild(mkEl("h3","",B.name));
+  const x=mkEl("button","","✕");x.type="button";x.setAttribute("aria-label","Close");x.addEventListener("click",()=>{villSel=null;farmSel=null;renderVillage();});top.appendChild(x);
+  card.appendChild(top);
+  if(st!=="open"||k!=="farm") card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
+  if(st==="fund"){
+    if(!b){card.appendChild(mkEl("p","","Loading…"));return;}
+    const bar=mkEl("div","vbar"),u=mkEl("u");u.style.width=Math.min(100,b.raised/b.price*100)+"%";bar.appendChild(u);card.appendChild(bar);
+    const nums=mkEl("div","vnums");nums.append(mkEl("span","",`${b.raised.toLocaleString()} / ${b.price.toLocaleString()} coins`),mkEl("span","",`${(b.price-b.raised).toLocaleString()} to go`));card.appendChild(nums);
+    card.appendChild(mkEl("p","",`Chip in any amount. When it's all paid for, it takes a day to build. You have ${Math.max(0,S.me.coins||0).toLocaleString()} coins.`));
+    const give=mkEl("div","vgive");
+    [10,50,100,500].forEach(n=>{const bt=mkEl("button","",`+${n}`);bt.type="button";bt.disabled=(S.me.coins||0)<1;bt.addEventListener("click",()=>donate(k,Math.min(n,S.me.coins||0),bt));give.appendChild(bt);});
+    const inp=mkEl("input");inp.type="number";inp.min="1";inp.inputMode="numeric";inp.placeholder="Amount";inp.setAttribute("aria-label","How many coins to give");
+    const go=mkEl("button","go","Give");go.type="button";go.addEventListener("click",()=>donate(k,Number(inp.value),go));
+    give.append(inp,go);card.appendChild(give);
+  }else if(st==="building"){
+    card.appendChild(mkEl("p","",`Paid for! It's being built and opens in ${durText(builtAt(k)-clockNow())} (${sgClock(builtAt(k))}${sgParts(builtAt(k)).day!==sgParts(clockNow()).day?" tomorrow":""}).`));
+  }else{
+    const acts=mkEl("div","vacts");
+    if(k==="weather"){
+      const w=S.cave.weather&&S.cave.weather[S.me.id];
+      if(!S.me.city){card.appendChild(mkEl("p","","Pick your city and the weather shows on your card."));const bt=mkEl("button","btn primary","Set my city");bt.type="button";bt.addEventListener("click",()=>$("meChip").click());acts.appendChild(bt);}
+      else if(w){
+        if(w.at) card.appendChild(mkEl("p","",`${w.city} at ${fmt12(S.me.h,S.me.m)}: ${w.at.label}, ${w.at.temp}°C, ${w.at.rain}% chance of rain. It's on your card too.`));
+        if(w.daily&&w.daily.length){const g=mkEl("div","vwx");w.daily.slice(0,3).forEach(d=>{const c=mkEl("div");c.append(wxIcon(d.kind),mkEl("b","",`${d.max}°/${d.min}°`),mkEl("span","",`${fmtLong(d.day)} · ${d.rain}%`));g.appendChild(c);});card.appendChild(g);}
+      }else card.appendChild(mkEl("p","","The forecast is on its way."));
+    }
+    if(k==="farm") renderFarm(card);
+    if(k==="harbor"){
+      card.appendChild(mkEl("p","",`Mr. Fishfish lives here now and buys fish all day.${S.fishfish&&CAVE_HOME.FISH[S.fishfish.wants]?` Today he pays double for ${CAVE_HOME.FISH[S.fishfish.wants].name.toLowerCase()}.`:""}`));
+      const bt=mkEl("button","btn primary","Fish at sea");bt.type="button";bt.addEventListener("click",()=>openFish("sea"));acts.appendChild(bt);
+    }
+    if(k==="cinema"){
+      [["This week's movie",0],["Last week's",1]].forEach(([t,w],i)=>{const bt=mkEl("button",i?"btn ghost":"btn primary",t);bt.type="button";bt.addEventListener("click",()=>openCinema(w));acts.appendChild(bt);});
+    }
+    if(acts.childElementCount) card.appendChild(acts);
+  }
+  if(b&&b.donors.length){
+    card.appendChild(mkEl("b","bp-sub",st==="fund"?"Chipped in so far":"Built by"));
+    const ul=mkEl("ul","vdonors");
+    b.donors.forEach(d=>{const li=mkEl("li");li.append(mkEl("b","",d.pid===S.me.id?"You":nameOf(d.pid).replace(/^./,c=>c.toUpperCase())),mkEl("span","",`${d.amt.toLocaleString()} coins`));ul.appendChild(li);});
+    card.appendChild(ul);
+  }
+}
+async function donate(k,amount,btn){
+  amount=Math.floor(amount);
+  if(!(amount>0)){toast("How many coins?");return;}
+  btn.disabled=true;
+  try{
+    const d=await api("village/donate",{kind:k,amount});village=d.village;
+    S.me.coins=(S.me.coins||0)-d.gave;renderCoins();
+    const name=VILLAGE.BUILD[k].name.toLowerCase();
+    if(d.village[k].openAt){S.cave.built={...(S.cave.built||{}),[k]:d.village[k].openAt};toast(`That did it! The ${name} is paid for. It'll be built in a day.`,5000);}
+    else toast(`You gave ${d.gave} coins to the ${name}. ${(d.village[k].price-d.village[k].raised).toLocaleString()} to go.`,4000);
+    renderVillage();refresh();
+  }catch(e){if(e.data&&e.data.village){village=e.data.village;renderVillage();}if(e.status!==401) toast(e.message);}
+  finally{btn.disabled=false;}
+}
+
+/* ---- the farm ---- */
+async function loadFarm(quiet){
+  try{const d=await api("farm");farm=d;farm._got=Date.now();if(villSel==="farm") renderVillCard();}
+  catch(e){if(!quiet&&e.status!==401) toast(e.message);}
+}
+const cropSvg=(kind,cls="fi")=>`<svg class="${cls}" viewBox="0 0 100 60" aria-hidden="true">${VILLAGE.CROPS[kind]?VILLAGE.CROPS[kind].produce:""}</svg>`;
+const hoursText=h=>h<24?`${h} h`:`${h/24} ${h===24?"day":"days"}`;
+function renderFarm(card){
+  if(!farm){card.appendChild(mkEl("p","","Opening the farm…"));return;}
+  const t=clockNow(), grid=mkEl("div","farm");
+  farm.plots.forEach(p=>{
+    const c=p.crop, b=mkEl("button","plot");b.type="button";
+    const thirsty=c&&c.status==="growing"&&t-c.lastWater>farm.thirstMs/2;
+    if(c) b.classList.add(c.status==="dead"?"dead":c.status==="ripe"?"ripe":"growing");
+    if(thirsty) b.classList.add("thirsty");
+    if(farmSel===p.n) b.classList.add("sel");
+    const frac=c?Math.min(1,(t-c.at)/(c.ripeAt-c.at)):0;
+    b.innerHTML=`<svg viewBox="0 0 60 60" aria-hidden="true">${VILLAGE.plant(c&&c.kind,c&&c.status,frac)}</svg>`;
+    b.appendChild(mkEl("span","",c?VILLAGE.CROPS[c.kind].name:"Empty"));
+    b.appendChild(mkEl("small","",!c?"Plant here":c.status==="dead"?"Died":c.status==="ripe"?(c.by===S.me.id?"Pick me!":"Ready"):thirsty?"Thirsty!":`${Math.floor(frac*100)}%`));
+    b.addEventListener("click",()=>{farmSel=farmSel===p.n?null:p.n;renderVillCard();});
+    grid.appendChild(b);
+  });
+  card.appendChild(grid);
+  if(farmSel==null){card.appendChild(mkEl("p","vwhat","Tap a plot. Crops need water at least once a day until they're ripe; ripe ones wait for you."));return;}
+  const p=farm.plots[farmSel], c=p.crop, acts=mkEl("div","vacts");
+  if(!c){
+    card.appendChild(mkEl("b","bp-sub",`Plant in plot ${farmSel+1}`));
+    const seeds=mkEl("div","seeds");
+    Object.entries(VILLAGE.CROPS).forEach(([k,info])=>{
+      const price=SEED_PRICE[k];
+      const bt=mkEl("button");bt.type="button";bt.innerHTML=cropSvg(k,"");
+      const tx=mkEl("span");tx.append(mkEl("b","",info.name),document.createElement("br"),`${price} coins · ${hoursText(info.hours)}`);bt.appendChild(tx);
+      bt.disabled=(S.me.coins||0)<price;
+      bt.addEventListener("click",()=>farmAct("plant",{plot:farmSel,kind:k},bt));
+      seeds.appendChild(bt);
+    });
+    card.appendChild(seeds);
+    return;
+  }
+  const who=c.by===S.me.id?"Your":`${nameOf(c.by).replace(/^./,x=>x.toUpperCase())}'s`, name=VILLAGE.CROPS[c.kind].name.toLowerCase();
+  if(c.status==="dead"){
+    card.appendChild(mkEl("p","",`${who} ${name} went a day without water and died.`));
+    const bt=mkEl("button","btn ghost","Clear the plot");bt.type="button";bt.addEventListener("click",()=>farmAct("clear",{plot:farmSel},bt));acts.appendChild(bt);
+  }else if(c.status==="ripe"){
+    card.appendChild(mkEl("p","",c.by===S.me.id?`Your ${name} is ripe. Pick it and sell it to Mr. Veggie.`:`${who} ${name} is ripe, waiting to be picked.`));
+    if(c.by===S.me.id){const bt=mkEl("button","btn primary","Pick");bt.type="button";bt.addEventListener("click",()=>farmAct("harvest",{plot:farmSel},bt));acts.appendChild(bt);}
+  }else{
+    const mineToday=(c.waterers||[]).includes(S.me.id);
+    card.appendChild(mkEl("p","",`${who} ${name}: ripe in ${durText(c.ripeAt-t)}. Water it within ${durText(c.dryAt-t)} or it dies.`+
+      ((c.waterers||[]).length?` Watered today by ${c.waterers.map(nameOf).join(", ")}.`:"")));
+    const bt=mkEl("button","btn primary",c.by!==S.me.id&&!mineToday?"Water it (+2 coins)":"Water it");bt.type="button";
+    bt.addEventListener("click",()=>farmAct("water",{plot:farmSel},bt));acts.appendChild(bt);
+    if(c.by===S.me.id){const dig=mkEl("button","btn ghost","Dig it up");dig.type="button";dig.addEventListener("click",()=>farmAct("clear",{plot:farmSel},dig));acts.appendChild(dig);}
+  }
+  card.appendChild(acts);
+}
+async function farmAct(what,body,btn){
+  btn.disabled=true;
+  try{
+    const d=await api("farm/"+what,body);farm=d;farm._got=Date.now();
+    if(what==="plant"){const k=body.kind;S.me.coins-=SEED_PRICE[k];renderCoins();toast(`Planted! Keep it watered.`);}
+    if(what==="water") toast(d.tip?`Watered. +${d.tip} coins for helping out.`:"Watered.");
+    if(what==="harvest"&&d.crop){(S.me.bag||=[]).push(d.crop);renderBag();toast(`Picked a ${"★".repeat(d.crop.size)} ${VILLAGE.CROPS[d.crop.kind].name.toLowerCase()}, worth ${d.crop.worth} coins. It's in your bag.`,4500);}
+    if(what==="clear") farmSel=null;
+    if(d.tip){S.me.coins=(S.me.coins||0)+d.tip;renderCoins();}
+    renderVillCard();refresh();
+  }catch(e){btn.disabled=false;if(e.status!==401) toast(e.message);if(e.status===409) loadFarm(true);}
+}
+const vegHere=()=>{const v=S&&S.veggie;return !!v&&clockNow()>=v.from&&clockNow()<v.until;};
+async function cropSell(ids,btn){
+  btn.disabled=true;
+  try{const d=await api("farm/sell",{ids});
+    S.me.bag=(S.me.bag||[]).filter(f=>!ids.includes(f.id));S.me.coins=(S.me.coins||0)+d.won;renderCoins();
+    toast(`Mr. Veggie paid ${d.won} coins for ${d.sold===1?"your crop":d.sold+" crops"}.`);refresh();}
+  catch(e){btn.disabled=false;if(e.status!==401) toast(e.message);}
+}
+$("veggieBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
+$("bagSellCrops").addEventListener("click",e=>cropSell((S.me.bag||[]).filter(f=>f.crop).map(f=>f.id),e.currentTarget));
+
+/* ---- the cinema: a week of clips as one movie ---- */
+let cineWeek=0, cineJob=null;
+function weekDaysOf(off){ // Monday..Sunday of this week (off 0) or last week (off 1), Singapore days
+  const today=S.day, wd=(new Date(today+"T00:00:00Z").getUTCDay()+6)%7, out=[];
+  for(let i=0;i<7;i++){const d=new Date(today+"T00:00:00Z");d.setUTCDate(d.getUTCDate()-wd-7*off+i);out.push(d.toISOString().slice(0,10));}
+  return out;
+}
+async function weekClips(off){
+  const days=weekDaysOf(off), months=[...new Set(days.map(d=>d.slice(0,7)))], got={};
+  await Promise.all(months.map(async m=>{let d=calData&&calData.month===m&&Date.now()-(calData._at||0)<30000?calData:null;if(!d){d=await api("days?month="+m);d._at=Date.now();}got[m]=d;}));
+  return days.filter(d=>d<=S.day).map(d=>({day:d,info:got[d.slice(0,7)]&&got[d.slice(0,7)].days[d]})).filter(x=>x.info&&x.info.clips&&x.info.clips.length);
+}
+async function openCinema(off){
+  cineWeek=off;$("cineView").hidden=false;document.body.classList.add("fishing");
+  [...$("cineTabs").children].forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.w)===off)));
+  const days=weekDaysOf(off);$("cineTitle").textContent=off?"Last week's movie":"This week's movie";
+  $("cineSub").textContent="Loading the week…";$("cinePlay").hidden=true;
+  const g=$("cineCv").getContext("2d");g.fillStyle="#000";g.fillRect(0,0,VW,VH);
+  try{
+    const list=await weekClips(off);
+    if(cineWeek!==off||$("cineView").hidden) return;
+    cineList=list;
+    const n=list.reduce((a,x)=>a+x.info.clips.length,0);
+    drawMovieTitle(g,days,list,1);
+    $("cineSub").textContent=n?`${fmtLong(days[0])} – ${fmtLong(days[6])} · ${n} ${n===1?"clip":"clips"} from ${list.length} ${list.length===1?"day":"days"}`:"No clips this week yet. Film when the ring goes off and you'll be in it.";
+    $("cinePlay").hidden=!n;
+  }catch(e){$("cineSub").textContent=e.message||"Couldn't load the week.";}
+}
+let cineList=[];
+function cineStars(list){const by={};list.forEach(x=>x.info.clips.forEach(c=>{(by[c.pid]||(by[c.pid]={name:c.name,color:c.color,monster:c.monster,n:0})).n++;}));return Object.values(by).sort((a,b)=>b.n-a.n);}
+function drawMovieTitle(g,days,list,f){
+  g.fillStyle="#120d18";g.fillRect(0,0,VW,VH);g.globalAlpha=Math.min(1,f*2);g.textAlign="center";
+  g.fillStyle="#ffd34d";g.font="700 26px 'JetBrains Mono', monospace";g.fillText("NOW SHOWING AT THE CAVE CINEMA",VW/2,380);
+  g.fillStyle="#fff";g.font="70px Bungee, sans-serif";wrapText(g,S.cave.name,VW-100).slice(0,2).forEach((l,i)=>g.fillText(l,VW/2,500+i*80));
+  g.font="44px Bungee, sans-serif";g.fillStyle="#ff8fab";g.fillText("THE WEEK",VW/2,680);
+  g.fillStyle="#d8cfe6";g.font="600 30px 'JetBrains Mono', monospace";g.fillText(`${fmtLong(days[0])} – ${fmtLong(days[6])}`,VW/2,740);
+  g.fillText(`${list.length} ${list.length===1?"day":"days"} · ${cineStars(list).length} stars`,VW/2,790);
+  g.globalAlpha=1;g.textAlign="left";
+}
+function drawCredits(g,list,mons,f){
+  g.fillStyle="#120d18";g.fillRect(0,0,VW,VH);g.textAlign="center";
+  const stars=cineStars(list), y0=VH-f*(VH+260+stars.length*150);
+  g.fillStyle="#ffd34d";g.font="44px Bungee, sans-serif";g.fillText("STARRING",VW/2,y0+VH*0.55);
+  stars.forEach((s,i)=>{const y=y0+VH*0.55+90+i*150, m=mons[s.monster+"|"+s.color];
+    if(m) g.drawImage(m,VW/2-50,y,100,100);
+    g.fillStyle=cssColor(s.color);g.font="40px Bungee, sans-serif";g.fillText(s.name,VW/2,y+130);
+    g.fillStyle="#d8cfe6";g.font="600 24px 'JetBrains Mono', monospace";g.fillText(`${s.n} ${s.n===1?"clip":"clips"}`,VW/2,y+160);});
+  g.fillStyle="#fff";g.font="34px Bungee, sans-serif";g.fillText("THE END",VW/2,y0+VH*0.55+180+stars.length*150+60);
+  g.textAlign="left";
+}
+async function playCinema(){
+  if(cineJob||!cineList.length) return;
+  let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
+  const job={cancel:false,ac};cineJob=job;$("cinePlay").hidden=true;
+  const g=$("cineCv").getContext("2d"), list=cineList, days=weekDaysOf(cineWeek);
+  try{
+    await frames(2600,el=>drawMovieTitle(g,days,list,el/2600),job);
+    for(const x of list){
+      if(job.cancel) break;
+      const ctx={day:x.day,clips:x.info.clips,rings:x.info.rings,...groupDay(x.day,x.info)};
+      $("cineSub").textContent=fmtLonger(x.day);
+      await runDay(ctx,g,{ac,out:ac&&ac.destination,job});
+    }
+    if(!job.cancel){const stars=cineStars(list), mons=await dayAssets({people:stars,clips:[]});$("cineSub").textContent="The end";
+      await frames(4500+stars.length*900,el=>drawCredits(g,list,mons,el/(4500+stars.length*900)),job);}
+  }catch(e){$("cineSub").textContent="Playback stopped. Try again.";}
+  finally{if(ac) ac.close().catch(()=>{});if(cineJob===job) cineJob=null;if(!$("cineView").hidden){$("cinePlay").hidden=false;$("cinePlay").textContent=job.cancel?"▶":"↻";}}
+}
+function closeCinema(){if(cineJob) cineJob.cancel=true;$("cineView").hidden=true;document.body.classList.remove("fishing");}
+$("cinePlay").addEventListener("click",playCinema);
+$("cineCv").addEventListener("click",()=>{if(cineJob) cineJob.cancel=true;});
+$("cineClose").addEventListener("click",closeCinema);
+[...$("cineTabs").children].forEach(b=>b.addEventListener("click",()=>{if(cineJob) cineJob.cancel=true;openCinema(Number(b.dataset.w));}));
 (function(){
   const L=$("sceneLayer"), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   L.addEventListener("pointerdown",e=>{
@@ -2882,7 +3236,7 @@ const POWERS=[
   {key:"tako",name:"Ink Notes",kind:"Tool",lv:["Stick 1 note on the cave board","2 notes at a time","3 notes, and pin one for a week"]},
   {key:"mush",name:"Spore Cheer",kind:"Fun",lv:["Cheer 1 friend a day; mushrooms sprout on their card","Cheer 3 times a day","Cheer 5 times a day, and your mushrooms grow big"]},
   {key:"chomp",name:"Snack Run",kind:"Tool",soon:true,lv:["Start a drinks poll in the chat","With a countdown","Sums up who wants what"]},
-  {key:"fluff",name:"Weather Eye",kind:"Tool",lv:["The weather at your clock-out time","Plus a rain alert before you leave","Plus a 3-day forecast"]},
+  {key:"fluff",name:"Cloud Shield",kind:"Tool",lv:["Zaps grab 20% less of your coins, and the weather at your clock-out time","Zaps grab 40% less, plus a rain alert before you leave","The first grab each day is blocked, plus a 3-day forecast"]},
   {key:"dino",name:"Roar",kind:"Fun",lv:["Roar to the whole cave when you leave","Write your own roar","Your roar comes with sound"]},
 ];
 const STREAK_AT=[0,3,7,14];
@@ -3098,8 +3452,10 @@ function renderPower(){
   $("rerollHint").textContent=me.canReroll?"Once a month, at random. You keep your level."
     :`Next reroll from ${new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(me.nextReroll+"T00:00:00Z"))}.`;
   $("fxToggle").checked=me.fx!==false;
-  $("citySection").hidden=pw.key!=="fluff";
-  $("cityNow").textContent=me.city?`Fluff is watching the sky over ${me.city.name}.`:"Pick your city so Fluff can watch the sky for you.";
+  const station=!!(S.cave&&S.cave.station);
+  $("citySection").hidden=pw.key!=="fluff"&&!station;
+  $("cityNow").textContent=pw.key==="fluff"?(me.city?`Fluff is watching the sky over ${me.city.name}.`:"Pick your city so Fluff can watch the sky for you.")
+    :(me.city?`The weather station is watching the sky over ${me.city.name}.`:"Pick your city and the weather station puts the forecast on your card.");
 }
 let rerollArmed=false;
 $("rerollBtn").addEventListener("click",async()=>{
@@ -3131,7 +3487,7 @@ $("cityForm").addEventListener("submit",async e=>{
       const li=document.createElement("li"), b=document.createElement("button");b.type="button";b.innerHTML="<span></span> <small></small>";
       b.querySelector("span").textContent=r.name;b.querySelector("small").textContent=[r.admin1,r.country].filter(Boolean).join(", ");
       b.addEventListener("click",async()=>{
-        try{applyState(await api("me",{action:"city",name:r.name,lat:r.lat,lon:r.lon}));ul.replaceChildren();$("cityInput").value="";renderPower();toast(`Fluff is watching the sky over ${r.name}.`);}
+        try{applyState(await api("me",{action:"city",name:r.name,lat:r.lat,lon:r.lon}));ul.replaceChildren();$("cityInput").value="";renderPower();toast(S.me.power==="fluff"?`Fluff is watching the sky over ${r.name}.`:`The weather station is watching the sky over ${r.name}.`);}
         catch(ex){$("acctErr").textContent=ex.message;}
       });
       li.appendChild(b);ul.appendChild(li);
@@ -3986,6 +4342,17 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v50-village",v:"v50.0",at:"2026-11-13T17:00",title:"The village: build it together",changes:[
+    "Tap Village (next to Bag): four buildings the whole cave pays for together. Chip in any amount; once it's paid for, it's built in a day.",
+    "Weather station (2,000 coins): the weather for everyone. Farm (3,000): grow crops, water each other's, sell them to Mr. Veggie.",
+    "Harbor (4,000): fish at sea, with 5 new fish, and Mr. Fishfish buys fish all day. Cinema (5,000): the week's clips as one movie.",
+    "Fluff's new power is Cloud Shield: zaps grab less of a Fluff's coins (Fluff still sees the weather).",
+    "Zaps now show what you grabbed right away."],panels:[
+    {art:"village",title:"Build it together",text:"Tap Village. Every building has a jar: chip in what you like. When it's full, it's built in a day."},
+    {art:"farm",title:"The farm",text:"Plant seeds, water each other's crops (+2 coins), pick them when they're ripe and sell them to Mr. Veggie."},
+    {art:"harbor",title:"The harbor",text:"Fish at sea: squid, tuna, swordfish, anglerfish and a whale shark. Mr. Fishfish buys all day."},
+    {art:"cinema",title:"The cinema",text:"The whole week's clips, back to back, with credits. Popcorn not included."},
+    {art:"shield",title:"Cloud Shield",text:"Fluffs keep 20 to 40% of their coins when zapped, and at Lv3 the first grab of the day bounces off."}]},
   {id:"v48-loot",v:"v48.0",at:"2026-11-13T15:30",title:"100 coins for everyone, and every zap grabs",changes:[
     "Everyone has their 100 welcome coins now, even if they haven't opened the app since coins came.",
     "No more \"first zap of the day\": every zap takes 1 to 10% of their coins. One zap per person every 10 minutes, as before.",
@@ -4152,6 +4519,11 @@ function panelArt(kind){
     case "ot":{const m=monEl(me.monster,me.color,"tired");add(m,burstEl("+45",{top:"16px",right:"24px"}));break;}
     case "hours":{const c=propEl("clock","prop");c.style.color="var(--c-teal)";add(c,monEl(me.monster,me.color,"work"),burstEl("8:30 →",{top:"14px",left:"16px"}));break;}
     case "lunch":add(monEl(me.monster,me.color,"eat"),burstEl("NOM NOM",{top:"14px",right:"18px"}));break;
+    case "village":add(svgEl(`<svg viewBox="0 0 120 100" style="width:38%">${VILLAGE.BUILD.scaffold.svg}</svg>`),small(me),small(crew[0]),burstEl("+500",{top:"10px",right:"14px"}));break;
+    case "farm":add(svgEl(`<svg viewBox="0 0 60 60" style="width:26%">${VILLAGE.plant("tomato","ripe",1)}</svg>`),small(me),svgEl(`<svg viewBox="0 0 100 100" style="width:30%">${VILLAGE.VEGGIE}</svg>`));break;
+    case "harbor":add(svgEl(`<svg viewBox="0 0 120 100" style="width:40%">${VILLAGE.BUILD.harbor.svg}</svg>`),svgEl(`<svg viewBox="0 0 100 60" style="width:40%">${VILLAGE.SEA_FISH.whaleshark.svg}</svg>`));break;
+    case "cinema":add(svgEl(`<svg viewBox="0 0 120 100" style="width:42%">${VILLAGE.BUILD.cinema.svg}</svg>`),small(me),small(crew[0]));break;
+    case "shield":{const fl=POWERS.findIndex(x=>x.key==="fluff");add(small({monster:fl<0?8:fl,color:"cyan"}),propEl("bolt","prop shake"),burstEl("-40%",{top:"14px",right:"16px"}));break;}
     case "gift":add(small(me),small(crew[0]),small(crew[1]),burstEl("+100 each",{top:"10px",right:"14px"}));break;
     case "payday":add(monEl(me.monster,me.color,"dance"),burstEl("+50",{top:"14px",right:"20px"}));break;
     case "loot":{const z=propEl("bolt","prop shake");z.style.color="var(--zap)";add(small(me),z,small(crew[0]),burstEl("-7%",{top:"14px",right:"16px"}));break;}
@@ -4341,6 +4713,13 @@ $("retryBtn").addEventListener("click",()=>{clearTimeout(bootRetry);bootLoad();}
 $("devRing").addEventListener("click",async e=>{
   const b=e.currentTarget;b.disabled=true;
   try{const d=await api("dev/ring",{});toast(d.sent?`Rang ${d.sent} ${d.sent===1?"phone":"phones"}. You can film any time on the test site.`:"No phone in this cave has notifications on. You can still film.",4500);refresh();}
+  catch(ex){if(ex.status!==401) toast(ex.message);}
+  finally{b.disabled=false;}
+});
+
+$("devCoins").addEventListener("click",async e=>{
+  const b=e.currentTarget;b.disabled=true;
+  try{await api("dev/coins",{});toast("+5,000 coins (test site only).");refresh();}
   catch(ex){if(ex.status!==401) toast(ex.message);}
   finally{b.disabled=false;}
 });
