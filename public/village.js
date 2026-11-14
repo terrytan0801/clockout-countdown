@@ -134,18 +134,33 @@ ${night ? `<g fill="#fff"><circle cx="40" cy="20" r="1.2"/><circle cx="120" cy="
   if (window.CAVE_HOME) Object.assign(window.CAVE_HOME.FISH, SEA_FISH);
 
   /* ---------- the harbor, for fishing at sea (same layout as the pond: water from y 114 to 252) ---------- */
+  // v53: the harbor, portrait like the pond (sea from y116 to y332, the pier below).
   function sea(night) {
-    const sky = night ? ["#151d3d", "#2b3a72"] : ["#8fd0ff", "#e3f4ff"], water = night ? ["#173a6b", "#0c2147"] : ["#2d7fd0", "#1b4f99"];
-    return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
+    const N = night;
+    const sky = N ? ["#0f1633", "#2b3a72"] : ["#6ab8ff", "#e6f5ff"], water = N ? ["#163a6a", "#081a3a"] : ["#2f86d6", "#123f88"];
+    const wood = N ? ["#5d4630", "#463422"] : ["#b98549", "#8c5d2e"];
+    return `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
 <linearGradient id="szSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>
-<linearGradient id="szWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${water[0]}"/><stop offset="1" stop-color="${water[1]}"/></linearGradient></defs>
-<rect width="400" height="120" fill="url(#szSky)"/>${night ? `<circle cx="330" cy="36" r="14" fill="#fff6c8"/><circle cx="324" cy="32" r="14" fill="${sky[0]}"/>` : `<circle cx="80" cy="40" r="16" fill="#ffd34d"/><g fill="#fff" opacity=".9"><ellipse cx="270" cy="36" rx="28" ry="9"/><ellipse cx="292" cy="30" rx="18" ry="10"/></g>`}
-<path d="M300 112 Q320 92 346 96 Q366 90 384 112Z" fill="${night ? "#1f4030" : "#5aa85a"}"/><path d="M352 98 L354 70 L362 70 L364 98Z" fill="#fff"/><path d="M353 84 L363 84 L363.5 90 L352.6 90Z" fill="#e5383b"/><rect x="352" y="64" width="12" height="7" fill="#ffd34d"/>
-<path d="M40 112 L56 112 L52 106 L44 106Z" fill="#fff"/><path d="M48 106 L48 96 L54 104Z" fill="#fff"/>
-<rect y="112" width="400" height="152" fill="url(#szWater)"/>
-<g stroke="#fff" stroke-width="2" fill="none" opacity=".3" stroke-linecap="round"><path class="fz-wave" d="M30 136 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave w2" d="M290 150 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave" d="M80 186 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave w2" d="M240 210 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave" d="M170 128 q8 -3 16 0"/><path class="fz-wave w2" d="M340 230 q8 -3 16 0"/></g>
-<rect y="250" width="400" height="50" fill="${night ? "#5d4630" : "#a8743f"}"/><g stroke="${night ? "#463422" : "#7b5228"}" stroke-width="2"><path d="M0 262 L400 262 M0 276 L400 276 M0 290 L400 290"/><path d="M60 250 L60 262 M150 262 L150 276 M250 250 L250 262 M330 276 L330 290 M90 276 L90 290"/></g>
-<g fill="${night ? "#463422" : "#7b5228"}"><rect x="10" y="236" width="10" height="16" rx="2"/><rect x="380" y="236" width="10" height="16" rx="2"/></g>
+<linearGradient id="szWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${water[0]}"/><stop offset="1" stop-color="${water[1]}"/></linearGradient>
+<linearGradient id="szWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${wood[0]}"/><stop offset="1" stop-color="${wood[1]}"/></linearGradient></defs>
+<rect width="300" height="400" fill="url(#szSky)"/>
+${N ? `<g fill="#fff">${[[30,20],[80,44],[130,14],[190,34],[260,22],[60,80],[220,74]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.2"/>`).join("")}</g><circle cx="70" cy="46" r="14" fill="#fff6d8"/><circle cx="64" cy="42" r="14" fill="${sky[0]}" opacity=".9"/>`
+  : `<circle cx="70" cy="50" r="18" fill="#ffd34d" stroke="#f2b632" stroke-width="2"/><g fill="#fff"><ellipse cx="200" cy="40" rx="30" ry="10"/><ellipse cx="220" cy="33" rx="18" ry="10"/></g><g fill="#fff" opacity=".85"><ellipse cx="120" cy="80" rx="20" ry="6"/></g>
+<path d="M150 56 q4 -4 8 0 q4 -4 8 0 M176 70 q3 -3 6 0 q3 -3 6 0" stroke="#3a5068" stroke-width="1.4" fill="none" stroke-linecap="round"/>`}
+<path d="M196 116 Q214 92 238 96 Q262 88 290 116Z" fill="${N ? "#1f4030" : "#5aa85a"}"/>
+<path d="M248 98 L250 62 L260 62 L262 98Z" fill="#fff"/><path d="M249 76 L261 76 L261.5 84 L248.5 84Z" fill="#e5383b"/><rect x="247" y="54" width="16" height="9" rx="2" fill="#ffd34d"/><path d="M245 54 L255 46 L265 54Z" fill="#e5383b"/>
+${N ? `<path d="M263 58 L300 48 L300 68Z" fill="#fff59d" opacity=".45"/>` : ""}
+<path d="M30 112 L58 112 L54 104 L34 104Z" fill="#fff"/><path d="M44 104 L44 88 L54 102Z" fill="#fff"/><path d="M44 90 L36 102 L44 102Z" fill="#ff8c5a"/>
+<rect y="114" width="300" height="222" fill="url(#szWater)"/>
+<path d="M0 115 L300 115" stroke="${N ? "#5a7aa8" : "#e9f7ff"}" stroke-width="2" opacity=".7"/>
+<g stroke="#fff" stroke-width="2.2" fill="none" opacity=".4" stroke-linecap="round"><path class="fz-wave" d="M20 150 q8 -4 16 0 q8 4 16 0"/><path class="fz-wave w2" d="M200 140 q8 -4 16 0 q8 4 16 0"/><path class="fz-wave" d="M100 186 q8 -4 16 0 q8 4 16 0"/><path class="fz-wave w2" d="M230 214 q8 -4 16 0 q8 4 16 0"/><path class="fz-wave" d="M30 240 q8 -4 16 0 q8 4 16 0"/><path class="fz-wave w2" d="M150 270 q8 -4 16 0"/><path class="fz-wave" d="M250 290 q8 -4 16 0"/></g>
+<g fill="#fff" opacity=".55"><path d="M60 170 l6 -3 l6 3Z"/><path d="M180 232 l6 -3 l6 3Z"/><path d="M260 170 l5 -2.5 l5 2.5Z"/></g>
+<g fill="${N ? "#8f9aac" : "#fff"}"><path d="M120 300 q6 -8 12 0 q-6 -3 -12 0Z" opacity=".7"/></g>
+<rect y="330" width="300" height="70" fill="url(#szWood)"/>
+<g stroke="${N ? "#3a2a1a" : "#6e4620"}" stroke-width="1.6"><path d="M0 344 L300 344 M0 358 L300 358 M0 372 L300 372 M0 386 L300 386"/><path d="M50 330 L50 344 M120 344 L120 358 M200 330 L200 344 M260 358 L260 372 M80 372 L80 386 M170 386 L170 400"/></g>
+<g fill="${N ? "#3a2a1a" : "#6e4620"}"><rect x="6" y="316" width="12" height="20" rx="3"/><rect x="282" y="316" width="12" height="20" rx="3"/></g>
+<g><ellipse cx="40" cy="380" rx="14" ry="6" fill="#d9b77a" stroke="#8a6a3a" stroke-width="1.4"/><ellipse cx="40" cy="378" rx="8" ry="3" fill="none" stroke="#8a6a3a" stroke-width="1.4"/>
+<rect x="250" y="362" width="26" height="22" rx="3" fill="#4d9be8" stroke="#2a5a8a" stroke-width="1.4"/><path d="M250 370 L276 370" stroke="#2a5a8a" stroke-width="1.2"/></g>
 </svg>`;
   }
 

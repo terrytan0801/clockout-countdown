@@ -50,6 +50,7 @@ let s = await st(C);
 assert.ok(s.cave.built.weather > clock, "not open yet");
 
 /* ---------- weather station: weather for everyone once open ---------- */
+{ const p = JSON.parse(store._m.get(`person/${C.id}`)); p.monster = 0; store._m.set(`person/${C.id}`, JSON.stringify(p)); } // Cat is not a Fluff (monsters are random)
 await call("POST", "me", { action: "city", name: "Singapore", lat: 1.3, lon: 103.8 }, C.t); // Cat is not a Fluff
 s = await st(C);
 assert.equal(s.cave.weather[C.id], undefined, "no weather before it opens");

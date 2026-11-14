@@ -1,6 +1,6 @@
 {
   "name": "clockout-countdown",
-  "version": "52.0.0",
+  "version": "53.0.0",
   "private": true,
   "type": "module",
   "description": "Clock-out countdown app: caves of friends, overtime, dancing monsters, zaps and chat.",

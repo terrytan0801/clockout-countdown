@@ -169,23 +169,25 @@ body.calm .newsbtn .nmon{animation:none!important}
 .vlot{position:absolute;width:26%;aspect-ratio:1.2;transform:translate(-50%,-78%);border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .vlot svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 0 rgba(0,0,0,.08))}
 .vlot.sel svg{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 6px #ffd34d)}
-.vlot b{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);white-space:nowrap;font:700 10px/1 var(--f-mono);background:#fff;border:1.5px solid var(--ink);color:var(--ink);padding:3px 6px;border-radius:999px}
+.vlot b{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);display:grid;justify-items:center;gap:2px;white-space:nowrap;font:800 12.5px/1 var(--f-mono);background:#fff;border:2px solid var(--ink);color:var(--ink);padding:4px 8px;border-radius:10px;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.vlot b em{font:800 10.5px/1 var(--f-mono);font-style:normal;color:#c2410c}
 .vlot i{position:absolute;left:12%;right:12%;bottom:14px;height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden;font-style:normal}
 .vlot i u{position:absolute;left:0;top:0;bottom:0;background:#ffd34d;text-decoration:none}
 .vlot.open b{background:#ffd34d}
-.vlot.building b{background:#ffe0b2}
 .vback{position:fixed;inset:0;z-index:9040;background:rgba(20,26,24,.5);animation:vFade .2s}
 @keyframes vFade{from{opacity:0}}
-@keyframes vIn{from{opacity:0;transform:translate(-50%,-46%) scale(.94)}}
+@keyframes vIn{from{opacity:0;transform:translateX(-50%) scale(.96)}}
 /* v52: the building card opens in the middle of the screen, bigger */
-.vcard{position:fixed;z-index:9050;left:50%;top:50%;transform:translate(-50%,-50%);width:min(calc(100vw - 24px),520px);max-height:calc(100dvh - 40px);overflow:auto;overscroll-behavior:contain;
-  border:2.5px solid var(--ink);background:var(--card);border-radius:20px;padding:16px 16px 18px;display:grid;gap:12px;font-size:15.5px;line-height:1.45;box-shadow:0 18px 50px rgba(0,0,0,.35);animation:vIn .22s cubic-bezier(.2,.9,.3,1)}
+.vcard{position:fixed;z-index:9050;left:50%;top:max(16px,env(safe-area-inset-top),9dvh);transform:translateX(-50%);width:min(calc(100vw - 24px),520px);max-height:calc(100dvh - max(16px,9dvh) - 16px);overflow:auto;overscroll-behavior:contain;
+  border:2.5px solid var(--ink);background:var(--card);border-radius:20px;padding:16px 16px 18px;display:grid;gap:12px;font-size:15.5px;line-height:1.45;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.vcard.pop{animation:vIn .2s ease-out}
+.vcard .vload{min-height:220px;display:grid;place-items:center;color:var(--muted)}
 .vcard>.vtop{position:sticky;top:-16px;margin:-16px -16px 0;padding:14px 16px 10px;background:var(--card);z-index:1;border-bottom:1.5px solid var(--line)}
 .vcard .vhero{display:flex;justify-content:center;margin:-4px 0 -6px}.vcard .vhero svg{width:46%;max-width:200px;height:auto}
 .vhome{position:absolute;left:38%;top:24%;width:24%;height:22%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.vhome b{position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);white-space:nowrap;font:700 11px/1 var(--f-mono);background:var(--ink);color:#fff;border:1.5px solid var(--ink);padding:4px 8px;border-radius:999px}
+.vhome b{position:absolute;left:50%;top:-20px;transform:translateX(-50%);white-space:nowrap;font:800 14px/1 var(--f-mono);background:#ffd34d;color:var(--ink);border:2.5px solid var(--ink);padding:7px 13px;border-radius:999px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
 .vhome:active b{transform:translateX(-50%) scale(.94)}
-.vlot.site b{background:#ffe0b2}
+
 .vcard h3{margin:0;font:400 26px/1.1 var(--f-display)}
 .vcard .vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .vcard .vtop button{border:1.5px solid var(--line);background:var(--card);font-size:18px;cursor:pointer;color:var(--ink);width:40px;height:40px;border-radius:50%;flex:none}
@@ -207,6 +209,18 @@ body.calm .newsbtn .nmon{animation:none!important}
 .vwx b{display:block;font-size:14px}
 .vwx svg{width:30px;height:30px;display:block;margin:0 auto}
 .plist{display:grid;gap:8px}
+.pbooked{font:700 14px/1.35 var(--f-mono);color:#1f8a7f;background:#e6f6f4;border-radius:10px;padding:8px 10px}
+.pmonths{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pmonth{position:relative;display:grid;gap:2px;justify-items:center;text-align:center;padding:12px 4px 10px;border:2px solid var(--ink);border-radius:14px;background:var(--card);color:var(--ink);cursor:pointer;font-family:var(--f-mono)}
+.pmonth b{font:400 22px/1 var(--f-display)}
+.pmonth small{font-size:11px;color:var(--muted);min-height:1em}
+.pmonth .pm-best{font-size:12px;font-weight:700;color:#26a69a}
+.pmonth .pm-dot{position:absolute;top:-8px;right:-4px;font:800 10px/1 var(--f-mono);background:#26a69a;color:#fff;border-radius:999px;padding:3px 6px}
+.pmonth.none{border-color:var(--line);color:var(--muted);cursor:default}
+.pmonth.none .pm-best{color:var(--muted)}
+.pmhead{display:flex;align-items:center;gap:10px}
+.pmhead b{font:400 22px/1.1 var(--f-display)}
+.pmhead .btn{padding:9px 12px;font-size:13.5px}
 .pidea{border:2px solid var(--line);border-radius:14px;padding:12px 13px;display:grid;gap:4px;justify-items:start}
 .pidea.mine{border-color:#26a69a;background:#e6f6f4}
 .pidea .ptop{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px;width:100%}
@@ -264,15 +278,17 @@ body.calm .newsbtn .nmon{animation:none!important}
 .bp-list .acts button.sell{background:#fff8dc;border-color:#b07d12;color:#5a3d00}
 /* fishing (v45): the camera goes behind your monster at the pond */
 /* v46: full screen, so a finger on the button can't land on the page behind it; the whole screen is the reel button */
-.fishgame{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,3vh,28px);
-  padding:max(10px,env(safe-area-inset-top)) 0 max(14px,env(safe-area-inset-bottom));overflow:hidden;
-  background:linear-gradient(#8fd0ff 0 50%,#6cbf5c 50%);transform-origin:91% 94%;animation:fzIn .5s cubic-bezier(.2,.8,.2,1);
+.fishgame{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;justify-content:flex-start;gap:clamp(10px,2vh,18px);
+  padding:0 0 max(16px,env(safe-area-inset-bottom));overflow:hidden;
+  background:linear-gradient(var(--fzTop,#7cc6ff) 0 50%,var(--fzBot,#6cbf5c) 50%);transform-origin:91% 94%;animation:fzIn .5s cubic-bezier(.2,.8,.2,1);
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:contain}
-.fishgame.night{background:linear-gradient(#151d3d 0 50%,#2f5a3a 50%)}
 .fishgame *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 body.fishing,body.vmodal{overflow:hidden}
-.fz-stage{position:relative;flex:none;width:min(100%,calc((100dvh - 230px) * 4 / 3));aspect-ratio:4/3;margin:0 auto;overflow:hidden;background:#2f6fc4}
-@media (min-width:600px){.fz-stage{border:3px solid rgba(0,0,0,.18);border-radius:18px}}
+.fz-stage{position:relative;flex:1 1 auto;min-height:300px;width:100%;max-width:640px;margin:0 auto;overflow:hidden;background:var(--fzTop,#7cc6ff)}
+.fz-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:3/4}
+.fishgame.fz-biting .fz-scene{animation:fzPunch .35s ease-out}
+@keyframes fzPunch{30%{transform:translate(-4px,3px) scale(1.03)}60%{transform:translate(4px,-2px) scale(1.03)}}
+@media (min-width:700px){.fz-stage{border-radius:0 0 18px 18px}}
 .fz-hint{margin:0;min-height:1.3em;text-align:center;font:700 13px/1.3 var(--f-mono);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}
 @keyframes fzIn{from{transform:scale(.12);opacity:0;border-radius:50%}to{transform:none;opacity:1}}
 .fz-bg,.fz-bg svg,.fz-lines{position:absolute;inset:0;width:100%;height:100%}
@@ -283,45 +299,60 @@ body.fishing,body.vmodal{overflow:hidden}
 #fzString{stroke:#fff;stroke-width:1.2;opacity:.85}
 .fishgame.reel #fzRod{animation:fzRod .16s ease-in-out infinite alternate}
 @keyframes fzRod{to{transform:translate(1.5px,2px)}}
-.fz-mon{position:absolute;left:50%;bottom:-7%;width:40%;aspect-ratio:1;transform:translateX(-50%);animation:fzMonIn .55s ease-out}
+.fz-mon{position:absolute;left:50%;bottom:-5%;width:42%;aspect-ratio:1;transform:translateX(-50%);animation:fzMonIn .55s ease-out}
 @keyframes fzMonIn{from{transform:translate(-50%,60%)}to{transform:translate(-50%,0)}}
 .fz-mon .mon{width:100%;height:100%}
 .mon.back .m-eye,.mon.back .m-pupil,.mon.back .m-cheek,.mon.back .m-blush,.mon.back .m-line,.mon.back .mouth,.mon.back .lap,.mon.back .zz,.mon.back .sweat{display:none!important}
 .fishgame.reel .fz-mon .mon{animation:fzPull .2s ease-in-out infinite alternate}
 @keyframes fzPull{from{transform:rotate(-2.5deg)}to{transform:rotate(2.5deg) translateY(1%)}}
-.fz-bob{position:absolute;width:4.2%;aspect-ratio:1;border-radius:50%;background:linear-gradient(#e5383b 50%,#fff 50%);border:1.5px solid #5a1a1a;transform:translate(-50%,-50%);animation:fzBob 1.6s ease-in-out infinite}
+.fz-bob{position:absolute;width:5.4%;z-index:2;aspect-ratio:1;border-radius:50%;background:linear-gradient(#e5383b 50%,#fff 50%);border:1.5px solid #5a1a1a;transform:translate(-50%,-50%);animation:fzBob 1.6s ease-in-out infinite}
 @keyframes fzBob{50%{margin-top:.9%}}
 .fz-bob i{display:none;position:absolute;left:50%;bottom:130%;transform:translateX(-50%);font:900 26px/1 var(--f-display,sans-serif);font-style:normal;color:#ffd34d;text-shadow:0 2px 0 #7a4a00}
-.fishgame.bite .fz-bob{animation:fzDip .14s linear infinite alternate}.fishgame.bite .fz-bob i{display:block}
+.fishgame.fz-biting .fz-bob i{display:none}
 @keyframes fzDip{from{margin-top:0}to{margin-top:2.2%}}
+.fz-lurk{position:absolute;left:0;top:0;width:20%;aspect-ratio:2.6;margin:-3.8% 0 0 -10%;border-radius:50%;background:rgba(8,24,60,.42);filter:blur(2px);opacity:0}
+.fishgame.nibble .fz-bob{animation:fzNib .3s ease-in-out}
+@keyframes fzNib{40%{margin-top:1.4%}}
+.fz-alert{position:absolute;z-index:4;width:15%;aspect-ratio:1;margin:-22% 0 0 -7.5%;display:grid;place-items:center;border-radius:50%;background:#ffd34d;border:3px solid #1d2b25;
+  font:400 clamp(26px,8vw,40px)/1 var(--f-display,sans-serif);color:#e5383b;box-shadow:0 4px 0 rgba(0,0,0,.3);animation:fzAlert .45s cubic-bezier(.2,1.8,.4,1),fzBeat .3s .45s ease-in-out infinite alternate}
+@keyframes fzAlert{from{transform:scale(0) translateY(60%)}}
+@keyframes fzBeat{to{transform:scale(1.14)}}
+.fz-vig{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;background:radial-gradient(circle at var(--bx,50%) var(--by,55%),transparent 22%,rgba(210,20,45,.5) 100%)}
+.fishgame.fz-biting .fz-vig{animation:fzVig .32s ease-in-out infinite alternate}
+@keyframes fzVig{from{opacity:.3}to{opacity:.9}}
+.fishgame.fz-biting .fz-bob{animation:fzDip .12s linear infinite alternate;width:4.4%}
+.fishgame.fz-biting .fz-text{font:400 clamp(30px,10vw,46px)/1 var(--f-display,sans-serif);color:#fff;text-shadow:0 3px 0 #b3001b,0 0 14px rgba(229,56,59,.8);animation:fzYell .18s ease-in-out infinite alternate}
+@keyframes fzYell{from{transform:rotate(-3deg) scale(1)}to{transform:rotate(3deg) scale(1.06)}}
+.fz-text.hooked{font:400 clamp(28px,9vw,42px)/1 var(--f-display,sans-serif);color:#ffd34d;text-shadow:0 3px 0 #7a4a00;animation:fzPop .3s cubic-bezier(.2,1.6,.4,1)}
+.fz-plume{position:absolute;width:18%;aspect-ratio:.7;margin:-24% 0 0 -9%;transform-origin:50% 100%;
+  background:radial-gradient(ellipse at 50% 100%,#fff 0 35%,rgba(220,242,255,.9) 36% 60%,transparent 62%)}
 .fz-shadow{position:absolute;width:var(--fw,16%);aspect-ratio:2.6;border-radius:50%;background:rgba(8,24,60,.42);transform:translate(-50%,-50%);filter:blur(1.5px)}
-.fz-top{position:absolute;left:0;right:0;top:max(12px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;padding:0 12px;z-index:2}
+.fz-top{position:absolute;left:0;right:0;top:max(12px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;padding:0 12px;z-index:10}
 .fz-top span{font:700 13px/1 var(--f-mono);color:#fff;background:rgba(0,0,0,.35);padding:8px 11px;border-radius:999px}
 .fz-top button{border:0;background:rgba(0,0,0,.35);color:#fff;width:42px;height:42px;border-radius:50%;font-size:17px;cursor:pointer}
-.fz-text{position:absolute;left:5%;right:5%;top:6%;margin:0;text-align:center;font:700 clamp(13px,3.9vw,17px)/1.3 var(--f-mono);color:#fff;text-shadow:0 2px 3px rgba(0,0,0,.55)}
-.fishgame.bite .fz-text{color:#ffd34d;font-size:clamp(16px,5vw,22px)}
-.fz-meter{position:absolute;left:8%;right:8%;top:18%;display:grid;gap:5px}
+.fz-text{position:absolute;z-index:4;left:5%;right:5%;top:calc(max(12px,env(safe-area-inset-top)) + 58px);margin:0;text-align:center;font:700 clamp(13px,3.9vw,17px)/1.3 var(--f-mono);color:#fff;text-shadow:0 2px 3px rgba(0,0,0,.55)}
+.fz-meter{position:absolute;left:8%;right:8%;top:calc(max(12px,env(safe-area-inset-top)) + 110px);display:grid;gap:5px}
 .fz-track{position:relative;height:26px;border-radius:13px;background:rgba(8,24,60,.6);border:2px solid #fff;overflow:hidden}
 .fz-zone{position:absolute;top:0;bottom:0;background:#6ee08b;border-radius:10px;opacity:.9}
 .fz-zone.on{background:#b6ffc6}
 .fz-pip{position:absolute;top:50%;width:22px;height:14px;margin:-7px 0 0 -11px;background:#ffd34d;border:2px solid #7a4a00;border-radius:50% 60% 60% 50%}
 .fz-prog{height:8px;border-radius:4px;background:rgba(8,24,60,.6);overflow:hidden}
 .fz-prog i{display:block;height:100%;width:30%;background:#ffd34d}
-.fz-result{position:absolute;left:10%;right:10%;top:7%;bottom:9%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,253,246,.96);border:2.5px solid #1d2b25;border-radius:16px;padding:10px;color:#1d2b25;animation:fzPop .35s cubic-bezier(.2,1.4,.4,1)}
+.fz-result{position:absolute;left:10%;right:10%;top:calc(max(12px,env(safe-area-inset-top)) + 60px);bottom:6%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,253,246,.96);border:2.5px solid #1d2b25;border-radius:16px;padding:10px;color:#1d2b25;animation:fzPop .35s cubic-bezier(.2,1.4,.4,1)}
 @keyframes fzPop{from{transform:scale(.5);opacity:0}}
 .fz-catch{flex:1;min-height:0;width:70%;display:flex;justify-content:center}.fz-catch svg{height:100%;width:auto;max-width:100%;display:block}
 /* v52: landing a fish is a moment - flash, splash, the fish leaps out, then a card in its rarity's colours */
 .fz-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6}
-.fz-flash.go{animation:fzFlash .5s ease-out}
-@keyframes fzFlash{0%{opacity:.95}100%{opacity:0}}
-.fz-stage.shake{animation:fzShake .5s}
-@keyframes fzShake{10%,50%,90%{transform:translate(-7px,3px)}30%,70%{transform:translate(7px,-3px)}}
+.fz-flash.go{animation:fzFlash .28s ease-out}
+@keyframes fzFlash{0%{opacity:.6}100%{opacity:0}}
+.fz-stage.shake .fz-scene{animation:fzShake .5s}
+@keyframes fzShake{10%,50%,90%{transform:translate(-7px,3px) scale(1.04)}30%,70%{transform:translate(7px,-3px) scale(1.04)}}
 .fz-fx{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
 .fz-drop{position:absolute;width:10px;height:13px;margin:-6px 0 0 -5px;border-radius:50%/60% 60% 40% 40%;background:#e6f6ff;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(30,90,160,.25)}
 .fz-ring{position:absolute;width:12%;aspect-ratio:2.6;margin:-3% 0 0 -6%;border:3px solid #fff;border-radius:50%;opacity:.9}
-.fz-leap{position:absolute;left:0;top:0;width:34%;margin:-10% 0 0 -17%}
-.fz-leap svg{width:100%;display:block;filter:drop-shadow(0 5px 0 rgba(0,0,0,.22))}
-.fz-result.landed{left:3%;right:3%;top:3%;bottom:3%;gap:4px;justify-content:flex-start;padding:12px 10px 14px;overflow:hidden;color:#fff;border:3px solid #1d2b25;
+.fz-leap{position:absolute;left:0;top:0;width:44%;margin:-13% 0 0 -22%;z-index:2}
+.fz-leap svg{width:100%;display:block;filter:drop-shadow(0 6px 0 rgba(0,0,0,.25)) drop-shadow(0 0 10px rgba(255,255,255,.8))}
+.fz-result.landed{left:3%;right:3%;top:calc(max(12px,env(safe-area-inset-top)) + 58px);bottom:3%;gap:4px;justify-content:flex-start;padding:12px 10px 14px;overflow:hidden;color:#fff;border:3px solid #1d2b25;
   background:radial-gradient(circle at 50% 42%,var(--t1) 0,var(--t2) 72%);animation:fzPop .4s cubic-bezier(.2,1.4,.4,1)}
 .fz-rays{display:none;position:absolute;left:50%;top:44%;width:170%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:repeating-conic-gradient(rgba(255,255,255,.26) 0 9deg,rgba(255,255,255,0) 9deg 18deg);
@@ -1079,17 +1110,22 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       <div class="fishgame" id="fishGame" hidden>
         <div class="fz-top"><span id="fzCasts"></span><button type="button" id="fzClose" aria-label="Stop fishing">✕</button></div>
         <div class="fz-stage">
+        <div class="fz-scene" id="fzScene">
         <div class="fz-bg" id="fzBg"></div>
         <div class="fz-shadow" id="fzShadow" hidden></div>
-        <svg class="fz-lines" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"><path id="fzRod" d="M214 262 Q240 190 262 118" /><path id="fzString" d="M262 118 L262 118"/></svg>
+        <div class="fz-lurk" id="fzLurk" hidden></div>
+        <svg class="fz-lines" viewBox="0 0 300 400" preserveAspectRatio="none" aria-hidden="true"><path id="fzRod" d="M186 366 Q200 250 226 150" /><path id="fzString" d="M226 150 L226 150"/></svg>
         <div class="fz-bob" id="fzBob" hidden><i>!</i></div>
         <div class="fz-mon" id="fzMon"></div>
+        <div class="fz-alert" id="fzAlert" hidden>!</div>
+        <div class="fz-fx" id="fzFx" aria-hidden="true"></div>
+        </div>
+        <div class="fz-vig" id="fzVig" aria-hidden="true"></div>
         <p class="fz-text" id="fzText"></p>
         <div class="fz-meter" id="fzMeter" hidden>
           <div class="fz-track"><div class="fz-zone" id="fzZone"></div><div class="fz-pip" id="fzPip"></div></div>
           <div class="fz-prog"><i id="fzProg"></i></div>
         </div>
-        <div class="fz-fx" id="fzFx" aria-hidden="true"></div>
         <div class="fz-flash" id="fzFlash" aria-hidden="true"></div>
         <div class="fz-result" id="fzResult" hidden>
           <div class="fz-rays" aria-hidden="true"></div>
@@ -1156,7 +1192,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v52.0</span>
+    <span>v53.0</span>
   </div>
 </div>
 
@@ -2467,15 +2503,24 @@ async function tapDecor(it,el){
    and it drifts left; keep the fish inside it to fill the bar. Bigger, rarer fish dart about faster and the band is narrower. */
 let fz=null;
 const fzEl=id=>$(id);
+function fzSize(){ // the 3:4 scene covers the stage and sits on its bottom edge (the dock stays in view)
+  const st=$("fishGame").querySelector(".fz-stage"), sc=$("fzScene"), W=st.clientWidth, H=st.clientHeight;
+  const k=Math.max(W/300,H/400), w=300*k, h=400*k;
+  Object.assign(sc.style,{width:w+"px",height:h+"px",left:(W-w)/2+"px",top:(H-h)+"px"});
+  return {W,H,w,h,ox:(W-w)/2,oy:H-h};
+}
+if(window.ResizeObserver) new ResizeObserver(()=>{if(!$("fishGame").hidden){const d=fzSize();if(fz) fz.dim=d;}}).observe($("fishGame").querySelector(".fz-stage"));
+else addEventListener("resize",()=>{if(!$("fishGame").hidden) fzSize();});
 function fzPlace(x,y){ // x, y as fractions of the pond view
-  const bob=fzEl("fzBob"), sh=fzEl("fzShadow");
-  bob.style.left=x*100+"%";bob.style.top=y*100+"%";sh.style.left=x*100+"%";sh.style.top=(y*100+3)+"%";
-  fzEl("fzString").setAttribute("d",`M262 118 Q${(262+x*400)/2} ${Math.max(118,y*300)-6+26} ${x*400} ${y*300}`);
+  const bob=fzEl("fzBob"), sh=fzEl("fzShadow"), al=fzEl("fzAlert");
+  bob.style.left=x*100+"%";bob.style.top=y*100+"%";al.style.left=x*100+"%";al.style.top=y*100+"%";sh.style.left=x*100+"%";sh.style.top=(y*100+3)+"%";
+  fzEl("fzString").setAttribute("d",`M226 150 Q${(226+x*300)/2} ${Math.max(150,y*400)+20} ${x*300} ${y*400}`);
+  const g=$("fishGame"), d=fz&&fz.dim;if(d){g.style.setProperty("--bx",(d.ox+x*d.w)+"px");g.style.setProperty("--by",(d.oy+y*d.h)+"px");}
 }
 function closeFish(){
   const g=$("fishGame");if(!g||g.hidden){fz=null;return;}
   if(fz){
-    clearTimeout(fz.t);cancelAnimationFrame(fz.raf);
+    clearTimeout(fz.t);cancelAnimationFrame(fz.raf);fishCalm();
     if(["wait","bite","reel"].includes(fz.state)) api("fish/land",{ok:false}).catch(()=>{}); // walked away: it swims off
   }
   fz=null;g.hidden=true;document.body.classList.remove("fishing");refresh();
@@ -2486,44 +2531,71 @@ function openFish(spot){
   if((S.me.bag||[]).length>=(S.bagMax||24)){tipAt($("pondBtn"),"Your bag is full. Sell some fish or put them in an aquarium.","9%",4000);return;}
   const g=$("fishGame");if(g.parentNode!==document.body) document.body.appendChild(g); // out of the cave card: full screen
   g.className="fishgame"+(sceneNight()?" night":"");g.hidden=false;document.body.classList.add("fishing");
+  const nt=sceneNight(), cols=spot==="sea"?(nt?["#0f1633","#463422"]:["#6ab8ff","#8c5d2e"]):(nt?["#0f1633","#2f5a3a"]:["#7cc6ff","#6cbf5c"]);
+  g.style.setProperty("--fzTop",cols[0]);g.style.setProperty("--fzBot",cols[1]); // the scene carries on above and below
   $("fzBg").innerHTML=spot==="sea"?VILLAGE.sea(sceneNight()):CAVE_HOME.pond(sceneNight());
   $("fzMon").replaceChildren(monEl(S.me.monster,S.me.color,"","back"));
-  fz={state:"idle",spot};fishIdle(spot==="sea"?"Cast your line into the sea.":"Cast your line into the pond.");
+  fz={state:"idle",spot};requestAnimationFrame(()=>{if(fz) fz.dim=fzSize();});fz.dim=fzSize();fishIdle(spot==="sea"?"Cast your line into the sea.":"Cast your line into the pond.");
 }
 const bagFull=()=>(S.me.bag||[]).length>=(S.bagMax||24);
 function fzBagLine(){$("fzCasts").textContent=`Bag ${(S.me.bag||[]).length}/${S.bagMax||24}`;}
 function fishIdle(text){
-  const g=$("fishGame");g.classList.remove("bite","reel");
+  const g=$("fishGame");g.classList.remove("fz-biting","reel");
   fz.state=bagFull()?"over":"idle";
   $("fzMeter").hidden=true;$("fzResult").hidden=true;$("fzBob").hidden=true;$("fzShadow").hidden=true;
-  $("fzString").setAttribute("d","M262 118 L262 132");
+  $("fzString").setAttribute("d","M226 150 L226 168");
   $("fzText").textContent=text;$("fzText").hidden=false;
   fzBagLine();$("fzHint").textContent=fz.state==="over"?"Your bag is full. Sell some fish or put them in an aquarium.":"";
   const b=$("fzBtn");b.hidden=fz.state==="over";b.disabled=false;b.textContent="Cast";b.classList.remove("held");
   $("fzDone").hidden=fz.state!=="over";
 }
 async function fishCast(){
-  fz.state="casting";$("fzFx").replaceChildren();const b=$("fzBtn");b.disabled=true;$("fzText").textContent="Casting…";$("fzResult").hidden=true;$("fzText").hidden=false;$("fzDone").hidden=true;
+  fz.state="casting";$("fzFx").replaceChildren();$("fzText").classList.remove("hooked");const b=$("fzBtn");b.disabled=true;$("fzText").textContent="Casting…";$("fzResult").hidden=true;$("fzText").hidden=false;$("fzDone").hidden=true;
   let d;
   try{d=await api("fish/cast",{spot:fz.spot});}
   catch(e){if(!fz) return;fz.state="over";$("fzText").textContent=e.message||"The line tangled. Try again.";b.hidden=true;$("fzDone").hidden=false;return;}
   if(!fz) return;
   fz.fish=d;$("fzHint").textContent="Tap anywhere when the float dips.";
-  fz.bx=.38+Math.random()*.3;fz.by=.5+Math.random()*.12;fzPlace(fz.bx,fz.by);$("fzBob").hidden=false;
+  fz.dim=fzSize();const sx=Math.max(.16,-fz.dim.ox/fz.dim.w+.06);fz.bx=Math.max(sx,.36)+Math.random()*(Math.min(.84,1-sx)-Math.max(sx,.36));fz.by=.5+Math.random()*.12;fzPlace(fz.bx,fz.by);$("fzBob").hidden=false;
   fz.state="wait";b.disabled=false;b.textContent="Hook!";$("fzText").textContent="Wait for a bite… don't pull too early!";
+  const waitMs=1800+Math.random()*3500;
+  fishLurk(waitMs);
+  // a nibble or two first: the float twitches, but it's not the bite yet
+  fz.nib=[];for(let i=0,n=1+Math.floor(Math.random()*2);i<n;i++) fz.nib.push(setTimeout(()=>{
+    if(!fz||fz.state!=="wait") return;const g=$("fishGame");g.classList.remove("nibble");void g.offsetWidth;g.classList.add("nibble");fishRing(.6);
+    if(navigator.vibrate) navigator.vibrate(12);
+  },waitMs*(.35+.25*i)+Math.random()*300));
   fz.t=setTimeout(()=>{
     if(!fz||fz.state!=="wait") return;
-    fz.state="bite";$("fishGame").classList.add("bite");$("fzText").textContent="HOOK IT!";
-    if(navigator.vibrate) navigator.vibrate(60);
+    fz.state="bite";const g=$("fishGame");g.classList.add("fz-biting");$("fzText").textContent="HOOK IT!";
+    $("fzAlert").hidden=false;$("fzLurk").hidden=true;fishRing(1.4);
+    fz.rings=setInterval(()=>fishRing(1),240);
+    if(navigator.vibrate) navigator.vibrate([90,40,90,40,90]);
     fz.t=setTimeout(()=>fishLost("Too slow… it got away."),1350-120*d.hard);
-  },1500+Math.random()*3500);
+  },waitMs);
+}
+function fishCalm(){ // stop the bite alarm
+  if(!fz) return;clearInterval(fz.rings);(fz.nib||[]).forEach(clearTimeout);$("fzAlert").hidden=true;$("fzLurk").hidden=true;$("fishGame").classList.remove("fz-biting","nibble");
+}
+function fishRing(k){ // one splash ring around the float
+  const fx=$("fzFx"), bob=$("fzBob");if(!fx.animate) return;
+  const r=mkEl("i","fz-ring");r.style.left=bob.style.left;r.style.top=bob.style.top;fx.appendChild(r);
+  r.animate([{transform:"scale(.4)",opacity:.95},{transform:`scale(${2.2*k})`,opacity:0}],{duration:600,easing:"ease-out"}).onfinish=()=>r.remove();
+}
+function fishLurk(ms){ // a dark shape swims up to the float while you wait
+  const l=$("fzLurk"), dm=fzSize();if(!l.animate) return;
+  const w=dm.w,h=dm.h, bx=fz.bx*w, by=fz.by*h, side=Math.random()<.5?-1:1;
+  l.hidden=false;
+  l.animate([{transform:`translate(${bx+side*w*.45}px,${by+h*.1}px)`,opacity:0},{transform:`translate(${bx+side*w*.2}px,${by+h*.06}px)`,opacity:.8,offset:.3},
+    {transform:`translate(${bx-side*w*.06}px,${by+h*.03}px)`,opacity:.9,offset:.75},{transform:`translate(${bx}px,${by+h*.02}px)`,opacity:1}],{duration:ms,easing:"ease-in-out",fill:"forwards"});
 }
 function fishReel(){
-  clearTimeout(fz.t);const g=$("fishGame"), h=fz.fish.hard;
-  g.classList.remove("bite");g.classList.add("reel");fz.state="reel";
+  clearTimeout(fz.t);fishCalm();const g=$("fishGame"), h=fz.fish.hard;
+  g.classList.remove("fz-biting");g.classList.add("reel");fz.state="reel";
   Object.assign(fz,{pos:fz.bx,target:.5,nextT:0,zw:.32-.034*h,z:Math.max(0,fz.bx-.15),vz:0,prog:.3,hold:false,last:performance.now(),tt:0});
   $("fzMeter").hidden=false;$("fzShadow").hidden=false;$("fzShadow").style.setProperty("--fw",(9+h*4.5)+"%");
-  $("fzBtn").textContent="Hold to reel";$("fzText").textContent="Keep the fish in the green!";$("fzHint").textContent="Hold anywhere on the screen to pull the green up; let go to drop it.";
+  $("fzBtn").textContent="Hold to reel";$("fzText").textContent="HOOKED!";$("fzText").classList.add("hooked");fishRing(1.6);
+  setTimeout(()=>{if(fz&&fz.state==="reel"){$("fzText").classList.remove("hooked");$("fzText").textContent="Keep the fish in the green!";}},700);$("fzHint").textContent="Hold anywhere on the screen to pull the green up; let go to drop it.";
   if(navigator.vibrate) navigator.vibrate([30,40,30]);
   fz.raf=requestAnimationFrame(fishFrame);
 }
@@ -2539,7 +2611,7 @@ function fishFrame(now){
   fz.prog+=dt*(inside?.3:-(.15+.02*h));
   const zone=$("fzZone");zone.style.left=fz.z*100+"%";zone.style.width=fz.zw*100+"%";zone.classList.toggle("on",inside);
   $("fzPip").style.left=fz.pos*100+"%";$("fzProg").style.width=Math.max(0,Math.min(1,fz.prog))*100+"%";
-  fzPlace(.08+.84*fz.pos,.6+.05*Math.sin(fz.tt*5)-.12*fz.prog);
+  fzPlace(.16+.68*fz.pos,.6+.05*Math.sin(fz.tt*5)-.12*fz.prog);
   if(fz.prog>=1){fishWon();return;}
   if(fz.prog<=0){fishLost("The line went slack… it got away.");return;}
   fz.raf=requestAnimationFrame(fishFrame);
@@ -2548,7 +2620,7 @@ const FZ_TIER=[["junk","JUNK"],["common","COMMON"],["uncommon","UNCOMMON"],["rar
 function fishTier(kind,hard){const f=CAVE_HOME.FISH[kind]||{};return kind==="boot"?FZ_TIER[0]:f.legend?["legend","★ LEGENDARY ★"]:FZ_TIER[Math.max(1,Math.min(5,hard||1))];}
 // the fish bursts out of the water where the float was, with a splash, a flash and a shake
 function fishSplash(kind){
-  const st=$("fishGame").querySelector(".fz-stage"), fx=$("fzFx"), bob=$("fzBob");
+  const st=$("fishGame").querySelector(".fz-stage"), fx=$("fzFx"), bob=$("fzBob"), dm=fzSize();
   const x=parseFloat(bob.style.left)||50, y=parseFloat(bob.style.top)||55;
   fx.replaceChildren();
   const fl=$("fzFlash");fl.classList.remove("go");void fl.offsetWidth;fl.classList.add("go");
@@ -2556,15 +2628,17 @@ function fishSplash(kind){
   if(!fx.animate) return;
   for(let i=0;i<2;i++){const r=mkEl("i","fz-ring");r.style.left=x+"%";r.style.top=y+"%";fx.appendChild(r);
     r.animate([{transform:"scale(.4)",opacity:.95},{transform:"scale(3.2)",opacity:0}],{duration:700,delay:i*160,easing:"ease-out",fill:"both"});}
-  for(let i=0;i<18;i++){const d=mkEl("i","fz-drop");d.style.left=x+"%";d.style.top=y+"%";fx.appendChild(d);
+  const pl=mkEl("i","fz-plume");pl.style.left=x+"%";pl.style.top=y+"%";fx.appendChild(pl);
+  pl.animate([{transform:"scaleY(.1) scaleX(.6)",opacity:1},{transform:"scaleY(1.25) scaleX(1)",opacity:1,offset:.35},{transform:"scaleY(.9) scaleX(1.2)",opacity:0}],{duration:800,easing:"ease-out",fill:"both"});
+  for(let i=0;i<28;i++){const d=mkEl("i","fz-drop");d.style.left=x+"%";d.style.top=y+"%";fx.appendChild(d);
     const a=-Math.PI*(.1+.8*Math.random()), v=60+Math.random()*120, dx=Math.cos(a)*v, dy=Math.sin(a)*v;
     d.animate([{transform:"translate(0,0) scale(1)",opacity:1},{transform:`translate(${dx}px,${dy}px) scale(.9)`,opacity:1,offset:.55},{transform:`translate(${dx*1.3}px,${dy+90}px) scale(.5)`,opacity:0}],
       {duration:650+Math.random()*250,easing:"cubic-bezier(.2,.7,.4,1)",fill:"both"});}
   if(kind){const lp=mkEl("div","fz-leap");lp.innerHTML=fishSvg(kind,"");fx.appendChild(lp);
-    const w=st.clientWidth, h=st.clientHeight, sx=x/100*w, sy=y/100*h, ex=w/2, ey=h*.42;
+    const w=dm.w, h=dm.h, sx=x/100*w, sy=y/100*h, ex=dm.W/2-dm.ox, ey=dm.H*.45-dm.oy;
     lp.animate([{transform:`translate(${sx}px,${sy}px) scale(.35) rotate(25deg)`,opacity:1},
       {transform:`translate(${(sx+ex)/2}px,${Math.min(sy,ey)-h*.32}px) scale(1.1) rotate(-20deg)`,opacity:1,offset:.55},
-      {transform:`translate(${ex}px,${ey}px) scale(1.7) rotate(0deg)`,opacity:0}],{duration:820,easing:"cubic-bezier(.3,.6,.4,1)",fill:"both"});}
+      {transform:`translate(${ex}px,${ey}px) scale(1.5) rotate(0deg)`,opacity:1,offset:.9},{transform:`translate(${ex}px,${ey}px) scale(1.6) rotate(0deg)`,opacity:0}],{duration:820,easing:"cubic-bezier(.3,.6,.4,1)",fill:"both"});}
 }
 function fishConfetti(n,gold){
   const box=$("fzConf");box.replaceChildren();
@@ -2579,8 +2653,8 @@ function fishCount(el,to,unit,ms){ // the size counts up
   el.textContent="0"+unit;setTimeout(()=>requestAnimationFrame(step),500);
 }
 function fishShow(kind,title,sub,win){
-  const g=$("fishGame");g.classList.remove("bite","reel");
-  $("fzMeter").hidden=true;$("fzBob").hidden=true;$("fzShadow").hidden=true;$("fzText").hidden=true;$("fzString").setAttribute("d","M262 118 L262 132");
+  const g=$("fishGame");g.classList.remove("fz-biting","reel");
+  $("fzMeter").hidden=true;$("fzBob").hidden=true;$("fzShadow").hidden=true;$("fzText").hidden=true;$("fzString").setAttribute("d","M226 150 L226 168");
   $("fzCatch").innerHTML=kind?fishSvg(kind,""):"";$("fzCatch").hidden=!kind;
   const r=$("fzResult");r.className="fz-result"+(kind?"":" lost")+(win?` landed t-${win.tier[0]}`:"");
   $("fzName").textContent=title;$("fzSize").textContent=sub;
@@ -2596,7 +2670,7 @@ function fishShow(kind,title,sub,win){
 async function fishWon(){
   cancelAnimationFrame(fz.raf);fz.state="landing";const f=fz.fish, info=CAVE_HOME.FISH[f.kind], tier=fishTier(f.kind,f.hard);
   $("fzBtn").disabled=true;$("fzMeter").hidden=true;$("fzText").hidden=true;$("fzShadow").hidden=true;
-  fishSplash(f.kind);$("fzBob").hidden=true;$("fzString").setAttribute("d","M262 118 L262 132");
+  fishSplash(f.kind);$("fzBob").hidden=true;$("fzString").setAttribute("d","M226 150 L226 168");
   if(navigator.vibrate) navigator.vibrate(info.legend?[80,40,80,40,240]:f.hard>=4?[60,30,60,30,120]:[40,30,90]);
   let worth=null;
   const land=api("fish/land",{ok:true}), wait=new Promise(r=>setTimeout(r,760));
@@ -2615,7 +2689,7 @@ async function fishWon(){
 }
 function fishLost(msg){
   if(!fz||!["wait","bite","reel"].includes(fz.state)) return;
-  clearTimeout(fz.t);cancelAnimationFrame(fz.raf);fz.state="landing";
+  clearTimeout(fz.t);cancelAnimationFrame(fz.raf);fishCalm();fz.state="landing";
   api("fish/land",{ok:false}).catch(()=>{});
   fishShow(null,"It got away",msg);
 }
@@ -2757,19 +2831,29 @@ async function loadVillage(quiet){
   try{const d=await api("village");village=d.village;renderVillage();if(villSel==="farm"&&isBuilt("farm")) loadFarm(true);}
   catch(e){if(!quiet&&e.status!==401) toast(e.message);}
 }
+function selectLot(k){
+  villSel=villSel===k?null:k;farmSel=null;planMonth=null;
+  if(villSel==="farm"&&isBuilt("farm")) loadFarm();if(villSel==="planner"&&isBuilt("planner")) loadPlanner();
+  renderVillage();
+}
 function renderVillage(){
   if($("villView").hidden) return;
-  const box=$("villLots");box.replaceChildren();
+  const box=$("villLots");
   Object.keys(BUILD_INFO).forEach(k=>{
-    const st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD;
-    const el=mkEl("button","vlot "+st+(villSel===k?" sel":""));el.type="button";el.setAttribute("aria-label",B[k].name);
-    el.style.left=LOT_AT[k][0]+"%";el.style.top=LOT_AT[k][1]+"%";
+    const st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD, pct=b?Math.floor(b.raised/b.price*100):0;
+    let el=box.querySelector(`.vlot[data-k="${k}"]`);
+    if(!el){el=mkEl("button","vlot");el.type="button";el.dataset.k=k;el.setAttribute("aria-label",B[k].name);
+      el.style.left=LOT_AT[k][0]+"%";el.style.top=LOT_AT[k][1]+"%";el.addEventListener("click",()=>selectLot(k));box.appendChild(el);}
+    el.className="vlot "+st+(villSel===k?" sel":"");
+    const sig=st+"|"+pct;
+    if(el.dataset.sig===sig) return; // nothing changed: leave it alone
+    el.dataset.sig=sig;
     el.innerHTML=`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;
-    if(st==="fund"||st==="site"){const i=mkEl("i"),u=mkEl("u");u.style.width=(b?Math.min(100,b.raised/b.price*100):0)+"%";i.appendChild(u);el.appendChild(i);}
+    if(st==="fund"||st==="site"){const i=mkEl("i"),u=mkEl("u");u.style.width=Math.min(100,pct)+"%";i.appendChild(u);el.appendChild(i);}
     const short={weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"}[k];
-    el.appendChild(mkEl("b","",st==="open"?short:st==="building"?`${short} · soon`:st==="site"?`${short} 🚧 ${Math.floor(b.raised/b.price*100)}%`:`${short} ${b?Math.floor(b.raised/b.price*100):0}%`));
-    el.addEventListener("click",()=>{villSel=villSel===k?null:k;farmSel=null;renderVillage();if(villSel==="farm"&&isBuilt("farm")) loadFarm();if(villSel==="planner"&&isBuilt("planner")) loadPlanner();});
-    box.appendChild(el);
+    const lab=mkEl("b","",short);
+    if(st==="building") lab.appendChild(mkEl("em","","opens soon"));else if(st!=="open") lab.appendChild(mkEl("em","",pct+"% paid"));
+    el.appendChild(lab);
   });
   renderVillCard();
 }
@@ -2777,14 +2861,15 @@ function renderVillCard(){
   const card=$("villCard");
   if(!villSel||$("villView").hidden){card.hidden=true;$("villBack").hidden=true;document.body.classList.remove("vmodal");return;}
   const k=villSel, st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD[k];
-  const wasOpen=!card.hidden, sc=card.scrollTop;
+  const wasOpen=!card.hidden&&card.dataset.k===k, sc=card.scrollTop;
+  card.dataset.k=k;card.classList.toggle("pop",!wasOpen);
   card.hidden=false;$("villBack").hidden=false;document.body.classList.add("vmodal");card.replaceChildren();
-  if(wasOpen) requestAnimationFrame(()=>{card.scrollTop=sc;});
+  if(wasOpen) card.scrollTop=sc;
   const top=mkEl("div","vtop");top.appendChild(mkEl("h3","",B.name));
   const x=mkEl("button","","✕");x.type="button";x.setAttribute("aria-label","Close");x.addEventListener("click",closeVillCard);top.appendChild(x);
   card.appendChild(top);
   if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div","vhero");hero.innerHTML=`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;card.appendChild(hero);}
-  if(st!=="open"||k!=="farm") card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
+  if(st!=="open"||(k!=="farm"&&k!=="planner")) card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
   if(st==="fund"||st==="site"){
     if(!b){card.appendChild(mkEl("p","","Loading…"));return;}
     if(st==="site") card.appendChild(mkEl("p","",`🚧 Building has started! The walls go up as coins come in.`));
@@ -2842,19 +2927,41 @@ async function donate(k,amount,btn){
 }
 
 /* ---- the holiday planner (v51) ---- */
-let planner=null, planMore=false;
+let planner=null, planMonth=null;
 async function loadPlanner(quiet){
   try{planner=await api("planner");if(villSel==="planner") renderVillCard();}
   catch(e){if(!quiet&&e.status!==401) toast(e.message);}
 }
 const dShort=d=>new Intl.DateTimeFormat("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(d+"T00:00:00Z"));
 function renderPlanner(card){
-  if(!planner){card.appendChild(mkEl("p","","Looking at the calendar…"));return;}
+  if(!planner){card.appendChild(mkEl("p","vload","Looking at the calendar…"));return;}
   if(planner.region==="none"){card.appendChild(mkEl("p","","Your holiday list is set to none. Pick Singapore or Malaysia in your account to see long breaks."));return;}
-  card.appendChild(mkEl("p","vwhat",`Using the ${planner.regionName} holidays (change it in your account).${planner.planned.length?` You've booked: ${planner.planned.map(dShort).join(", ")}.`:""}`));
-  if(!planner.ideas.length){card.appendChild(mkEl("p","","No long breaks coming up in the holiday list yet."));return;}
-  const list=mkEl("div","plist"), show=planMore?planner.ideas:planner.ideas.slice(0,8);
-  show.forEach(i=>{
+  if(planner.planned.length) card.appendChild(mkEl("p","pbooked",`✓ You've booked: ${planner.planned.map(dShort).join(", ")}`));
+  const months={};planner.ideas.forEach(i=>{const m=i.from.slice(0,7);(months[m]||(months[m]=[])).push(i);});
+  if(!planMonth){ // step 1: pick a month
+    card.appendChild(mkEl("p","vwhat",`Pick a month: it shows where a day or two of leave turns the ${planner.regionName} public holidays into a long break, and who in the cave is taking it.`));
+    const grid=mkEl("div","pmonths"), start=new Date(planner.today+"T00:00:00Z");
+    for(let i=0;i<12;i++){
+      const d=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+i,1)), m=d.toISOString().slice(0,7), list=months[m]||[];
+      const bt=mkEl("button","pmonth"+(list.length?"":" none"));bt.type="button";bt.disabled=!list.length;
+      bt.appendChild(mkEl("b","",new Intl.DateTimeFormat("en-GB",{month:"short",timeZone:"UTC"}).format(d)));
+      bt.appendChild(mkEl("small","",d.getUTCFullYear()!==start.getUTCFullYear()||i===0?String(d.getUTCFullYear()):""));
+      if(list.length){const best=Math.max(...list.map(x=>x.days));bt.appendChild(mkEl("span","pm-best",`${best} days`));
+        const mine=list.some(x=>x.takers.includes(S.me.id)), friends=list.some(x=>x.takers.some(p=>p!==S.me.id));
+        if(mine||friends) bt.appendChild(mkEl("span","pm-dot",mine?"booked":"friends"));}
+      else bt.appendChild(mkEl("span","pm-best","—"));
+      bt.addEventListener("click",()=>{planMonth=m;renderVillCard();card.scrollTop=0;});
+      grid.appendChild(bt);
+    }
+    card.appendChild(grid);return;
+  }
+  // step 2: that month's breaks
+  const head=mkEl("div","pmhead"), back=mkEl("button","btn ghost","← Months");back.type="button";
+  back.addEventListener("click",()=>{planMonth=null;renderVillCard();card.scrollTop=0;});
+  head.append(back,mkEl("b","",new Intl.DateTimeFormat("en-GB",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(planMonth+"-01T00:00:00Z"))));
+  card.appendChild(head);
+  const list=mkEl("div","plist");
+  (months[planMonth]||[]).forEach(i=>{
     const row=mkEl("div","pidea"+(i.takers.includes(S.me.id)?" mine":""));
     const top=mkEl("div","ptop");top.append(mkEl("b","",`${dShort(i.from)} – ${dShort(i.to)}`),mkEl("span","pdays",`${i.days} days`));row.appendChild(top);
     row.appendChild(mkEl("span","phol",[...new Set(i.holidays.map(h=>h.name))].join(" · ")));
@@ -2871,7 +2978,6 @@ function renderPlanner(card){
     list.appendChild(row);
   });
   card.appendChild(list);
-  if(!planMore&&planner.ideas.length>8){const more=mkEl("button","btn ghost",`Show all ${planner.ideas.length}`);more.type="button";more.addEventListener("click",()=>{planMore=true;renderVillCard();});card.appendChild(more);}
 }
 
 /* ---- the farm ---- */
@@ -2882,7 +2988,7 @@ async function loadFarm(quiet){
 const cropSvg=(kind,cls="fi")=>`<svg class="${cls}" viewBox="0 0 100 60" aria-hidden="true">${VILLAGE.CROPS[kind]?VILLAGE.CROPS[kind].produce:""}</svg>`;
 const hoursText=h=>h<24?`${h} h`:`${h/24} ${h===24?"day":"days"}`;
 function renderFarm(card){
-  if(!farm){card.appendChild(mkEl("p","","Opening the farm…"));return;}
+  if(!farm){card.appendChild(mkEl("p","vload","Opening the farm…"));return;}
   const t=clockNow(), grid=mkEl("div","farm");
   farm.plots.forEach(p=>{
     const c=p.crop, b=mkEl("button","plot");b.type="button";
@@ -4499,43 +4605,25 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v52-splash",v:"v52.0",at:"2026-11-14T15:00",title:"Bigger catches, easier village",changes:[
-    "Landing a fish is a moment now: a splash, the fish leaps out, and a card in its rarity's colours (common to legendary) with its size counting up. NEW! the first time you catch a kind.",
-    "Village buildings start going up with the first coin: the walls rise as the cave chips in.",
-    "Tapping a building opens its card in the middle of the screen, bigger and easier to read.",
-    "Tap the cave in the middle of the village map to go home."],panels:[
-    {art:"bigfish",title:"SPLASH!",text:"Reel it in and it leaps out of the water. Rare ones come with confetti."},
-    {art:"site",title:"Walls going up",text:"The first coin starts the building. Every coin after that adds bricks."}]},
-  {id:"v51-holidays",v:"v51.0",at:"2026-11-13T17:40",title:"The holiday planner",changes:[
-    "A fifth building for the village: the holiday planner (2,500 coins).",
-    "It finds where a day or two of leave turns public holidays into a long break (Christmas + New Year: 10 days for 4 days of leave), and pushes you a tip 3 weeks ahead.",
-    "Tap I'll take it and those days are marked off in the app; everyone sees who's taking the same break."],panels:[
-    {art:"planner",title:"Long breaks, found",text:"Take Thu 24 Dec off and Christmas is 4 days. The planner finds these for you."},
-    {art:"together",title:"Off together",text:"See who in the cave is taking the same days, and plan the trip."}]},
-  {id:"v50-village",v:"v50.0",at:"2026-11-13T17:00",title:"The village: build it together",changes:[
-    "Tap Village (next to Bag): four buildings the whole cave pays for together. Chip in any amount; once it's paid for, it's built in a day.",
-    "Weather station (2,000 coins): the weather for everyone. Farm (3,000): grow crops, water each other's, sell them to Mr. Veggie.",
-    "Harbor (4,000): fish at sea, with 5 new fish, and Mr. Fishfish buys fish all day. Cinema (5,000): the week's clips as one movie.",
-    "Fluff's new power is Cloud Shield: zaps grab less of a Fluff's coins (Fluff still sees the weather).",
-    "Zaps now show what you grabbed right away."],panels:[
-    {art:"village",title:"Build it together",text:"Tap Village. Every building has a jar: chip in what you like. When it's full, it's built in a day."},
+  {id:"v53-village",v:"v49.0–53.0",at:"2026-11-14T16:00",title:"The village, and fishing that feels like it",changes:[
+    "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, then a day of finishing touches.",
+    "Weather station (2,000): weather and rain alerts for everyone. Farm (3,000): grow crops, water each other's (+2 coins), sell to Mr. Veggie. Harbor (4,000): fish at sea with 5 new fish, and Mr. Fishfish buys all day. Cinema (5,000): the week's clips as one movie. Holiday planner (2,500): pick a month and see where a day or two of leave makes a long break.",
+    "Fishing fills the screen: a shadow swims up, the float nibbles, then HOOK IT! When you land it, it leaps out with a splash and its card shows how rare it is.",
+    "Fluff's new power is Cloud Shield: zaps grab less of a Fluff's coins.",
+    "Zaps show what you grabbed right away."],panels:[
+    {art:"site",title:"Build it together",text:"Tap Village and pick a lot. Chip in any amount: the first coin starts the building and the walls go up as the cave pays."},
     {art:"farm",title:"The farm",text:"Plant seeds, water each other's crops (+2 coins), pick them when they're ripe and sell them to Mr. Veggie."},
     {art:"harbor",title:"The harbor",text:"Fish at sea: squid, tuna, swordfish, anglerfish and a whale shark. Mr. Fishfish buys all day."},
-    {art:"cinema",title:"The cinema",text:"The whole week's clips, back to back, with credits. Popcorn not included."},
+    {art:"planner",title:"Long breaks, found",text:"Pick a month. Take Thu 24 Dec off and Christmas is 4 days, and you can see who's taking it too."},
+    {art:"bigfish",title:"SPLASH!",text:"Wait for the bite, hook it, reel it in: it leaps out of the water. Rare ones come with confetti."},
     {art:"shield",title:"Cloud Shield",text:"Fluffs keep 20 to 40% of their coins when zapped, and at Lv3 the first grab of the day bounces off."}]},
-  {id:"v48-loot",v:"v48.0",at:"2026-11-13T15:30",title:"100 coins for everyone, and every zap grabs",changes:[
-    "Everyone has their 100 welcome coins now, even if they haven't opened the app since coins came.",
-    "No more \"first zap of the day\": every zap takes 1 to 10% of their coins. One zap per person every 10 minutes, as before.",
-    "If someone's nearly broke, the app says so instead of staying quiet."],panels:[
-    {art:"gift",title:"100 for everyone",text:"Nobody starts at 0 any more: every monster has its 100 welcome coins, opened the app or not."},
-    {art:"loot",title:"Zap, grab, repeat",text:"Every zap grabs 1 to 10% of their coins. Want to keep yours? A safe at home keeps half out of reach."}]},
-  {id:"v45-coins",v:"v47.0",at:"2026-11-13T14:00",title:"Monster coins, a shop and a pond",changes:[
-    "Earn monster coins: 50 for every workday (paid at clock-out), a bonus every 5 days in a row, and more for filming on time.",
-    "Every zap takes 1 to 10% of their coins.",
+  {id:"v48-loot",v:"v44.0–48.0",at:"2026-11-13T15:30",title:"Monster coins, a shop and a pond",changes:[
+    "Earn monster coins: 50 for every workday (paid at clock-out), a bonus every 5 days in a row, and more for filming on time. Everyone starts with 100.",
+    "Every zap grabs 1 to 10% of their coins (a safe at home keeps half out of reach).",
     "Go fishing in the yard: cast, hook, reel. 13 kinds of fish, 5 of them legendary. Sell your catch to Mr. Fishfish or keep it in an aquarium.",
     "The home is now a shop: 33 things to buy, and some of them do something."],panels:[
-    {art:"payday",title:"Payday",text:"Every workday you show up pays 50 monster coins at clock-out. Tap the coin button to see your wallet."},
-    {art:"loot",title:"Zap and grab",text:"Every zap takes 1 to 10% of their coins. A safe at home keeps half out of reach."},
+    {art:"payday",title:"Payday",text:"Every workday you show up pays 50 monster coins at clock-out. Everyone starts with 100. Tap the coin button to see your wallet."},
+    {art:"loot",title:"Zap and grab",text:"Every zap grabs 1 to 10% of their coins. A safe at home keeps half out of reach."},
     {art:"fishing",title:"Gone fishing",text:"Tap the pond: cast, hook it when it bites, then hold to reel. Mr. Fishfish buys fish at lunch and in the evening."},
     {art:"shop",title:"The shop",text:"Spend coins on the home: a jukebox that plays, a coffee machine that raises your wage, a big fish tank…"}]},
   {id:"v42-home",v:"v42.0",at:"2026-11-12T16:00",title:"Our cave has a home",changes:[
@@ -4569,10 +4657,6 @@ const NEWS=[
     {art:"holiday",title:"Holiday!",text:"On a public holiday your card says Holiday instead of counting down. Pick Singapore or Malaysia in your account."},
     {art:"dayoff",title:"Day off",text:"Taking leave? Turn on Taking today off in your account. Your streak is safe."},
     {art:"lofi",title:"Lofi vlog",text:"Days play with a soft lofi beat, and Make video keeps it. Everyone's own sound stays on top, a little quieter."}]},
-  {id:"v22-history",v:"v22.0",at:"2026-11-08T18:36",title:"Every update, in News",changes:[
-    "News now lists every update, newest first, with its version, date and time.",
-    "Updates with a comic have a Watch the comic button. Back takes you to the list."],panels:[
-    {art:"news",title:"Never miss an update",text:"Tap News any time to see what changed and when. Your monster hops when there's something new."}]},
   {id:"v21-camera",v:"v21.0",at:"2026-11-08T18:24",title:"Camera filters, zoom and tone",changes:[
     "8 filters under the camera: Normal, Vivid, Warm, Cool, Film, Retro, Mono, Dreamy.",
     "Zoom 1×, 2× or 3×, or pinch the picture. Works while you film too.",
@@ -4581,18 +4665,13 @@ const NEWS=[
     {art:"filters",title:"Pick a look",text:"Swipe the filters under the camera: Vivid, Warm, Cool, Film, Retro, Mono, Dreamy."},
     {art:"zoom",title:"Zoom in",text:"Tap 1×, 2× or 3×, or pinch the picture. You can zoom while you film."},
     {art:"adjust",title:"Fine-tune it",text:"The sliders button sets brightness, contrast, saturation and warmth. Your phone remembers your look."}]},
-  {id:"v20",v:"v20.0",at:"2026-11-08T17:53",title:"A clearer Screenshot button",changes:[
-    "A camera icon over a small SCREENSHOT label, so it doesn't look like the photo camera."]},
-  {id:"v19",v:"v19.0",at:"2026-11-08T17:49",title:"The News button",changes:[
-    "News sits next to Screenshot. Every update is here, with its date and comic.",
-    "Your monster hops in the button while there's something you haven't read.",
-    "On phones, the four buttons at the top share one row."],panels:[
-    {art:"news",title:"Something new?",text:"When your monster hops in the News button and a red dot shows, there's an update to read."}]},
-  {id:"v18",v:"v18.0",at:"2026-11-08T17:37",title:"What's new comics",changes:[
-    "Short comics explain new features. (A monster peeked in from the screen edge; the News button replaced it in v19.0.)"]},
-  {id:"v17",v:"v17.0",at:"2026-11-08T17:35",title:"Tidier top bar on phones",changes:[
-    "Account, Cave and Screenshot in one row.","Board / Chat / Days spans the full width, like the cards."]},
-  {id:"v16-calendar",v:"v16.0",at:"2026-11-08T17:33",title:"Cave Calendar, Setlog style",changes:[
+  {id:"v22-history",v:"v17.0–22.0",at:"2026-11-08T18:36",title:"The News button, and a tidier top bar",changes:[
+    "News lists every update, newest first, with its version, date, time and a comic.",
+    "Your monster hops in the News button while there's something you haven't read.",
+    "On phones the buttons at the top share one row, and Screenshot has a clearer icon."],panels:[
+    {art:"news",title:"Never miss an update",text:"When your monster hops in the News button, there's something new. Tap it any time to see what changed."}]},
+  {id:"v16-calendar",v:"v15.0–16.0",at:"2026-11-08T17:33",title:"Cave Calendar",changes:[
+    "The new Days tab keeps every day's clips on a calendar; Make video turns a day into one video.",
     "Four rings a day, at random times between 9 am and 10 pm, at least an hour apart.",
     "Clips are 2 to 4 seconds, one per person per ring.",
     "A day plays as a split screen per ring: everyone side by side.",
@@ -4601,10 +4680,6 @@ const NEWS=[
     {art:"film",title:"Film 2 to 4 seconds",text:"Show what you're doing right now. Within 10 minutes is on time; later is marked Late."},
     {art:"grid",title:"Side by side",text:"Open Days. Each ring plays everyone's clips together, then the next ring."},
     {art:"share",title:"Your day, one video",text:"Tap Make video, then save it or share it to Instagram. Add your own music there."}]},
-  {id:"v15",v:"v15.0",at:"2026-11-08T16:15",title:"Cave Calendar",changes:[
-    "Your cave's phones ring once a day; everyone films a short clip.",
-    "The new Days tab keeps every day's clips on a calendar.",
-    "Make video turns a day into one video to save or share."]},
   {id:"v14",v:"v14.0",at:"2026-11-08T14:46",title:"Smoother on iPhone, and Calm mode",changes:[
     "No more flashing: the board only redraws what changed.","Monsters pause when they're off screen.",
     "Calm mode in your account makes monsters stand still on your phone."],panels:[
@@ -4616,11 +4691,9 @@ const NEWS=[
     "Reroll your monster once a month and keep your level."],panels:[
     {art:"powers",title:"Monster powers",text:"See yours in your account. Some are tools, some are just for fun."},
     {art:"streak",title:"Level up",text:"Open the app on workdays. 3 in a row is Lv1, 7 is Lv2, 14 is Lv3. Weekends and holidays never break it."}]},
-  {id:"v12",v:"v12.0",at:"2026-11-07T14:24",title:"Behind the scenes: admin logo",changes:["The admin page got its own Staff Badge logo."]},
-  {id:"v11",v:"v11.0",at:"2026-11-07T14:01",title:"Usage stats",changes:[
-    "The app counts opens and time in the app, never what your messages say.","Deleting your account deletes your stats."]},
-  {id:"v10",v:"v10.0",at:"2026-11-07T11:23",title:"Loading screen",changes:[
-    "Monster scenes play while your login is checked: tag, a meeting, the night shift, the exit rush.","You only go in once you're logged in."]},
+  {id:"v12",v:"v10.0–12.0",at:"2026-11-07T14:24",title:"Loading screen and usage stats",changes:[
+    "Monster scenes play while your login is checked, and you only go in once you're logged in.",
+    "The app counts opens and time in the app, never what your messages say. Deleting your account deletes your stats."]},
   {id:"v9",v:"v9.0",at:"2026-11-07T11:09",title:"Caves and cave chat",changes:[
     "Caves: your own group of friends, joined with an invite link or code.",
     "Cave chat shows each person's monster and colour.","Pick your own colour. 10 monsters to get.",

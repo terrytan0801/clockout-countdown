@@ -138,19 +138,43 @@ ${[[268, "#e8583e"], [273, "#5b8def"], [278, "#f2c94c"], [284, "#2fa36b"], [289,
     `<path d="M40 62 Q50 72 60 62 Q50 66 40 62Z" fill="#e8583e"/><path d="M14 30 Q50 14 86 30 Q50 34 14 30Z" fill="#e9c46a"/><path d="M32 28 Q34 8 50 8 Q66 8 68 28Z" fill="#f2d68a"/><path d="M33 24 Q50 18 67 24" stroke="#e8583e" stroke-width="4" fill="none"/>` +
     `<path d="M78 70 L96 70 L93 90 L81 90Z" fill="#9aa8b8" stroke="#6b7685" stroke-width="1.2"/><path d="M78 70 Q87 58 96 70" fill="none" stroke="#6b7685" stroke-width="1.6"/><path d="M82 70 q5 -8 10 0" fill="#ff8c5a"/>`;
   // The pond from the bank, behind the monster (400x300). Water runs from y=110 to the bank at y=250.
+  // v53: portrait fishing scenes (viewBox 300x400) that fill a phone screen.
+  // Layout the game relies on: sky to ~y118, water y118-332, the dock y332-400 (the monster sits on it).
   function pond(night) {
-    const sky = night ? ["#151d3d", "#2b3a72"] : ["#8fd0ff", "#dff3ff"], water = night ? ["#1e3f7a", "#122a55"] : ["#4d9be8", "#2f6fc4"], land = night ? "#2f5a3a" : "#6cbf5c";
-    return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
+    const N = night;
+    const sky = N ? ["#0f1633", "#2a3a70"] : ["#7cc6ff", "#d8f0ff"], water = N ? ["#1d3d72", "#0d2148"] : ["#5fb0f0", "#2c6fc7"];
+    const hill1 = N ? "#1f3b33" : "#86c96f", hill2 = N ? "#183028" : "#5fae58", tree = N ? ["#1a3a2a", "#244a34"] : ["#3f9a4a", "#5dbb5b"];
+    const wood = N ? ["#5a4330", "#47341f"] : ["#c08a52", "#9c6a38"];
+    const stars = N ? [[20,18],[60,40],[95,12],[140,30],[180,10],[230,36],[270,16],[40,70],[205,62],[120,58]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="${(x*y)%3?1:1.5}" fill="#fff" opacity=".85"/>`).join("") : "";
+    return `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
 <linearGradient id="fzSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>
-<linearGradient id="fzWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${water[0]}"/><stop offset="1" stop-color="${water[1]}"/></linearGradient></defs>
-<rect width="400" height="120" fill="url(#fzSky)"/>${night ? `<circle cx="330" cy="36" r="14" fill="#fff6c8"/><circle cx="324" cy="32" r="14" fill="${sky[0]}"/>` : `<circle cx="332" cy="38" r="17" fill="#ffd34d"/><g fill="#fff" opacity=".9"><ellipse cx="90" cy="40" rx="30" ry="10"/><ellipse cx="112" cy="33" rx="20" ry="11"/></g>`}
-<path d="M0 112 Q40 84 90 100 Q140 78 200 98 Q260 80 310 100 Q360 86 400 104 L400 124 L0 124Z" fill="${night ? "#1f4030" : "#4a9a52"}"/>
-<g fill="${night ? "#17301f" : "#3a8246"}"><circle cx="40" cy="98" r="14"/><circle cx="62" cy="92" r="11"/><circle cx="356" cy="92" r="15"/><circle cx="378" cy="100" r="10"/></g>
-<rect y="114" width="400" height="150" fill="url(#fzWater)"/>
-<g stroke="#fff" stroke-width="2" fill="none" opacity=".28" stroke-linecap="round"><path class="fz-wave" d="M30 140 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave w2" d="M300 156 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave" d="M90 196 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave w2" d="M250 216 q10 -4 20 0 q10 4 20 0"/><path class="fz-wave" d="M170 132 q8 -3 16 0"/></g>
-<g><ellipse cx="60" cy="176" rx="20" ry="7" fill="#3f9c58"/><path d="M60 176 L80 172 L78 180Z" fill="url(#fzWater)"/><circle cx="54" cy="171" r="5" fill="#ff8fab"/><ellipse cx="346" cy="196" rx="24" ry="8" fill="#3f9c58"/><ellipse cx="318" cy="134" rx="14" ry="5" fill="#3f9c58"/></g>
-<path d="M0 252 Q60 238 130 248 Q200 236 270 248 Q340 238 400 252 L400 300 L0 300Z" fill="${land}"/>
-<g stroke="${night ? "#234a2e" : "#4a9a52"}" stroke-width="3" stroke-linecap="round"><path d="M22 252 l-4 -16 M30 250 l2 -18 M38 252 l6 -14 M362 250 l-5 -15 M370 250 l1 -18 M380 252 l6 -13"/></g>
+<linearGradient id="fzWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${water[0]}"/><stop offset="1" stop-color="${water[1]}"/></linearGradient>
+<linearGradient id="fzRefl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${N ? "#0d1f3a" : "#2f7a4a"}" stop-opacity=".55"/><stop offset="1" stop-color="${N ? "#0d1f3a" : "#2f7a4a"}" stop-opacity="0"/></linearGradient>
+<linearGradient id="fzWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${wood[0]}"/><stop offset="1" stop-color="${wood[1]}"/></linearGradient>
+<radialGradient id="fzSun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${N ? "#fffbe0" : "#fff6b0"}"/><stop offset=".55" stop-color="${N ? "#fff3c0" : "#ffd34d"}"/><stop offset="1" stop-color="${N ? "#fff3c0" : "#ffd34d"}" stop-opacity="0"/></radialGradient></defs>
+<rect width="300" height="400" fill="url(#fzSky)"/>${stars}
+<circle cx="236" cy="42" r="30" fill="url(#fzSun)"/>${N ? `<circle cx="236" cy="42" r="12" fill="#fff6d8"/><circle cx="231" cy="38" r="12" fill="${sky[0]}" opacity=".9"/>` : `<circle cx="236" cy="42" r="13" fill="#ffd34d" stroke="#f2b632" stroke-width="2"/>`}
+${N ? "" : `<g fill="#fff"><ellipse cx="62" cy="34" rx="30" ry="10"/><ellipse cx="80" cy="27" rx="18" ry="11"/><ellipse cx="46" cy="30" rx="13" ry="8"/></g><g fill="#fff" opacity=".85"><ellipse cx="170" cy="62" rx="22" ry="7"/><ellipse cx="183" cy="57" rx="12" ry="7"/></g>
+<path d="M120 40 q4 -4 8 0 q4 -4 8 0 M140 52 q3 -3 6 0 q3 -3 6 0" stroke="#3a5068" stroke-width="1.4" fill="none" stroke-linecap="round"/>`}
+<path d="M0 104 Q40 74 90 92 Q140 66 190 88 Q240 70 300 90 L300 122 L0 122Z" fill="${hill1}"/>
+<path d="M0 112 Q60 96 120 108 Q190 92 300 106 L300 124 L0 124Z" fill="${hill2}"/>
+<g>${[[14,108,16],[34,104,13],[52,110,11],[248,104,15],[270,108,13],[290,104,12],[150,112,9],[166,110,8]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${tree[0]}"/><circle cx="${x-r*.3}" cy="${y-r*.35}" r="${r*.55}" fill="${tree[1]}"/>`).join("")}</g>
+<rect y="116" width="300" height="220" fill="url(#fzWater)"/>
+<rect y="116" width="300" height="34" fill="url(#fzRefl)"/>
+<path d="M0 117 L300 117" stroke="${N ? "#5a7aa8" : "#e9f7ff"}" stroke-width="2" opacity=".7"/>
+<g stroke="#fff" stroke-width="2" fill="none" opacity=".35" stroke-linecap="round"><path class="fz-wave" d="M22 160 q8 -3 16 0 q8 3 16 0"/><path class="fz-wave w2" d="M210 176 q8 -3 16 0 q8 3 16 0"/><path class="fz-wave" d="M70 214 q8 -3 16 0 q8 3 16 0"/><path class="fz-wave w2" d="M190 250 q8 -3 16 0 q8 3 16 0"/><path class="fz-wave" d="M120 290 q8 -3 16 0"/><path class="fz-wave w2" d="M250 300 q8 -3 16 0"/></g>
+<g fill="#fff6b0" opacity="${N ? ".18" : ".3"}"><ellipse cx="236" cy="132" rx="14" ry="2"/><ellipse cx="238" cy="142" rx="10" ry="1.6"/><ellipse cx="235" cy="152" rx="7" ry="1.4"/></g>
+<g><ellipse cx="38" cy="196" rx="20" ry="6.5" fill="${N ? "#2f6a48" : "#4caf50"}"/><path d="M38 196 L58 193 L52 199Z" fill="${water[0]}"/><circle cx="32" cy="193" r="4" fill="#ff8fb4"/><circle cx="32" cy="193" r="1.6" fill="#ffe08a"/>
+<ellipse cx="264" cy="232" rx="17" ry="5.5" fill="${N ? "#2f6a48" : "#4caf50"}"/><path d="M264 232 L281 229 L276 235Z" fill="${water[1]}"/>
+<ellipse cx="62" cy="276" rx="14" ry="4.6" fill="${N ? "#2f6a48" : "#5cbf60"}"/><circle cx="68" cy="274" r="3.2" fill="#fff"/><circle cx="68" cy="274" r="1.3" fill="#ffe08a"/></g>
+<g stroke="${N ? "#2c5a3a" : "#3f8a3f"}" stroke-width="2.4" stroke-linecap="round"><path d="M8 336 Q6 300 12 280 M16 336 Q16 296 22 274 M286 336 Q288 302 282 284 M294 336 Q296 300 292 278"/></g>
+<g fill="${N ? "#5a3a26" : "#7a4a2a"}"><rect x="10" y="272" width="5" height="16" rx="2.5"/><rect x="19" y="268" width="5" height="16" rx="2.5"/><rect x="279" y="278" width="5" height="15" rx="2.5"/><rect x="289" y="274" width="5" height="15" rx="2.5"/></g>
+<g fill="${N ? "#5b6170" : "#a7adb8"}"><ellipse cx="30" cy="334" rx="24" ry="9"/><ellipse cx="272" cy="336" rx="26" ry="9"/></g>
+<rect y="330" width="300" height="70" fill="${N ? "#2f5a3a" : "#6cbf5c"}"/>
+<path d="M78 400 L92 330 L208 330 L222 400Z" fill="url(#fzWood)"/>
+<g stroke="${N ? "#3a2a1a" : "#7a5028"}" stroke-width="1.6"><path d="M89 344 L211 344 M86 358 L214 358 M83 372 L217 372 M80 386 L220 386"/><path d="M130 330 L126 400 M170 330 L174 400"/></g>
+<g fill="${N ? "#3a2a1a" : "#7a5028"}"><rect x="88" y="324" width="8" height="14" rx="2"/><rect x="204" y="324" width="8" height="14" rx="2"/></g>
+${N ? `<g fill="#fff59d">${[[40,250],[90,180],[260,200],[200,140],[150,300]].map(([x,y],i)=>`<circle class="fz-fly f${i%3}" cx="${x}" cy="${y}" r="2"/>`).join("")}</g>` : `<g fill="#ff8fab"><circle cx="20" cy="352" r="3"/><circle cx="280" cy="360" r="3"/></g><g fill="#fff59d"><circle cx="40" cy="364" r="3"/><circle cx="258" cy="350" r="3"/></g>`}
 </svg>`;
   }
 
