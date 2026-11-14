@@ -149,5 +149,24 @@ ${night ? `<g fill="#fff"><circle cx="40" cy="20" r="1.2"/><circle cx="120" cy="
 </svg>`;
   }
 
-  window.VILLAGE = { map, BUILD, CROPS, plant, VEGGIE, SEA_FISH, sea };
+  /* ---------- a building site that grows with the money given (v52), viewBox 0 0 120 100 ---------- */
+  // pct 0..1 of the price raised; done = fully paid and in its last day of building
+  function site(pct, done) {
+    const h = done ? 54 : 8 + 46 * Math.max(0, Math.min(1, pct)), top = 92 - h; // the walls rise as money comes in
+    let bricks = "";
+    for (let y = 92 - 7; y >= top; y -= 7) {
+      const row = Math.round((92 - y) / 7), off = row % 2 ? 7 : 0;
+      for (let x = 24 - off; x < 96; x += 14) { const x0 = Math.max(24, x), x1 = Math.min(96, x + 13); if (x1 > x0) bricks += `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="6" rx="1" fill="${(row + x) % 3 ? "#d9764a" : "#c9653d"}"/>`; }
+    }
+    const poles = h > 14 ? `<g stroke="#c8915a" stroke-width="2.6" fill="none"><path d="M20 94 L20 ${top - 6} M100 94 L100 ${top - 6}"/>` +
+      Array.from({ length: Math.floor((h + 6) / 16) }, (_, i) => `<path d="M18 ${92 - 16 * (i + 1)} L102 ${92 - 16 * (i + 1)}"/>`).join("") + `</g>` : "";
+    const crane = `<path d="M108 94 L108 10 M108 12 L62 12 M108 26 L94 12" stroke="#ffb703" stroke-width="3.4" fill="none"/><path d="M104 94 L112 94" stroke="#555" stroke-width="3"/>` +
+      `<path d="M74 12 L74 ${Math.min(top - 10, 40)}" stroke="#555" stroke-width="1.4"/><rect x="66" y="${Math.min(top - 10, 40)}" width="16" height="8" rx="1.5" fill="#d9764a" stroke="#8a3d22" stroke-width="1"/>`;
+    const cones = `<path d="M6 94 L11 80 L16 94Z M112 94 L116 84 L120 94Z" fill="#ff8c5a"/><path d="M8 89 L14 89" stroke="#fff" stroke-width="2"/>`;
+    const sign = done ? `<g transform="translate(40 ${top - 16})"><rect width="40" height="13" rx="3" fill="#ffd34d" stroke="#5a3d00" stroke-width="1.2"/><text x="20" y="9.5" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="7" fill="#5a3d00">SOON!</text></g>` : "";
+    return `<ellipse cx="60" cy="96" rx="52" ry="5" fill="#000" opacity=".14"/><ellipse cx="60" cy="92" rx="50" ry="8" fill="#b8915f" opacity=".8"/>` +
+      `<rect x="22" y="${top}" width="76" height="${h}" fill="#8a3d22"/>${bricks}${poles}${crane}${cones}${sign}`;
+  }
+
+  window.VILLAGE = { map, BUILD, CROPS, plant, VEGGIE, SEA_FISH, sea, site };
 })();

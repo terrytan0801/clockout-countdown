@@ -1,4 +1,4 @@
-# Clock-out Countdown · v51.0
+# Clock-out Countdown · v52.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -193,6 +193,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 | Cinema | 5,000 | This week's (or last week's) clips played back to back on the phone: a title card, each day as in the Days player, then credits with everyone's clip count |
 
 **Holiday planner (v51, 2,500 coins).** Uses each person's holiday list (Singapore or Malaysia) to find long breaks over the next year (`netlify/lib/planner.mjs`): for each run of public holidays it offers the plain long weekend (3+ days, no leave), the best 1-day bridge (4+ days), and a longer break for 2-4 days of leave when that's at least 2.5 days off per day of leave and 3+ days longer. *I'll take it* books those leave days (`leave/<pid>/<day>` and `dayoff/<day>/<pid>`, so the app treats them as days off: no countdown, no wage, streak kept) and the cave sees who's taking which break. Around 10 am each day, people in a cave with a planner get a push for a break whose first leave day is 3 weeks away (`holidayTips`, run with the rain alerts). Malaysia's 2027 holidays still need adding to `holidays.mjs`.
+
+**v52.** A building starts going up with its first coin: the lot shows a building site whose brick walls rise with the share of the price raised (`VILLAGE.site`), then a last day of finishing touches once it's fully paid. A building's card opens in the middle of the screen over a dimmed backdrop (tap outside or ✕ to close). The cave in the middle of the map is a Home button. Landing a fish now flashes, shakes, splashes and the fish leaps out, then the card shows its rarity (junk, common to super rare by how hard it is, legendary) in that tier's colours, the size counting up, NEW! the first time this phone lands that kind (`clockout.dex`), and confetti for rare and up.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
