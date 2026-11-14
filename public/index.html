@@ -1192,7 +1192,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v53.0</span>
+    <span>v54.0</span>
   </div>
 </div>
 
@@ -1606,7 +1606,18 @@ async function api(path,body,method){
   try{return await apiCall(path,body,method);}
   finally{if(spin){spin.classList.remove("busy");spin.removeAttribute("aria-busy");busyEnd();}}
 }
+// v54: right after the update the server moves the records next to it; it answers 503 {moving} until that's done.
 async function apiCall(path,body,method){
+  for(let i=0;;i++){
+    try{return await apiOnce(path,body,method);}
+    catch(e){
+      if(!(e.status===503&&e.data&&e.data.moving)||i>=120) throw e;
+      toast("Moving your cave to a faster server… one moment",4000);
+      await new Promise(r=>setTimeout(r,Math.min(4000,e.data.retryMs||1500)));
+    }
+  }
+}
+async function apiOnce(path,body,method){
   const headers={};
   if(token) headers.authorization="Bearer "+token;
   if(body) headers["content-type"]="application/json";
@@ -4605,7 +4616,8 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v53-village",v:"v49.0–53.0",at:"2026-11-14T16:00",title:"The village, and fishing that feels like it",changes:[
+  {id:"v54-village",v:"v49.0–54.0",at:"2026-11-14T18:00",title:"The village, fishing that feels like it, and a faster app",changes:[
+    "Everything is faster: the cave's records moved next to the server, so opening the app and every tap answer much sooner.",
     "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, then a day of finishing touches.",
     "Weather station (2,000): weather and rain alerts for everyone. Farm (3,000): grow crops, water each other's (+2 coins), sell to Mr. Veggie. Harbor (4,000): fish at sea with 5 new fish, and Mr. Fishfish buys all day. Cinema (5,000): the week's clips as one movie. Holiday planner (2,500): pick a month and see where a day or two of leave makes a long break.",
     "Fishing fills the screen: a shadow swims up, the float nibbles, then HOOK IT! When you land it, it leaps out with a splash and its card shows how rare it is.",
@@ -4616,7 +4628,8 @@ const NEWS=[
     {art:"harbor",title:"The harbor",text:"Fish at sea: squid, tuna, swordfish, anglerfish and a whale shark. Mr. Fishfish buys all day."},
     {art:"planner",title:"Long breaks, found",text:"Pick a month. Take Thu 24 Dec off and Christmas is 4 days, and you can see who's taking it too."},
     {art:"bigfish",title:"SPLASH!",text:"Wait for the bite, hook it, reel it in: it leaps out of the water. Rare ones come with confetti."},
-    {art:"shield",title:"Cloud Shield",text:"Fluffs keep 20 to 40% of their coins when zapped, and at Lv3 the first grab of the day bounces off."}]},
+    {art:"shield",title:"Cloud Shield",text:"Fluffs keep 20 to 40% of their coins when zapped, and at Lv3 the first grab of the day bounces off."},
+    {art:"fast",title:"Zoom",text:"The cave moved next door to the server. Opening the app, zapping and buying all answer much faster now."}]},
   {id:"v48-loot",v:"v44.0–48.0",at:"2026-11-13T15:30",title:"Monster coins, a shop and a pond",changes:[
     "Earn monster coins: 50 for every workday (paid at clock-out), a bonus every 5 days in a row, and more for filming on time. Everyone starts with 100.",
     "Every zap grabs 1 to 10% of their coins (a safe at home keeps half out of reach).",
@@ -4738,6 +4751,7 @@ function panelArt(kind){
   const small=(p,mood="dance")=>{const m=monEl(p.monster,p.color,mood);m.style.width=m.style.height="70px";return m;};
   switch(kind){
     case "ring":{const c=propEl("clock","prop shake");c.style.color="var(--accent)";add(monEl(me.monster,me.color,"work"),c,burstEl("RING!",{top:"18px",right:"22px"}));break;}
+    case "fast":{const c=propEl("clock","prop shake");c.style.color="var(--accent)";add(monEl(me.monster,me.color,"dance"),c,burstEl("ZOOM!",{top:"18px",right:"22px"}));break;}
     case "film":{const r=document.createElement("span");r.className="recl";r.innerHTML="<i></i>REC 0:03";add(r,monEl(me.monster,me.color,"dance"),propEl("phone"));break;}
     case "grid":add(tiles([{monster:me.monster,color:me.color},...crew]));break;
     case "filters":add(tiles([me,me,me],"tiles three",["sepia(.8) saturate(.9)","none","grayscale(1) contrast(1.2)"]));break;

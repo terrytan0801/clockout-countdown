@@ -1,4 +1,4 @@
-# Clock-out Countdown · v53.0
+# Clock-out Countdown · v54.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -81,7 +81,7 @@ Web apps can't force a custom vibration on someone else's phone.
 
 ## Deploy on Netlify
 
-The site is connected to this repo, so every push to `main` redeploys. For a fresh setup: **Add new project → Import an existing project → GitHub →** `terrytan0801/clockout-countdown` **→ Deploy**. No environment variables are needed. All data is kept in Netlify Blobs (store `clockout`, Singapore region), and push keys are generated automatically.
+The site is connected to this repo, so every push to `main` redeploys. For a fresh setup: **Add new project → Import an existing project → GitHub →** `terrytan0801/clockout-countdown` **→ Deploy**. No environment variables are needed. All data is kept in Netlify Blobs (v54: records in store `clockout-near` next to the functions, videos in store `clockout` in Singapore; see `netlify/lib/stores.mjs`), and push keys are generated automatically.
 
 Data from v8 (one shared board) is moved automatically into a cave called **The Original Cave**. Everyone keeps their name, passcode, monster and login.
 
@@ -117,7 +117,7 @@ test/dev-server.mjs         local preview with a fake store: node test/dev-serve
 - **Zap and chat show at once** on the phone and are sent in the background; they are undone with a message if the server can't be reached.
 - **Saved board.** The last board a phone saw today is kept on the phone, so the app opens straight away and still opens offline (marked "Offline · retrying"). The service worker keeps a copy of the app's own files for that; nothing under `/api` is kept.
 - A warm server remembers sessions for a minute and the push keys for as long as it lives. Logging out is still immediate.
-- The functions run in Netlify's default region (US East); the data is in Singapore. Choosing the functions' region needs Netlify Pro (setting it in code makes the deploy fail on other plans). `GET /api/where` shows the region in use.
+- The functions run in Netlify's default region (US East). Until v53 the data was in Singapore, so every read or write crossed the Pacific; from v54 the records live next to the functions and only videos stay in Singapore. Choosing the functions' region needs Netlify Pro (setting it in code makes the deploy fail on other plans). `GET /api/where` shows the region in use.
 
 ## Chat reactions (v33)
 
@@ -197,6 +197,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v52.** A building starts going up with its first coin: the lot shows a building site whose brick walls rise with the share of the price raised (`VILLAGE.site`), then a last day of finishing touches once it's fully paid. A building's card opens in the middle of the screen over a dimmed backdrop (tap outside or ✕ to close). The cave in the middle of the map is a Home button. Landing a fish now flashes, shakes, splashes and the fish leaps out, then the card shows its rarity (junk, common to super rare by how hard it is, legendary) in that tier's colours, the size counting up, NEW! the first time this phone lands that kind (`clockout.dex`), and confetti for rare and up.
 
 **v53.** Fishing fills the screen: a tall pond or sea scene (`CAVE_HOME.pond`, `VILLAGE.sea` in a 300x400 portrait) covers the stage, a shadow lurks under the float, nibbles tease, and the bite flashes a "!" bubble, ripples, darkens the edges and buzzes "HOOK IT!", then "HOOKED!" before the splash. Village lots are redrawn only when they change (no jumping when tapped) and the building card opens at a fixed spot near the top; map labels are two lines ("35% paid" / "opens soon") and Home is a yellow pill above the cave. The holiday planner starts with a month grid (best break per month, dots where you or friends are off) and then lists that month's breaks. News entries are merged into fewer, bigger updates.
+
+**v54.** Speed. Netlify's request logs showed taps taking 1.5 to 5 seconds (state 2.7 s, zap 4.5 s, even ping 3 s at the median) because the functions run in US East while every record lived in Singapore, so each store read or write crossed the Pacific. The records now live in a store next to the functions (`clockout-near`, region picked from `AWS_REGION` by `nearRegion`); videos and cover frames (`clip/`, `thumb/`) stay in Singapore, behind the CDN. The first requests after the update copy everything else across in 5-second chunks (`moveStep`: lists the old store folder by folder, copies 48 keys at a time, keeps its place in `sys/movecur`, marks `sys/moved` at the end); until it's done every request answers 503 `{moving:true}`, so nothing is written to the old store mid-copy, and the phone shows "Moving your cave to a faster server" and retries. The scheduled jobs wait for the move. The old store is left untouched as a backup. `test/move.test.mjs` covers the move and the app on the split store.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

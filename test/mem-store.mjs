@@ -12,7 +12,14 @@ export function memStore({ onlyIfNew = false } = {}) {
     async set(k, v, o) { if (onlyIfNew && o?.onlyIfNew && m.has(k)) return { modified: false }; ops.write++; m.set(k, v); tag(k); meta.set(k, o?.metadata || {}); return onlyIfNew ? { modified: true } : undefined; },
     async setJSON(k, v, o) { if (onlyIfNew && o?.onlyIfNew && m.has(k)) return { modified: false }; ops.write++; m.set(k, JSON.stringify(v)); tag(k); meta.delete(k); return onlyIfNew ? { modified: true } : undefined; },
     async delete(k) { ops.write++; m.delete(k); meta.delete(k); tags.delete(k); },
-    async list({ prefix = "" } = {}) { ops.list++; return { blobs: [...m.keys()].filter((k) => k.startsWith(prefix)).sort().map((key) => ({ key, etag: tags.get(key) })) }; },
+    async list({ prefix = "", directories = false } = {}) {
+      ops.list++;
+      const ks = [...m.keys()].filter((k) => k.startsWith(prefix)).sort();
+      if (!directories) return { blobs: ks.map((key) => ({ key, etag: tags.get(key) })), directories: [] };
+      const dirs = new Set(), blobs = [];
+      for (const key of ks) { const rest = key.slice(prefix.length), i = rest.indexOf("/"); if (i < 0) blobs.push({ key, etag: tags.get(key) }); else dirs.add(prefix + rest.slice(0, i)); }
+      return { blobs, directories: [...dirs] };
+    },
     _m: m, _ops: ops,
   };
   return api;
