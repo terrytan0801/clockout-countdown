@@ -1,4 +1,4 @@
-# Clock-out Countdown · v55.0
+# Clock-out Countdown · v56.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -201,6 +201,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v54.** Speed. Netlify's request logs showed taps taking 1.5 to 5 seconds (state 2.7 s, zap 4.5 s, even ping 3 s at the median) because the functions run in US East while every record lived in Singapore, so each store read or write crossed the Pacific. The records now live in a store next to the functions (`clockout-near`, region picked from `AWS_REGION` by `nearRegion`); videos and cover frames (`clip/`, `thumb/`) stay in Singapore, behind the CDN. The first requests after the update copy everything else across in 5-second chunks (`moveStep`: lists the old store folder by folder, copies 48 keys at a time, keeps its place in `sys/movecur`, marks `sys/moved` at the end); until it's done every request answers 503 `{moving:true}`, so nothing is written to the old store mid-copy, and the phone shows "Moving your cave to a faster server" and retries. The scheduled jobs wait for the move. The old store is left untouched as a backup. `test/move.test.mjs` covers the move and the app on the split store.
 
 **v55.** A new look: the cave as a train map. The header is a charcoal station sign with your own time left in large type. Each friend's lane is a strip map in their monster colour: stations for start, lunch and clock-out, the walked part greyed, and a lit dot for now that pulses softly (still under Calm mode and reduced motion). Overtime turns the line red and dashed; when someone is off, the dot sits on the last station. Type moves from Bungee and JetBrains Mono to Barlow and Barlow Semi Condensed (signage lettering, tabular figures), corners go square, and the palette is a neutral grey ground with charcoal ink so the twelve monster colours carry the colour. The local dev server now serves pages on Windows too.
+
+**v56.** The train-map look reaches the village and the games. Village buildings are stations: charcoal name plates with a roundel (amber while being paid for, green once open), and Home is the interchange with two roundels. A building card opens under a charcoal sign band with a short slide up (no motion under reduced motion), and its savings bar is a line with start and terminus stations. The shop, bag, farm, cinema tabs and fishing buttons take the square sign corners and uppercase labels. Monster and fishing animations are unchanged. The v55 News entry covers both versions.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

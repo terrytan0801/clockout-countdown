@@ -1028,6 +1028,46 @@ header .ndot{box-shadow:0 0 0 2px var(--sign)}
 
 body.calm .lane .bar i::after{animation:none!important}
 @media (prefers-reduced-motion:reduce){.lane .bar i::after{animation:none!important}}
+/* v56 the village as a network map: every building is a station with a charcoal name plate and a roundel,
+   Home is the interchange; building cards open under a sign band and their savings bar is a line to the terminus. */
+.vlot b{background:var(--sign);color:#fff;border:0;border-radius:3px;padding:5px 8px 5px 24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.vlot b::before{content:"";position:absolute;left:6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid #ffb81c;box-sizing:border-box}
+.vlot b em{color:#ffcf66;letter-spacing:.02em}
+.vlot.open b{background:var(--sign)}
+.vlot.open b::before{border-color:#00a650;background:#00a650;box-shadow:inset 0 0 0 2px #fff}
+.vlot i{border-radius:2px}
+.vhome b{background:var(--sign);color:#fff;border:3px solid #fff;border-radius:4px;padding:7px 12px 7px 32px;text-transform:uppercase;letter-spacing:.05em;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.vhome b::before,.vhome b::after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid #d42e12;box-sizing:border-box}
+.vhome b::before{left:7px}.vhome b::after{left:15px;border-color:#005ec4}
+
+.vcard{padding-top:0}
+.vcard>.vtop{background:var(--sign);color:var(--sign-ink);border-bottom:0;top:0;margin:0 -16px;padding:14px 16px 12px;border-radius:8px 8px 0 0}
+.vcard h3{text-transform:uppercase;letter-spacing:.02em;color:var(--sign-ink)}
+.vcard>.vtop button{background:transparent;color:var(--sign-ink);border:1.5px solid rgba(255,255,255,.35);border-radius:4px}
+.vcard.pop{animation:vIn .22s cubic-bezier(.25,1,.5,1)}
+@keyframes vIn{from{opacity:0;transform:translateX(-50%) translateY(14px)}}
+.vbar{position:relative;height:8px;margin:12px 9px 4px;border-radius:4px;background:var(--track);overflow:visible}
+.vbar u{border-radius:4px;background:#e0a800}
+.vbar::before,.vbar::after{content:"";position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--card);border:3px solid #e0a800;box-sizing:border-box;transform:translate(-50%,-50%);z-index:1}
+.vbar::before{left:0}.vbar::after{left:100%;width:18px;height:18px;border-width:4px}
+.vgive button,.vgive input{border-radius:4px}
+.vwx div,.pbooked{border-radius:4px}
+.pidea .pdays,.pmonth .pm-dot{border-radius:3px}
+
+/* shop, bag, wallet, fishing chrome */
+.shop-tabs button{border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+.shop-pick,.tray-items button{border-radius:6px}
+.tray-items button .pr,.tray-items button .own{border-radius:3px}
+.bp-list li,.bp-list .acts button,.bp-ff,.seeds button,.plot{border-radius:4px}
+.bp-title{text-transform:uppercase;letter-spacing:.03em}
+.pond span,.fishfish span{border-radius:3px}
+.fz-btn{border-radius:6px;text-transform:uppercase;letter-spacing:.05em}
+.fz-result .fz-tier{border-radius:3px}
+.fz-result .fz-new{border-radius:4px}
+.cine-tabs button{border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+.cine-top b{text-transform:uppercase;letter-spacing:.03em}
+
+@media (prefers-reduced-motion:reduce){.vcard.pop{animation:none}}
 </style>
 </head>
 <body class="booting">
@@ -1170,7 +1210,7 @@ body.calm .lane .bar i::after{animation:none!important}
     </div>
     <div class="village" id="villView" hidden>
       <div class="vscene" id="villScene"><div class="vbg" id="villBg"></div><div id="villLots"></div>
-        <button class="vhome" id="villHome" type="button" aria-label="Back to the cave"><b>🏠 Home</b></button></div>
+        <button class="vhome" id="villHome" type="button" aria-label="Back to the cave"><b>Home</b></button></div>
       <div class="vback" id="villBack" hidden></div>
       <div class="vcard" id="villCard" role="dialog" aria-modal="true" hidden></div>
     </div>
@@ -1267,7 +1307,7 @@ body.calm .lane .bar i::after{animation:none!important}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v55.0</span>
+    <span>v56.0</span>
   </div>
 </div>
 
@@ -4702,10 +4742,11 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v55-strip",v:"v55.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
+  {id:"v55-strip",v:"v55.0–56.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
     "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go.",
     "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
     "Overtime turns the line red and dashed. When someone's off, their dot has reached the last station.",
+    "The village is a train network too: every building is a station with its own name plate, and Home is the interchange.",
     "New lettering and square, sign-like buttons all through the app."],panels:[
     {art:"grid",title:"Everyone's line",text:"One line per friend. The grey part is the day done; the coloured part is what's left until the last stop."},
     {art:"smooth",title:"Next stop: off",text:"The lit dot moves along all day. When it reaches the end, that friend is out."}]},
