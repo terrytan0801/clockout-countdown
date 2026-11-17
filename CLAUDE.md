@@ -50,8 +50,7 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
 
 ## Status (17 Nov 2026)
 
-Production runs v64 (v62 fixed the v54 move, v63 added the admin passcode reset and dropped the built-in admin
-key; v64 only redeploys so a new `ADMIN_KEY` takes effect). v61 had marked an almost empty copy as moved, so
-to redo the move delete `sys/moved`, `sys/movelist`, `sys/movecur` and the failed-login `lock/` keys from store
-`clockout-near` (never from `clockout`); the next request copies everything again (787 keys). Changing
-`ADMIN_KEY` in Netlify only takes effect on the next deploy.
+Production runs v64; the redone move worked (requests 0.3 to 0.5 s). `dev` has v65 waiting for "上线": the
+service worker keeps a per-version offline copy (`shell-<version>`, written with `waitUntil`) instead of
+`shell-v1`, which on iPhones held pages from v48 or earlier, and the fishing scene hides the page behind it and
+drops finished splash elements. `ADMIN_KEY` in Netlify only takes effect on the next deploy.

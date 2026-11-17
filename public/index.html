@@ -273,6 +273,9 @@ body.calm .newsbtn .nmon{animation:none!important}
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:contain}
 .fishgame *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 body.fishing,body.vmodal{overflow:hidden}
+/* v65: the page behind the full-screen pond isn't drawn or animated (an iPhone gives a page little graphics memory) */
+body.fishing>.wrap{visibility:hidden}
+body.fishing>.wrap *{animation-play-state:paused!important}
 .fz-stage{position:relative;flex:1 1 auto;min-height:300px;width:100%;max-width:640px;margin:0 auto;overflow:hidden;background:var(--fzTop,#7cc6ff)}
 .fz-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:3/4}
 .fishgame.fz-biting .fz-scene{animation:fzPunch .35s ease-out}
@@ -1353,7 +1356,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v64.0</span>
+    <span>v65.0</span>
   </div>
 </div>
 
@@ -2830,18 +2833,18 @@ function fishSplash(kind){
   st.classList.remove("shake");void st.offsetWidth;st.classList.add("shake");
   if(!fx.animate) return;
   for(let i=0;i<2;i++){const r=mkEl("i","fz-ring");r.style.left=x+"%";r.style.top=y+"%";fx.appendChild(r);
-    r.animate([{transform:"scale(.4)",opacity:.95},{transform:"scale(3.2)",opacity:0}],{duration:700,delay:i*160,easing:"ease-out",fill:"both"});}
+    r.animate([{transform:"scale(.4)",opacity:.95},{transform:"scale(3.2)",opacity:0}],{duration:700,delay:i*160,easing:"ease-out",fill:"both"}).onfinish=()=>r.remove();}
   const pl=mkEl("i","fz-plume");pl.style.left=x+"%";pl.style.top=y+"%";fx.appendChild(pl);
-  pl.animate([{transform:"scaleY(.1) scaleX(.6)",opacity:1},{transform:"scaleY(1.25) scaleX(1)",opacity:1,offset:.35},{transform:"scaleY(.9) scaleX(1.2)",opacity:0}],{duration:800,easing:"ease-out",fill:"both"});
+  pl.animate([{transform:"scaleY(.1) scaleX(.6)",opacity:1},{transform:"scaleY(1.25) scaleX(1)",opacity:1,offset:.35},{transform:"scaleY(.9) scaleX(1.2)",opacity:0}],{duration:800,easing:"ease-out",fill:"both"}).onfinish=()=>pl.remove();
   for(let i=0;i<28;i++){const d=mkEl("i","fz-drop");d.style.left=x+"%";d.style.top=y+"%";fx.appendChild(d);
     const a=-Math.PI*(.1+.8*Math.random()), v=60+Math.random()*120, dx=Math.cos(a)*v, dy=Math.sin(a)*v;
     d.animate([{transform:"translate(0,0) scale(1)",opacity:1},{transform:`translate(${dx}px,${dy}px) scale(.9)`,opacity:1,offset:.55},{transform:`translate(${dx*1.3}px,${dy+90}px) scale(.5)`,opacity:0}],
-      {duration:650+Math.random()*250,easing:"cubic-bezier(.2,.7,.4,1)",fill:"both"});}
+      {duration:650+Math.random()*250,easing:"cubic-bezier(.2,.7,.4,1)",fill:"both"}).onfinish=()=>d.remove();} // v65: gone once it lands
   if(kind){const lp=mkEl("div","fz-leap");lp.innerHTML=fishSvg(kind,"");fx.appendChild(lp);
     const w=dm.w, h=dm.h, sx=x/100*w, sy=y/100*h, ex=dm.W/2-dm.ox, ey=dm.H*.45-dm.oy;
     lp.animate([{transform:`translate(${sx}px,${sy}px) scale(.35) rotate(25deg)`,opacity:1},
       {transform:`translate(${(sx+ex)/2}px,${Math.min(sy,ey)-h*.32}px) scale(1.1) rotate(-20deg)`,opacity:1,offset:.55},
-      {transform:`translate(${ex}px,${ey}px) scale(1.5) rotate(0deg)`,opacity:1,offset:.9},{transform:`translate(${ex}px,${ey}px) scale(1.6) rotate(0deg)`,opacity:0}],{duration:820,easing:"cubic-bezier(.3,.6,.4,1)",fill:"both"});}
+      {transform:`translate(${ex}px,${ey}px) scale(1.5) rotate(0deg)`,opacity:1,offset:.9},{transform:`translate(${ex}px,${ey}px) scale(1.6) rotate(0deg)`,opacity:0}],{duration:820,easing:"cubic-bezier(.3,.6,.4,1)",fill:"both"}).onfinish=()=>lp.remove();}
 }
 function fishConfetti(n,gold){
   const box=$("fzConf");box.replaceChildren();

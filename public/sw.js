@@ -1,14 +1,26 @@
 // Clock-out Countdown service worker: receives zaps (push) and keeps the app installable.
-const VERSION = "v64.0";
-
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+const VERSION = "v65.0";
 
 // The app's own files (page, styles, monsters, icons) are fetched from the network and a copy is kept.
 // If the network is down, or the page takes more than 4 seconds, the kept copy is used, so the app still opens.
 // Nothing under /api is ever kept here.
-const SHELL = "shell-v1";
-const keep = async (req, res) => { if (res && res.ok && res.type === "basic") (await caches.open(SHELL)).put(req, res.clone()); return res; };
+// v65: the copy belongs to this version. Until v64 it lived in "shell-v1" for every version and the copy was
+// written without waiting, so an iPhone (which stops service workers quickly) often never finished writing it:
+// a reload that fell back to the copy could show a page from v48 or earlier. Now each version saves its own
+// complete set while it installs, waits for every write, and drops older sets once it takes over.
+const SHELL = "shell-" + VERSION;
+const SHELL_FILES = ["/", "/monsters.css", "/monsters.js", "/monster-props.js", "/cave-home.js", "/village.js"];
+self.addEventListener("install", (e) => e.waitUntil((async () => {
+  const c = await caches.open(SHELL);
+  await c.addAll(SHELL_FILES.map((u) => new Request(u, { cache: "reload" }))); // straight from the network, not the browser cache
+  await self.skipWaiting();
+})()));
+self.addEventListener("activate", (e) => e.waitUntil((async () => {
+  const names = await caches.keys();
+  await Promise.all(names.filter((n) => n.startsWith("shell-") && n !== SHELL).map((n) => caches.delete(n)));
+  await self.clients.claim();
+})()));
+const keep = async (req, res) => { if (res && res.ok && res.type === "basic") await (await caches.open(SHELL)).put(req, res.clone()); };
 const offlineNote = () => new Response(
   "<!doctype html><meta name=viewport content='width=device-width'><body style='font-family:system-ui;padding:24px'>You're offline. Open Clock-out again when you're back online.</body>",
   { headers: { "content-type": "text/html; charset=utf-8" } });
@@ -32,9 +44,11 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/.netlify/") || url.pathname.startsWith("/admin")) return;
   const nav = req.mode === "navigate";
   const key = nav ? "/" : req; // every way into the app is the same page
+  let saved = Promise.resolve();
+  const net = fetch(req).then((res) => { saved = keep(key, res).catch(() => {}); return res; });
+  e.waitUntil(net.then(() => saved, () => {})); // keep the worker alive until the copy is written
   e.respondWith((async () => {
-    const cached = () => caches.match(key, { ignoreSearch: nav });
-    const net = fetch(req).then((res) => keep(key, res));
+    const cached = async () => (await caches.open(SHELL)).match(key, { ignoreSearch: nav });
     try {
       if (!nav) return await net;
       const slow = new Promise((ok) => setTimeout(ok, 4000, null));
