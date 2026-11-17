@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Clock-out Countdown</title>
 <meta name="description" content="Count down to clock-out with your cave of friends. Zap each other, chat, and watch the monsters dance.">
-<meta name="theme-color" content="#eef3ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#101613" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f1f2ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@500;700&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;700;900&display=swap">
 <script>
 // The test site (dev--<site>.netlify.app) installs as its own app with its own name, so it can't be mixed up with the real one.
 var IS_DEV=/^(?!main--)[a-z0-9-]+--/.test(location.hostname);
@@ -34,7 +34,8 @@ if(IS_DEV){
    a Board | Chat switch, then either the lanes (one per cave member, monster in each) or the cave chat.
    Without a cave you land in the lobby: join with a code or start a cave. */
 :root{
-  --bg:#eef3ef; --card:#ffffff; --ink:#18231d; --muted:#5f6f66; --line:#d5dfd8; --track:#e3ebe6; --danger:#c43c3c; --accent:#ff6b3d;
+  --bg:#f1f2ef; --card:#ffffff; --ink:#25282d; --muted:#5d6269; --line:#d9dbd6; --track:#e4e6e1; --danger:#c8281a; --accent:#d42e12;
+  --sign:#25282d; --sign-ink:#ffffff; --sign-muted:#b4b8bd; --walked:#c3c6c2;
   --done-soft:#fff1c2; --done-ink:#8a6500;
   --eye:#ffffff; --pupil:#18231d; --lap:#3a4640; --lap-hi:#9aa8a0; --sweat:#57b7f0; --zap:#ffd23f; --stem:#f4ece0; --stem-edge:#ddd0bc;
   --c-orange:#ff6b3d; --c-orange-soft:#ffe4da;  --c-red:#e5484d;    --c-red-soft:#fde2e3;
@@ -43,13 +44,14 @@ if(IS_DEV){
   --c-cyan:#0e9fb5;   --c-cyan-soft:#d4f2f6;    --c-teal:#0fa37f;   --c-teal-soft:#d6f3ea;
   --c-green:#5f8a1e;  --c-green-soft:#e5f0d3;   --c-amber:#c2701b;  --c-amber-soft:#f8e6d2;
   --c-gold:#b8900a;   --c-gold-soft:#fbf0c4;    --c-brown:#8a5a3c;  --c-brown-soft:#f1e3d8;
-  --f-display:"Bungee",system-ui,sans-serif;
-  --f-body:"Noto Sans SC",system-ui,-apple-system,sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --f-display:"Barlow Semi Condensed","Noto Sans SC",system-ui,sans-serif;
+  --f-body:"Barlow","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --f-mono:"Barlow Semi Condensed","Noto Sans SC",system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#101613; --card:#17201b; --ink:#e8f0eb; --muted:#93a39a; --line:#2a3630; --track:#222d27; --danger:#ff7b7b; --accent:#ff7f57;
+  --bg:#16181b; --card:#212428; --ink:#eef0ec; --muted:#9ba0a7; --line:#33373c; --track:#2b2f34; --danger:#ff6b5b; --accent:#ff6b4f;
+  --sign:#0b0c0e; --sign-ink:#ffffff; --sign-muted:#9ba0a7; --walked:#454a50;
   --done-soft:#3a3014; --done-ink:#ffc933;
   --eye:#ffffff; --pupil:#101613; --lap:#56645c; --lap-hi:#8b9a92; --sweat:#7cc8ff; --stem:#ece3d4; --stem-edge:#bfb3a0;
   --c-orange:#ff7f57; --c-orange-soft:#3a2219;  --c-red:#ff6b6f;    --c-red-soft:#3b1a1c;
@@ -82,7 +84,7 @@ html.dev .devpill{display:flex;position:fixed;left:10px;bottom:max(10px,env(safe
 .devpill button:disabled{opacity:.6}
 .bubble.pending{opacity:.55}
 .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,7vw,44px);line-height:1.05;margin:0;text-wrap:balance;overflow-wrap:anywhere}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,7vw,44px);line-height:1.05;margin:0;text-wrap:balance;overflow-wrap:anywhere}
 .now{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .now b{color:var(--ink);font-weight:700}
 .offline{font-size:12px;color:var(--danger)}
@@ -188,7 +190,7 @@ body.calm .newsbtn .nmon{animation:none!important}
 .vhome b{position:absolute;left:50%;top:-20px;transform:translateX(-50%);white-space:nowrap;font:800 14px/1 var(--f-mono);background:#ffd34d;color:var(--ink);border:2.5px solid var(--ink);padding:7px 13px;border-radius:999px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
 .vhome:active b{transform:translateX(-50%) scale(.94)}
 
-.vcard h3{margin:0;font:400 26px/1.1 var(--f-display)}
+.vcard h3{margin:0;font:800 26px/1.1 var(--f-display)}
 .vcard .vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .vcard .vtop button{border:1.5px solid var(--line);background:var(--card);font-size:18px;cursor:pointer;color:var(--ink);width:40px;height:40px;border-radius:50%;flex:none}
 .vcard p{margin:0}
@@ -212,14 +214,14 @@ body.calm .newsbtn .nmon{animation:none!important}
 .pbooked{font:700 14px/1.35 var(--f-mono);color:#1f8a7f;background:#e6f6f4;border-radius:10px;padding:8px 10px}
 .pmonths{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .pmonth{position:relative;display:grid;gap:2px;justify-items:center;text-align:center;padding:12px 4px 10px;border:2px solid var(--ink);border-radius:14px;background:var(--card);color:var(--ink);cursor:pointer;font-family:var(--f-mono)}
-.pmonth b{font:400 22px/1 var(--f-display)}
+.pmonth b{font:800 22px/1 var(--f-display)}
 .pmonth small{font-size:11px;color:var(--muted);min-height:1em}
 .pmonth .pm-best{font-size:12px;font-weight:700;color:#26a69a}
 .pmonth .pm-dot{position:absolute;top:-8px;right:-4px;font:800 10px/1 var(--f-mono);background:#26a69a;color:#fff;border-radius:999px;padding:3px 6px}
 .pmonth.none{border-color:var(--line);color:var(--muted);cursor:default}
 .pmonth.none .pm-best{color:var(--muted)}
 .pmhead{display:flex;align-items:center;gap:10px}
-.pmhead b{font:400 22px/1.1 var(--f-display)}
+.pmhead b{font:800 22px/1.1 var(--f-display)}
 .pmhead .btn{padding:9px 12px;font-size:13.5px}
 .pidea{border:2px solid var(--line);border-radius:14px;padding:12px 13px;display:grid;gap:4px;justify-items:start}
 .pidea.mine{border-color:#26a69a;background:#e6f6f4}
@@ -248,7 +250,7 @@ body.calm .newsbtn .nmon{animation:none!important}
 /* the cinema */
 .cine{position:fixed;inset:0;z-index:9100;background:#120d18;color:#fff;display:flex;flex-direction:column;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px max(14px,env(safe-area-inset-bottom))}
 .cine-top{display:flex;justify-content:space-between;align-items:center}
-.cine-top b{font:400 20px/1.1 var(--f-display)}
+.cine-top b{font:800 20px/1.1 var(--f-display)}
 .cine-top button{border:0;background:rgba(255,255,255,.14);color:#fff;width:40px;height:40px;border-radius:50%;font-size:16px;cursor:pointer}
 .cine-screen{position:relative;flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
 .cine-screen canvas{max-width:100%;max-height:100%;aspect-ratio:9/16;border-radius:12px;background:#000;box-shadow:0 0 0 3px #3a2a4a,0 10px 40px rgba(0,0,0,.6)}
@@ -314,16 +316,16 @@ body.fishing,body.vmodal{overflow:hidden}
 .fishgame.nibble .fz-bob{animation:fzNib .3s ease-in-out}
 @keyframes fzNib{40%{margin-top:1.4%}}
 .fz-alert{position:absolute;z-index:4;width:15%;aspect-ratio:1;margin:-22% 0 0 -7.5%;display:grid;place-items:center;border-radius:50%;background:#ffd34d;border:3px solid #1d2b25;
-  font:400 clamp(26px,8vw,40px)/1 var(--f-display,sans-serif);color:#e5383b;box-shadow:0 4px 0 rgba(0,0,0,.3);animation:fzAlert .45s cubic-bezier(.2,1.8,.4,1),fzBeat .3s .45s ease-in-out infinite alternate}
+  font:800 clamp(26px,8vw,40px)/1 var(--f-display,sans-serif);color:#e5383b;box-shadow:0 4px 0 rgba(0,0,0,.3);animation:fzAlert .45s cubic-bezier(.2,1.8,.4,1),fzBeat .3s .45s ease-in-out infinite alternate}
 @keyframes fzAlert{from{transform:scale(0) translateY(60%)}}
 @keyframes fzBeat{to{transform:scale(1.14)}}
 .fz-vig{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;background:radial-gradient(circle at var(--bx,50%) var(--by,55%),transparent 22%,rgba(210,20,45,.5) 100%)}
 .fishgame.fz-biting .fz-vig{animation:fzVig .32s ease-in-out infinite alternate}
 @keyframes fzVig{from{opacity:.3}to{opacity:.9}}
 .fishgame.fz-biting .fz-bob{animation:fzDip .12s linear infinite alternate;width:4.4%}
-.fishgame.fz-biting .fz-text{font:400 clamp(30px,10vw,46px)/1 var(--f-display,sans-serif);color:#fff;text-shadow:0 3px 0 #b3001b,0 0 14px rgba(229,56,59,.8);animation:fzYell .18s ease-in-out infinite alternate}
+.fishgame.fz-biting .fz-text{font:800 clamp(30px,10vw,46px)/1 var(--f-display,sans-serif);color:#fff;text-shadow:0 3px 0 #b3001b,0 0 14px rgba(229,56,59,.8);animation:fzYell .18s ease-in-out infinite alternate}
 @keyframes fzYell{from{transform:rotate(-3deg) scale(1)}to{transform:rotate(3deg) scale(1.06)}}
-.fz-text.hooked{font:400 clamp(28px,9vw,42px)/1 var(--f-display,sans-serif);color:#ffd34d;text-shadow:0 3px 0 #7a4a00;animation:fzPop .3s cubic-bezier(.2,1.6,.4,1)}
+.fz-text.hooked{font:800 clamp(28px,9vw,42px)/1 var(--f-display,sans-serif);color:#ffd34d;text-shadow:0 3px 0 #7a4a00;animation:fzPop .3s cubic-bezier(.2,1.6,.4,1)}
 .fz-plume{position:absolute;width:18%;aspect-ratio:.7;margin:-24% 0 0 -9%;transform-origin:50% 100%;
   background:radial-gradient(ellipse at 50% 100%,#fff 0 35%,rgba(220,242,255,.9) 36% 60%,transparent 62%)}
 .fz-shadow{position:absolute;width:var(--fw,16%);aspect-ratio:2.6;border-radius:50%;background:rgba(8,24,60,.42);transform:translate(-50%,-50%);filter:blur(1.5px)}
@@ -365,7 +367,7 @@ body.fishing,body.vmodal{overflow:hidden}
 .fz-result.landed .fz-catch svg{filter:drop-shadow(0 7px 0 rgba(0,0,0,.25)) drop-shadow(0 0 20px rgba(255,255,255,.7));animation:fzFloat 1.8s ease-in-out .7s infinite}
 @keyframes fzFishPop{from{transform:scale(.15) rotate(-30deg);opacity:0}}
 @keyframes fzFloat{50%{transform:translateY(-6px) rotate(-3deg)}}
-.fz-result .fz-new{position:absolute;right:7%;top:14%;font:400 17px/1 var(--f-display,sans-serif);background:#ff3b5c;color:#fff;padding:7px 10px;border-radius:10px;border:2px solid #1d2b25;transform:rotate(12deg);box-shadow:0 3px 0 rgba(0,0,0,.3);animation:fzStamp .5s .75s cubic-bezier(.2,1.6,.4,1) both}
+.fz-result .fz-new{position:absolute;right:7%;top:14%;font:800 17px/1 var(--f-display,sans-serif);background:#ff3b5c;color:#fff;padding:7px 10px;border-radius:10px;border:2px solid #1d2b25;transform:rotate(12deg);box-shadow:0 3px 0 rgba(0,0,0,.3);animation:fzStamp .5s .75s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes fzStamp{from{transform:rotate(12deg) scale(3);opacity:0}}
 .fz-result.landed b{position:relative;color:#fff;font-size:clamp(23px,7.4vw,34px);text-align:center;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 12px rgba(0,0,0,.2);animation:fzDrop .4s .35s both}
 @keyframes fzDrop{from{transform:translateY(-16px);opacity:0}}
@@ -384,7 +386,7 @@ body.fishing,body.vmodal{overflow:hidden}
 .fz-result.t-legend{--t1:#fff6c4;--t2:#b07d12;box-shadow:0 0 0 4px #ffd34d,0 0 34px 10px rgba(255,211,77,.85)}
 .fz-result.t-legend .fz-rays{background:repeating-conic-gradient(rgba(255,120,120,.4) 0 6deg,rgba(255,220,90,.4) 6deg 12deg,rgba(120,220,140,.4) 12deg 18deg,rgba(110,170,255,.4) 18deg 24deg,rgba(190,130,255,.4) 24deg 30deg);animation-duration:7s}
 .fz-result.lost{top:26%;bottom:auto;padding:16px 10px}
-.fz-result b{font:400 clamp(17px,5vw,22px)/1.2 var(--f-display,sans-serif)}
+.fz-result b{font:800 clamp(17px,5vw,22px)/1.2 var(--f-display,sans-serif)}
 .fz-result span{font:12.5px var(--f-mono);color:#5a6b64;text-align:center}
 .fz-btns{display:flex;justify-content:center;gap:10px;padding:0 16px}
 .fz-btn{font:700 18px/1 var(--f-mono);padding:18px 30px;min-width:9em;border-radius:999px;border:2.5px solid #1d2b25;background:#ffd34d;color:#1d2b25;cursor:pointer;box-shadow:0 4px 0 #1d2b25;touch-action:none}
@@ -400,7 +402,7 @@ body.fishing,body.vmodal{overflow:hidden}
 @keyframes hdpoke{30%{transform:scale(1.12) rotate(-4deg)}60%{transform:scale(.96) rotate(3deg)}}
 /* the shop (v45): one detail card on top, even tiles underneath */
 .shop-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.shop-top>b{font:400 20px/1 var(--f-display,sans-serif)}
+.shop-top>b{font:800 20px/1 var(--f-display,sans-serif)}
 .shop-tabs{display:flex;gap:4px;flex-wrap:wrap}
 .shop-tabs button{font:700 11.5px/1 var(--f-mono);border:1.5px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);padding:7px 10px;cursor:pointer}
 .shop-tabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--card)}
@@ -431,7 +433,7 @@ body.fishing,body.vmodal{overflow:hidden}
 .rflame{transform-origin:50px 84px;animation:hd-fire .25s ease-in-out infinite alternate}
 .home{display:flex;flex-direction:column;gap:12px}
 .home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-.home-head h2{font:400 24px/1.1 var(--f-display);margin:0}
+.home-head h2{font:800 24px/1.1 var(--f-display);margin:0}
 .home-sub{margin:4px 0 0;color:var(--muted);font-size:13px}
 #decoBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
 .cscene{position:relative;z-index:0;isolation:isolate;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;border:2.5px solid var(--ink);background:#f2e2c4;touch-action:pan-y;user-select:none;-webkit-user-select:none}
@@ -523,7 +525,7 @@ body.fishing,body.vmodal{overflow:hidden}
 .lobby{display:flex;flex-direction:column;gap:14px}
 .lobby-hero{display:flex;gap:14px;align-items:center}
 .lobby-hero .mon{width:96px;height:96px;flex:none}
-.lobby-hero h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0}
+.lobby-hero h2{font-family:var(--f-display);font-weight:800;font-size:22px;margin:0}
 .lobby-hero p{margin:4px 0 0;color:var(--muted);max-width:52ch}
 .lobby-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .lcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -584,7 +586,7 @@ body.fishing,body.vmodal{overflow:hidden}
 /* crew */
 .crew{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:16px}
 .crew-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.crew h2{font-family:var(--f-display);font-weight:400;font-size:18px;margin:0}
+.crew h2{font-family:var(--f-display);font-weight:800;font-size:18px;margin:0}
 .crew p{margin:0;font-size:13px;color:var(--muted)}
 .moods{display:flex;gap:6px;flex-wrap:wrap}
 .mood{font:700 12px/1 var(--f-mono);border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 11px;cursor:pointer;color:var(--muted)}
@@ -602,7 +604,7 @@ body.fishing,body.vmodal{overflow:hidden}
 .sheet-card{background:var(--card);color:var(--ink);border-radius:18px;padding:18px;width:min(720px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .sheet-card.narrow{width:min(440px,100%)}
 .sheet-card img{width:100%;border-radius:10px;border:1px solid var(--line)}
-.sheet-msg{font-family:var(--f-display);font-weight:400;font-size:19px;overflow-wrap:anywhere}
+.sheet-msg{font-family:var(--f-display);font-weight:800;font-size:19px;overflow-wrap:anywhere}
 .sheet-hint{font-size:13px;color:var(--muted);margin:0}
 .sheet-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
 .sheet-row.split{justify-content:space-between}
@@ -624,7 +626,7 @@ select{font:500 16px/1.2 var(--f-body);color:var(--ink);background:var(--bg);bor
 .me-mon{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:10px}
 .me-mon .mon{width:72px;height:72px;flex:none}
 .me-mon p{margin:0;font-size:14px}
-.me-mon b{font-family:var(--f-display);font-weight:400;font-size:17px}
+.me-mon b{font-family:var(--f-display);font-weight:800;font-size:17px}
 .switch{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border-radius:12px;padding:12px}
 .switch span{display:flex;flex-direction:column;gap:2px}
 .switch small{font-weight:400;color:var(--muted);font-size:13px}
@@ -746,7 +748,7 @@ button.busy{pointer-events:none;opacity:.6}
 .extras>.xs{display:flex;flex-direction:column;gap:10px}.extras>.xs:empty{display:none}
 .roar{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--mc0);border-radius:14px;padding:6px 8px 6px 12px}
 .roar .mon{width:54px;height:54px;flex:none}
-.roar b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;line-height:1.2}
+.roar b{font-family:var(--f-display);font-weight:800;font-size:17px;display:block;line-height:1.2}
 .roar p{margin:0;font-size:14px;overflow-wrap:anywhere}
 .roar>div{min-width:0;flex:1}
 .x{width:32px;height:32px;flex:none;border-radius:8px;border:0;background:transparent;color:var(--muted);cursor:pointer;font:700 18px/1 var(--f-body)}
@@ -763,7 +765,7 @@ button.busy{pointer-events:none;opacity:.6}
 .power{display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:14px;padding:12px}
 .power-head{display:flex;align-items:center;gap:12px}
 .power-head .mon{width:76px;height:76px;flex:none}
-.power-head b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;line-height:1.2}
+.power-head b{font-family:var(--f-display);font-weight:800;font-size:17px;display:block;line-height:1.2}
 .power-head small{color:var(--muted);font-size:13px}
 .prog{height:8px;border-radius:999px;background:var(--track);overflow:hidden}
 .prog i{display:block;height:100%;background:var(--c-teal);border-radius:inherit}
@@ -792,12 +794,12 @@ button.busy{pointer-events:none;opacity:.6}
 .ring-ic{width:26px;height:26px;flex:none;color:var(--muted)}
 .ringbar.hot .ring-ic{color:var(--accent)}
 .ring-tx{flex:1;min-width:0;display:flex;flex-direction:column}
-.ring-tx b{font-family:var(--f-display);font-weight:400;font-size:18px;line-height:1.2}
+.ring-tx b{font-family:var(--f-display);font-weight:800;font-size:18px;line-height:1.2}
 .ring-tx span{font:500 13px/1.35 var(--f-mono);color:var(--muted)}
 .ringbar.hot .btn{background:var(--accent);color:#fff}
 .days{display:flex;flex-direction:column;gap:10px}
 .days-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.days-head h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0;text-align:center}
+.days-head h2{font-family:var(--f-display);font-weight:800;font-size:22px;margin:0;text-align:center}
 .icon-btn{width:44px;height:44px;flex:none;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 22px/1 var(--f-mono);cursor:pointer}
 .icon-btn[disabled]{opacity:.35;cursor:default}
 .dow,.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
@@ -889,7 +891,7 @@ body.sleeping *{animation-play-state:paused!important}
 .panel{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;gap:10px}
 .panel-art{position:relative;height:160px;border:2.5px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden;display:flex;align-items:center;justify-content:center;gap:6px}
 .panel-art .mon{width:92px;height:92px}
-.panel-art .burst{position:absolute;font:400 22px/1 var(--f-display);color:var(--accent);transform:rotate(-8deg);letter-spacing:.02em}
+.panel-art .burst{position:absolute;font:800 22px/1 var(--f-display);color:var(--accent);transform:rotate(-8deg);letter-spacing:.02em}
 .panel-art .prop{width:54px;height:54px;color:var(--ink)}
 .panel-art .shake{animation:shake .5s ease-in-out infinite}
 .panel-art .tiles{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:132px}
@@ -899,7 +901,7 @@ body.sleeping *{animation-play-state:paused!important}
 .panel-art .recl{position:absolute;top:12px;left:14px;font:700 12px/1 var(--f-mono);color:var(--danger);display:flex;align-items:center;gap:5px}
 .panel-art .recl i{width:9px;height:9px;border-radius:50%;background:var(--danger);animation:dot 1s ease-in-out infinite}
 .panel-cap{margin:0;font-size:15px;line-height:1.45}
-.panel-cap b{font-family:var(--f-display);font-weight:400;font-size:17px;display:block;margin-bottom:2px}
+.panel-cap b{font-family:var(--f-display);font-weight:800;font-size:17px;display:block;margin-bottom:2px}
 .news-top{flex-wrap:nowrap}
 .news-top .sheet-msg{flex:1;min-width:0}
 .pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -928,7 +930,7 @@ body.sleeping *{animation-play-state:paused!important}
 .nver{font:700 12px/1 var(--f-mono);background:var(--ink);color:var(--card);border-radius:999px;padding:4px 8px}
 .ndate{font:500 12px var(--f-mono);color:var(--muted)}
 .nnew{font:700 11px/1 var(--f-mono);background:var(--danger);color:#fff;border-radius:999px;padding:4px 7px;margin-left:auto}
-.ntitle{font-family:var(--f-display);font-weight:400;font-size:17px;line-height:1.25}
+.ntitle{font-family:var(--f-display);font-weight:800;font-size:17px;line-height:1.25}
 .nitem ul{margin:0;padding-left:18px;font-size:14px;line-height:1.45;display:flex;flex-direction:column;gap:2px}
 .ncomic{align-self:flex-start;min-height:38px;padding:8px 12px;font-size:13px;margin-top:2px}
 .ncomicview{display:flex;flex-direction:column;gap:10px}
@@ -954,6 +956,78 @@ body.calm .panel-art *{animation:none!important}
 .mon.offscreen,.mon.offscreen *{animation-play-state:paused!important}
 body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle .lane{animation:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}.lane.overtime .bar i::after,.lane.zapped,.lane.zapped::after,#shot.zapped{animation:none!important}}
+/* v55 Strip Map: the cave as a train map. A charcoal station sign on top, one line per friend in their monster's
+   colour, stations for start, lunch and clock-out, and a lit dot for now. Signage type, square corners. */
+body{font-variant-numeric:tabular-nums}
+h1,.name,.sheet-msg,.lcard h3,.vcard h3,.lobby-hero h2{letter-spacing:.01em}
+.eyebrow,.section-label,.tag,.you,.lvl,.owner-tag,.day,.seg button,.tab,.lbtn,.btn,.homebtn,.coinbtn{text-transform:uppercase;letter-spacing:.06em}
+.btn,.lbtn,.chip,.homebtn,.coinbtn,.kick{border-radius:4px}
+.lane,.lcard,.chat,.ringbar,.banner,.wallet,.bagpanel,.me-mon,.switch,.code,.members li,.pidea,.pmonth,.plot,.seeds button,.vwx div{border-radius:6px}
+.sheet-card,.vcard{border-radius:8px}
+.vscene{border-radius:8px}
+.toast{border-radius:6px;font-weight:600}
+input,select{border-radius:4px}
+.sw{border-radius:50%}
+
+/* the station sign */
+header{background:var(--sign);color:var(--sign-ink);border-radius:8px;padding:16px 16px 14px;align-items:stretch;gap:14px}
+header .eyebrow{color:var(--sign-muted);font-weight:600}
+header h1{font-size:clamp(26px,7vw,40px);text-transform:uppercase;letter-spacing:.02em}
+header .now{color:var(--sign-muted)}
+header .now b{color:var(--sign-ink)}
+.mytime{font:800 clamp(48px,15vw,72px)/.95 var(--f-display);letter-spacing:-.01em;margin:6px 0 2px;display:flex;align-items:baseline;gap:8px}
+.mytime small{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--sign-muted)}
+header .chip,header .btn.ghost{background:transparent;color:var(--sign-ink);border:1.5px solid rgba(255,255,255,.28)}
+header .chip b{color:var(--sign-ink)}
+header .btn:not(.ghost){background:var(--sign-ink);color:var(--sign)}
+header .newsbtn.fresh{border-color:var(--accent)}
+header .ndot{box-shadow:0 0 0 2px var(--sign)}
+
+/* tabs: an underline, like a platform sign's active line */
+.seg{background:transparent;border-bottom:1.5px solid var(--line);border-radius:0;padding:0;gap:0}
+.seg button{border-radius:0;padding:13px 4px 11px;font-weight:700}
+.seg button[aria-selected="true"]{background:transparent;box-shadow:inset 0 -3px var(--ink)}
+.homebtn{border-width:1.5px}
+.homebtn,.coinbtn{min-height:44px}
+
+/* a friend's line */
+.lane{border:0;padding:14px 16px 12px;gap:6px;box-shadow:0 1px 0 var(--line)}
+.lane.first,.lane.overtime{border:0;padding:14px 16px 12px;box-shadow:inset 4px 0 0 var(--c),0 1px 0 var(--line)}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--c0)}
+.name{font:800 19px/1.1 var(--f-display);text-transform:uppercase}
+.off{font-weight:600}
+.big{font-weight:800;font-size:clamp(22px,11cqi,40px)}
+.lane .mon{width:64px;height:64px;margin:-12px -4px -6px 0}
+.lane .bar{position:relative;height:8px;margin:12px 11px 0;border-radius:4px;background:var(--c);overflow:visible}
+.lane .bar i{position:relative;z-index:2;background:var(--walked);border-radius:4px;transition:width .8s cubic-bezier(.25,1,.5,1)}
+.lane .bar::before,.lane .bar::after,.lane .bar .stn{content:"";position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--card);border:3px solid var(--c);box-sizing:border-box;transform:translate(-50%,-50%);z-index:1}
+.lane .bar::before{left:0}
+.lane .bar::after{left:100%;width:18px;height:18px;border-width:4px}
+.lane .bar .stn{display:block}
+.lane .bar .stn[hidden]{display:none}
+.lane .bar i::after,.lane.overtime .bar i::after{content:"";position:absolute;left:auto;right:0;top:50%;bottom:auto;width:22px;height:22px;border-radius:50%;
+  background:var(--c);background-size:auto;box-shadow:0 0 0 4px var(--card);transform:translate(50%,-50%);will-change:auto;animation:nowlit 2.4s ease-out infinite}
+@keyframes nowlit{0%{box-shadow:0 0 0 4px var(--card),0 0 0 4px var(--c)}70%,100%{box-shadow:0 0 0 4px var(--card),0 0 0 13px transparent}}
+.lane.done .bar i{background:transparent}
+.lane.done .bar i::after{animation:none}
+.lane.overtime .bar i{background:repeating-linear-gradient(90deg,var(--walked) 0 9px,var(--danger) 9px 14px);overflow:visible}
+.lane.overtime .bar i::after{background:var(--danger);--c:var(--danger)}
+.lane.overtime .big{color:var(--danger)}
+.stops{position:relative;display:flex;justify-content:space-between;margin:6px 0 0;font:600 11.5px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stops .lu{position:absolute;top:0;transform:translateX(-50%)}
+.lane.hint .bar,.lane.hint .stops{display:none}
+.lbtn{height:38px;font-weight:700;border-width:1.5px}
+.lbtn.zap{color:#fff}
+
+/* everything else picks up the sign language */
+.ringbar,.banner,.lcard,.chat{border-color:var(--line)}
+.bubble{border-radius:10px;border-top-left-radius:3px}
+.mg.mine .bubble{border-top-left-radius:10px;border-top-right-radius:3px}
+.tabs{border-radius:6px}
+.tab{border-radius:4px}
+
+body.calm .lane .bar i::after{animation:none!important}
+@media (prefers-reduced-motion:reduce){.lane .bar i::after{animation:none!important}}
 </style>
 </head>
 <body class="booting">
@@ -973,6 +1047,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
       <div class="htext">
         <span class="eyebrow" id="eyebrow">Punch clock · UTC+8</span>
         <h1 id="title">Clock-out Countdown</h1>
+        <div class="mytime" id="myTime" hidden></div>
         <div class="now"><span id="now">Now <b id="nowT">--:--:--</b></span><span class="offline" id="offline" hidden>Offline · retrying</span></div>
       </div>
       <div class="actions" data-html2canvas-ignore>
@@ -1192,7 +1267,7 @@ body.calm .mon *,body.calm .lane.overtime .bar i::after,body.calm #lanes.jiggle 
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v54.0</span>
+    <span>v55.0</span>
   </div>
 </div>
 
@@ -1804,8 +1879,15 @@ function buildLanes(){
       <div class="big"></div>
       <div class="perks"></div>
       <div class="mid"><div class="sub"></div></div>
-      <div class="bar"><i></i></div>
+      <div class="bar"><i></i><b class="stn" hidden></b></div>
+      <div class="stops"><span></span><span class="lu" hidden>Lunch</span><span></span></div>
       <div class="acts" data-html2canvas-ignore></div>`;
+    // v55: the shift drawn as a train line: start, lunch, clock-out terminus
+    {const st=startOf(p),end=p.h*3600+p.m*60,span=Math.max(1,end-st),l=lunchOf(p),stops=el.querySelectorAll(".stops span");
+      stops[0].textContent=fmtSec(st);stops[2].textContent=fmt12(p.h,p.m);
+      if(l&&l[0]>st&&l[0]<end){const x=(l[0]-st)/span*100,stn=el.querySelector(".stn");
+        stn.hidden=false;stn.style.left=x.toFixed(1)+"%";
+        if(x>18&&x<82){stops[1].hidden=false;stops[1].style.left=x.toFixed(1)+"%";}}}
     el.querySelector(".mid").appendChild(monEl(p.monster,p.color,"work"));
     el.querySelector(".name").textContent=p.name;
     el.querySelector(".off").textContent=fmt12(p.h,p.m);
@@ -1883,6 +1965,10 @@ function tick(){
     }
     if(isDone&&mf.label) setT(tag,mf.label); // what they're up to now: Dinner, Reading, Gaming…
     if(el.dataset.state!==state) el.dataset.state=state;
+    if(p.id===S.me.id){const mt=$("myTime");mt.hidden=false;
+      if(state.startsWith("before")) setH(mt,`${hms(left).replace(/^0/,"")}<small>left</small>`);
+      else if(state==="ot") setH(mt,`+${hms(nowSec-offSec).replace(/^0/,"")}<small>overtime</small>`);
+      else {setT(mt,"Off");}}
 
     if(p.otBtn){
       const labels={before:"+ OT","before-ot":"Cancel OT",ot:"Clock out",done:"+ OT","done-ot":"Resume OT"};
@@ -3103,22 +3189,22 @@ let cineList=[];
 function cineStars(list){const by={};list.forEach(x=>x.info.clips.forEach(c=>{(by[c.pid]||(by[c.pid]={name:c.name,color:c.color,monster:c.monster,n:0})).n++;}));return Object.values(by).sort((a,b)=>b.n-a.n);}
 function drawMovieTitle(g,days,list,f){
   g.fillStyle="#120d18";g.fillRect(0,0,VW,VH);g.globalAlpha=Math.min(1,f*2);g.textAlign="center";
-  g.fillStyle="#ffd34d";g.font="700 26px 'JetBrains Mono', monospace";g.fillText("NOW SHOWING AT THE CAVE CINEMA",VW/2,380);
-  g.fillStyle="#fff";g.font="70px Bungee, sans-serif";wrapText(g,S.cave.name,VW-100).slice(0,2).forEach((l,i)=>g.fillText(l,VW/2,500+i*80));
-  g.font="44px Bungee, sans-serif";g.fillStyle="#ff8fab";g.fillText("THE WEEK",VW/2,680);
-  g.fillStyle="#d8cfe6";g.font="600 30px 'JetBrains Mono', monospace";g.fillText(`${fmtLong(days[0])} – ${fmtLong(days[6])}`,VW/2,740);
+  g.fillStyle="#ffd34d";g.font="700 26px 'Barlow Semi Condensed', monospace";g.fillText("NOW SHOWING AT THE CAVE CINEMA",VW/2,380);
+  g.fillStyle="#fff";g.font="800 70px 'Barlow Semi Condensed', sans-serif";wrapText(g,S.cave.name,VW-100).slice(0,2).forEach((l,i)=>g.fillText(l,VW/2,500+i*80));
+  g.font="800 44px 'Barlow Semi Condensed', sans-serif";g.fillStyle="#ff8fab";g.fillText("THE WEEK",VW/2,680);
+  g.fillStyle="#d8cfe6";g.font="600 30px 'Barlow Semi Condensed', monospace";g.fillText(`${fmtLong(days[0])} – ${fmtLong(days[6])}`,VW/2,740);
   g.fillText(`${list.length} ${list.length===1?"day":"days"} · ${cineStars(list).length} stars`,VW/2,790);
   g.globalAlpha=1;g.textAlign="left";
 }
 function drawCredits(g,list,mons,f){
   g.fillStyle="#120d18";g.fillRect(0,0,VW,VH);g.textAlign="center";
   const stars=cineStars(list), y0=VH-f*(VH+260+stars.length*150);
-  g.fillStyle="#ffd34d";g.font="44px Bungee, sans-serif";g.fillText("STARRING",VW/2,y0+VH*0.55);
+  g.fillStyle="#ffd34d";g.font="800 44px 'Barlow Semi Condensed', sans-serif";g.fillText("STARRING",VW/2,y0+VH*0.55);
   stars.forEach((s,i)=>{const y=y0+VH*0.55+90+i*150, m=mons[s.monster+"|"+s.color];
     if(m) g.drawImage(m,VW/2-50,y,100,100);
-    g.fillStyle=cssColor(s.color);g.font="40px Bungee, sans-serif";g.fillText(s.name,VW/2,y+130);
-    g.fillStyle="#d8cfe6";g.font="600 24px 'JetBrains Mono', monospace";g.fillText(`${s.n} ${s.n===1?"clip":"clips"}`,VW/2,y+160);});
-  g.fillStyle="#fff";g.font="34px Bungee, sans-serif";g.fillText("THE END",VW/2,y0+VH*0.55+180+stars.length*150+60);
+    g.fillStyle=cssColor(s.color);g.font="800 40px 'Barlow Semi Condensed', sans-serif";g.fillText(s.name,VW/2,y+130);
+    g.fillStyle="#d8cfe6";g.font="600 24px 'Barlow Semi Condensed', monospace";g.fillText(`${s.n} ${s.n===1?"clip":"clips"}`,VW/2,y+160);});
+  g.fillStyle="#fff";g.font="800 34px 'Barlow Semi Condensed', sans-serif";g.fillText("THE END",VW/2,y0+VH*0.55+180+stars.length*150+60);
   g.textAlign="left";
 }
 async function playCinema(){
@@ -4310,10 +4396,10 @@ function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,
 function drawIntro(g,ctx,mons,f){
   g.fillStyle="#18231d";g.fillRect(0,0,VW,VH);
   g.globalAlpha=Math.min(1,f*3);g.textAlign="center";g.fillStyle="#ff6b3d";
-  g.font="700 26px 'JetBrains Mono', monospace";g.fillText("CLOCK-OUT · CAVE CALENDAR",VW/2,330);
-  g.fillStyle="#ffffff";g.font="64px Bungee, sans-serif";
+  g.font="700 26px 'Barlow Semi Condensed', monospace";g.fillText("CLOCK-OUT · CAVE CALENDAR",VW/2,330);
+  g.fillStyle="#ffffff";g.font="800 64px 'Barlow Semi Condensed', sans-serif";
   wrapText(g,S.cave.name,VW-120).slice(0,3).forEach((l,i)=>g.fillText(l,VW/2,430+i*76));
-  g.fillStyle="#cfdcd4";g.font="600 32px 'JetBrains Mono', monospace";
+  g.fillStyle="#cfdcd4";g.font="600 32px 'Barlow Semi Condensed', monospace";
   g.fillText(fmtLonger(ctx.day),VW/2,700);
   g.fillText(`${ctx.groups.length} ${ctx.groups.length===1?"ring":"rings"} · ${ctx.people.length} ${ctx.people.length===1?"monster":"monsters"}`,VW/2,748);
   const n=ctx.people.length, cols=Math.min(n,6), size=Math.min(120,(VW-60)/cols);
@@ -4321,16 +4407,16 @@ function drawIntro(g,ctx,mons,f){
     const row=Math.floor(i/cols), col=i%cols, inRow=Math.min(cols,n-row*cols), x0=(VW-inRow*size)/2+col*size, y=820+row*(size+44);
     const bob=Math.sin(f*Math.PI*4+i)*6, m=mons[c.monster+"|"+c.color];
     if(m) g.drawImage(m,x0+8,y+bob,size-16,size-16);
-    g.fillStyle=cssColor(c.color);g.font="700 20px 'JetBrains Mono', monospace";g.fillText(c.name.slice(0,9),x0+size/2,y+size+12);
+    g.fillStyle=cssColor(c.color);g.font="700 20px 'Barlow Semi Condensed', monospace";g.fillText(c.name.slice(0,9),x0+size/2,y+size+12);
   });
   g.globalAlpha=1;g.textAlign="left";
 }
 function drawRing(g,ctx,grp,vids,mons){
   g.fillStyle="#101613";g.fillRect(0,0,VW,VH);
   // header: which ring and when
-  g.textAlign="center";g.fillStyle="#ffffff";g.font="46px Bungee, sans-serif";
+  g.textAlign="center";g.fillStyle="#ffffff";g.font="800 46px 'Barlow Semi Condensed', sans-serif";
   g.fillText(sgTime(grp.at).toUpperCase(),VW/2,70);
-  g.fillStyle="#9fb3a8";g.font="700 22px 'JetBrains Mono', monospace";
+  g.fillStyle="#9fb3a8";g.font="700 22px 'Barlow Semi Condensed', monospace";
   g.fillText(`${S.cave.name} · ${fmtLong(ctx.day)} · ring ${grp.r+1}`.toUpperCase(),VW/2,108);
   g.textAlign="left";
   const tiles=gridFor(grp.clips.length);
@@ -4345,9 +4431,9 @@ function drawRing(g,ctx,grp,vids,mons){
     g.fillStyle=gr;g.fillRect(t.x,t.y+t.h-lh*1.6,t.w,lh*1.6);
     const m=mons[c.monster+"|"+c.color], ms=Math.round(56*k);
     if(m) g.drawImage(m,t.x+8*k,t.y+t.h-ms-8*k,ms,ms);
-    g.fillStyle="#ffffff";g.font=`${Math.round(28*k)}px Bungee, sans-serif`;
+    g.fillStyle="#ffffff";g.font=`800 ${Math.round(28*k)}px 'Barlow Semi Condensed', sans-serif`;
     const nx=t.x+ms+14*k;g.fillText(c.name,nx,t.y+t.h-(c.late?32:18)*k);
-    if(c.late){g.font=`700 ${Math.round(15*k)}px 'JetBrains Mono', monospace`;const lw=g.measureText("LATE").width+12*k;
+    if(c.late){g.font=`700 ${Math.round(15*k)}px 'Barlow Semi Condensed', monospace`;const lw=g.measureText("LATE").width+12*k;
       g.fillStyle="#c2701b";g.fillRect(nx,t.y+t.h-20*k,lw,20*k);g.fillStyle="#fff";g.fillText("LATE",nx+6*k,t.y+t.h-5*k);}
     g.restore();
   });
@@ -4432,7 +4518,7 @@ function startLofi(ac,out,dur){
   };
 }
 async function runDay(ctx,g,{ac,out,job,onPct,onRing}){
-  await Promise.all([document.fonts.load("46px Bungee"),document.fonts.load("700 22px 'JetBrains Mono'")]).catch(()=>{});
+  await Promise.all([document.fonts.load("800 46px 'Barlow Semi Condensed'"),document.fonts.load("700 22px 'Barlow Semi Condensed'")]).catch(()=>{});
   const mons=await dayAssets(ctx);
   const segOf=gp=>Math.min(CLIP_MAX+.3,Math.max(...gp.clips.map(c=>c.dur||3)))+.25;
   const total=1.4+ctx.groups.reduce((a,gp)=>a+segOf(gp),0);let done=0;
@@ -4616,6 +4702,13 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v55-strip",v:"v55.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
+    "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go.",
+    "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
+    "Overtime turns the line red and dashed. When someone's off, their dot has reached the last station.",
+    "New lettering and square, sign-like buttons all through the app."],panels:[
+    {art:"grid",title:"Everyone's line",text:"One line per friend. The grey part is the day done; the coloured part is what's left until the last stop."},
+    {art:"smooth",title:"Next stop: off",text:"The lit dot moves along all day. When it reaches the end, that friend is out."}]},
   {id:"v54-village",v:"v49.0–54.0",at:"2026-11-14T18:00",title:"The village, fishing that feels like it, and a faster app",changes:[
     "Everything is faster: the cave's records moved next to the server, so opening the app and every tap answer much sooner.",
     "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, then a day of finishing touches.",

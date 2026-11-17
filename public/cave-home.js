@@ -46,7 +46,7 @@ ${[[268, "#e8583e"], [273, "#5b8def"], [278, "#f2c94c"], [284, "#2fa36b"], [289,
 <rect x="14" y="288" width="286" height="12" fill="url(#chWood)"/>
 <g stroke="#8a5a35" stroke-width="3"><path d="M178 140V288M192 140V288"/></g><g stroke="#a8784f" stroke-width="2.5">${[155, 175, 195, 215, 235, 255, 275].map((y) => `<path d="M178 ${y}H192"/>`).join("")}</g>
 <path d="M300 236 Q310 226 320 236 L320 300 L300 300Z" fill="#5e4e40" opacity=".35"/>
-<g font-family="JetBrains Mono, monospace" font-size="7.5" font-weight="700" fill="#8c7b69" letter-spacing=".5">
+<g font-family="Barlow Semi Condensed, sans-serif" font-size="7.5" font-weight="700" fill="#8c7b69" letter-spacing=".5">
 <text x="24" y="36">BEDROOM</text><text x="178" y="36">STUDY</text><text x="22" y="156">LIVING ROOM</text><text x="204" y="156">KITCHEN</text><text x="342" y="232" fill="#3f6b33">YARD</text></g>
 </svg>`;
   }
