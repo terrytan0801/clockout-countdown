@@ -50,14 +50,27 @@ export function openStores(getStore, { dev = false, aws = process.env.AWS_REGION
 
 const DONE = "sys/moved", LIST = "sys/movelist", CUR = "sys/movecur", LOCK = "sys/moving";
 
+const wanted = (k) => !isMedia(k) && !k.startsWith("sys/");
+
 // Every key in the old store except the media, found folder by folder (in parallel, so it's quick).
+// v62: the real store names folders with a trailing slash ("person/"), so v54-v61 asked for "person//",
+// found nothing, and marked an almost empty copy as done. Strip the slash before adding one.
 async function allKeys(far) {
   const top = await far.list({ directories: true });
   const keys = top.blobs.map((b) => b.key);
-  const dirs = (top.directories || []).filter((d) => !isMedia(d + "/"));
+  const dirs = (top.directories || []).map((d) => d.replace(/\/+$/, "")).filter((d) => d && !isMedia(d + "/"));
   const lists = await Promise.all(dirs.map((d) => far.list({ prefix: d + "/" })));
   for (const l of lists) keys.push(...l.blobs.map((b) => b.key));
-  return [...new Set(keys)].filter((k) => !isMedia(k) && !k.startsWith("sys/")).sort();
+  return [...new Set(keys)].filter(wanted).sort();
+}
+
+// Before the move counts as done: list both stores in full (no folders, so it can't repeat the bug above)
+// and check that every record in the old store is in the new one.
+async function missingKeys(near, far) {
+  const [f, n] = await Promise.all([far.list(), near.list()]);
+  const have = new Set(n.blobs.map((b) => b.key));
+  const all = f.blobs.map((b) => b.key).filter(wanted);
+  return { total: all.length, missing: all.filter((k) => !have.has(k)) };
 }
 
 // Is the move done? If not, do some of it (about budgetMs of work) and say how far it got.
@@ -84,7 +97,15 @@ export async function moveStep({ near, far, cache = {}, now = () => Date.now(), 
     await near.setJSON(CUR, { i });
   }
   if (i >= list.length) {
-    await near.setJSON(DONE, { at: now(), keys: list.length });
+    const check = await missingKeys(near, far);
+    if (check.missing.length) {
+      // Something was left behind: add it to the list and keep copying on the next request.
+      list = [...list, ...check.missing];
+      await near.setJSON(LIST, list);
+      await near.delete(LOCK);
+      return { done: false, copied, at: i, total: list.length, missing: check.missing.length };
+    }
+    await near.setJSON(DONE, { at: now(), keys: list.length, checked: check.total });
     await near.delete(LOCK);
     cache.moved = true;
     return { done: true, copied, total: list.length };

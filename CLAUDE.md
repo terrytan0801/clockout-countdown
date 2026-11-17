@@ -49,5 +49,7 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
 
 ## Status (17 Nov 2026)
 
-Production runs v48. `dev` has v49 to v54 waiting for "上线": the village (weather station, farm, harbor,
-cinema, holiday planner), fuller fishing, Cloud Shield, and the v54 speed-up (data moved next to the functions).
+Production runs v61 (went live 17 Nov, 16:59 SGT). Its first request ran the v54 move with the folder-slash
+bug and marked an almost empty copy as done, so everyone was logged out. `dev` has v62 with the fix, waiting
+for "上线". After it goes live: delete `sys/moved`, `sys/movelist`, `sys/movecur` and the failed-login `lock/`
+keys from store `clockout-near` (never from `clockout`); the next request copies everything again (787 keys).

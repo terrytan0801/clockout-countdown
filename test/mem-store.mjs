@@ -17,7 +17,7 @@ export function memStore({ onlyIfNew = false } = {}) {
       const ks = [...m.keys()].filter((k) => k.startsWith(prefix)).sort();
       if (!directories) return { blobs: ks.map((key) => ({ key, etag: tags.get(key) })), directories: [] };
       const dirs = new Set(), blobs = [];
-      for (const key of ks) { const rest = key.slice(prefix.length), i = rest.indexOf("/"); if (i < 0) blobs.push({ key, etag: tags.get(key) }); else dirs.add(prefix + rest.slice(0, i)); }
+      for (const key of ks) { const rest = key.slice(prefix.length), i = rest.indexOf("/"); if (i < 0) blobs.push({ key, etag: tags.get(key) }); else dirs.add(prefix + rest.slice(0, i + 1)); } // folder names end in "/", like the real store
       return { blobs, directories: [...dirs] };
     },
     _m: m, _ops: ops,

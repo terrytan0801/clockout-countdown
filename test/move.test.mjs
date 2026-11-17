@@ -70,6 +70,29 @@ assert.ok((await moveStep({ near, far, cache: c2 })).done); assert.equal(near._o
   assert.ok((await moveStep({ near: n2, far: f2, cache: {} })).done); assert.ok(n2._m.has("person/a"));
 }
 
+// v62: folder names come back as "person/" (v54-v61 then asked for "person//" and copied nothing)
+assert.ok((await far.list({ directories: true })).directories.every((d) => d.endsWith("/")), "the fake store names folders like the real one");
+assert.ok(want.some((k) => k.startsWith("person/")) && want.every((k) => near._m.has(k)), "every folder came across");
+assert.equal(JSON.parse(near._m.get("sys/moved")).checked, want.length, "the done mark records the count it checked");
+
+// The count check: if the folder listing misses something, the move isn't done until it's copied too.
+{
+  const f3 = memStore(), n3 = memStore();
+  await seed(f3, Date.now());
+  const all = [...f3._m.keys()].filter((k) => !isMedia(k)).sort();
+  const hide = "person/";
+  const realList = f3.list;
+  f3.list = async (o = {}) => { // a listing that drops one folder, like the v54 bug did
+    const r = await realList(o);
+    return o.directories ? { ...r, directories: r.directories.filter((d) => d !== hide) } : r;
+  };
+  let r3, n = 0, sawMissing = 0;
+  do { r3 = await moveStep({ near: n3, far: f3, cache: {} }); n++; if (r3.missing) sawMissing = r3.missing; } while (!r3.done && n < 20);
+  assert.ok(r3.done);
+  assert.ok(sawMissing > 0, "the check found the folder the listing missed");
+  for (const k of all) assert.ok(n3._m.has(k), `copied ${k} after the check`);
+}
+
 /* ---------- the app on the split store ---------- */
 const store = split(near, far);
 const webpush = { generateVAPIDKeys: () => ({ publicKey: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U", privateKey: "x" }), async sendNotification() {} };
