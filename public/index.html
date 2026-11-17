@@ -1106,6 +1106,14 @@ body.calm .lane .bar i::after{animation:none!important}
 @keyframes fzDfly{0%,100%{transform:translate(0,0)}30%{transform:translate(-18px,-10px)}60%{transform:translate(-6px,8px)}}
 body.calm .fz-glint,body.calm .fz-ducks,body.calm .fz-fly,body.calm .fz-dfly{animation:none}
 @media (prefers-reduced-motion:reduce){.fz-glint,.fz-ducks,.fz-fly,.fz-dfly{animation:none}}
+/* v61 off the Board the station sign folds into one strip: cave name and your time left side by side */
+body[data-view]:not([data-view="board"]) header{padding:10px 12px;gap:10px}
+body[data-view]:not([data-view="board"]) header .eyebrow,body[data-view]:not([data-view="board"]) header #now{display:none}
+body[data-view]:not([data-view="board"]) header .htext{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+body[data-view]:not([data-view="board"]) header h1{font-size:20px}
+body[data-view]:not([data-view="board"]) .mytime{font-size:24px;margin:0;gap:5px}
+body[data-view]:not([data-view="board"]) .mytime small{font-size:11px}
+body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:not([data-view="board"]) header .actions .btn{min-height:36px}
 </style>
 </head>
 <body class="booting">
@@ -1345,7 +1353,7 @@ body.calm .fz-glint,body.calm .fz-ducks,body.calm .fz-fly,body.calm .fz-dfly{ani
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v60.0</span>
+    <span>v61.0</span>
   </div>
 </div>
 
@@ -2133,7 +2141,7 @@ let chatMsgs=[], chatAfter=0, chatTimer=null, chatBusy=false, chatReacts={}, cha
 function resetChat(){chatMsgs=[];chatAfter=0;lastReadSent=0;chatReacts={};chatRv=null;closeReact();if(typeof endReply==="function") endReply();$("chatList").replaceChildren();}
 let lastReadSent=0;
 function setView(v){
-  closeReact();view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
+  closeReact();view=v;document.body.dataset.view=v;renderChrome();updateUnread();updateBanner();updateRing();updateDaysDot();
   if(v==="days"){loadDays(S.day.slice(0,7));markDaysSeen();}
   if(v==="home") openHome();else{closeHomeEdit();stopJuke();closeFish();}
   clearTimeout(chatTimer);chatTimer=null;
@@ -4818,8 +4826,8 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v55-strip",v:"v55.0–60.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
-    "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go.",
+  {id:"v55-strip",v:"v55.0–61.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
+    "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go. On Chat, Days and Home the sign folds into one slim strip to leave room.",
     "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
     "Overtime turns the line red and dashed. When someone's off, their dot has reached the last station.",
     "The village is now a little metro map: the Water, Garden and Fun lines run out from Home, and the Circle Line loops round through the Lake, the Farm and the Cinema. Track to places not built yet is dotted, and their cards show the blueprint.",
