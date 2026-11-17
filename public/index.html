@@ -166,16 +166,6 @@ body.calm .newsbtn .nmon{animation:none!important}
 .cscene.editing .fishfish.veg{display:none}
 /* v50: the village */
 .village{display:grid;gap:10px}
-.vscene{position:relative;aspect-ratio:4/3;border:2px solid var(--ink);border-radius:16px;overflow:hidden;isolation:isolate;background:#7cc96a}
-.vbg,.vbg svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-.vlot{position:absolute;width:26%;aspect-ratio:1.2;transform:translate(-50%,-78%);border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.vlot svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 0 rgba(0,0,0,.08))}
-.vlot.sel svg{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 6px #ffd34d)}
-.vlot b{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);display:grid;justify-items:center;gap:2px;white-space:nowrap;font:800 12.5px/1 var(--f-mono);background:#fff;border:2px solid var(--ink);color:var(--ink);padding:4px 8px;border-radius:10px;box-shadow:0 2px 0 rgba(0,0,0,.3)}
-.vlot b em{font:800 10.5px/1 var(--f-mono);font-style:normal;color:#c2410c}
-.vlot i{position:absolute;left:12%;right:12%;bottom:14px;height:6px;border-radius:3px;background:rgba(0,0,0,.25);overflow:hidden;font-style:normal}
-.vlot i u{position:absolute;left:0;top:0;bottom:0;background:#ffd34d;text-decoration:none}
-.vlot.open b{background:#ffd34d}
 .vback{position:fixed;inset:0;z-index:9040;background:rgba(20,26,24,.5);animation:vFade .2s}
 @keyframes vFade{from{opacity:0}}
 @keyframes vIn{from{opacity:0;transform:translateX(-50%) scale(.96)}}
@@ -186,9 +176,6 @@ body.calm .newsbtn .nmon{animation:none!important}
 .vcard .vload{min-height:220px;display:grid;place-items:center;color:var(--muted)}
 .vcard>.vtop{position:sticky;top:-16px;margin:-16px -16px 0;padding:14px 16px 10px;background:var(--card);z-index:1;border-bottom:1.5px solid var(--line)}
 .vcard .vhero{display:flex;justify-content:center;margin:-4px 0 -6px}.vcard .vhero svg{width:46%;max-width:200px;height:auto}
-.vhome{position:absolute;left:38%;top:24%;width:24%;height:22%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.vhome b{position:absolute;left:50%;top:-20px;transform:translateX(-50%);white-space:nowrap;font:800 14px/1 var(--f-mono);background:#ffd34d;color:var(--ink);border:2.5px solid var(--ink);padding:7px 13px;border-radius:999px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
-.vhome:active b{transform:translateX(-50%) scale(.94)}
 
 .vcard h3{margin:0;font:800 26px/1.1 var(--f-display)}
 .vcard .vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -964,7 +951,6 @@ h1,.name,.sheet-msg,.lcard h3,.vcard h3,.lobby-hero h2{letter-spacing:.01em}
 .btn,.lbtn,.chip,.homebtn,.coinbtn,.kick{border-radius:4px}
 .lane,.lcard,.chat,.ringbar,.banner,.wallet,.bagpanel,.me-mon,.switch,.code,.members li,.pidea,.pmonth,.plot,.seeds button,.vwx div{border-radius:6px}
 .sheet-card,.vcard{border-radius:8px}
-.vscene{border-radius:8px}
 .toast{border-radius:6px;font-weight:600}
 input,select{border-radius:4px}
 .sw{border-radius:50%}
@@ -1030,15 +1016,6 @@ body.calm .lane .bar i::after{animation:none!important}
 @media (prefers-reduced-motion:reduce){.lane .bar i::after{animation:none!important}}
 /* v56 the village as a network map: every building is a station with a charcoal name plate and a roundel,
    Home is the interchange; building cards open under a sign band and their savings bar is a line to the terminus. */
-.vlot b{background:var(--sign);color:#fff;border:0;border-radius:3px;padding:5px 8px 5px 24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;box-shadow:0 2px 0 rgba(0,0,0,.25)}
-.vlot b::before{content:"";position:absolute;left:6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid #ffb81c;box-sizing:border-box}
-.vlot b em{color:#ffcf66;letter-spacing:.02em}
-.vlot.open b{background:var(--sign)}
-.vlot.open b::before{border-color:#00a650;background:#00a650;box-shadow:inset 0 0 0 2px #fff}
-.vlot i{border-radius:2px}
-.vhome b{background:var(--sign);color:#fff;border:3px solid #fff;border-radius:4px;padding:7px 12px 7px 32px;text-transform:uppercase;letter-spacing:.05em;box-shadow:0 3px 0 rgba(0,0,0,.35)}
-.vhome b::before,.vhome b::after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid #d42e12;box-sizing:border-box}
-.vhome b::before{left:7px}.vhome b::after{left:15px;border-color:#005ec4}
 
 .vcard{padding-top:0}
 .vcard>.vtop{background:var(--sign);color:var(--sign-ink);border-bottom:0;top:0;margin:0 -16px;padding:14px 16px 12px;border-radius:8px 8px 0 0}
@@ -1068,6 +1045,47 @@ body.calm .lane .bar i::after{animation:none!important}
 .cine-top b{text-transform:uppercase;letter-spacing:.03em}
 
 @media (prefers-reduced-motion:reduce){.vcard.pop{animation:none}}
+/* v57 the home one room at a time: room tabs, and a frame that crops the house scene to the chosen room */
+.rooms{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.rooms::-webkit-scrollbar{display:none}
+.rooms button{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1.5px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);
+  font:700 13px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
+.rooms button[aria-selected="true"]{background:var(--sign);border-color:var(--sign);color:var(--sign-ink)}
+.rooms button i{font-style:normal;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--c-teal);color:#fff;font-size:12px;display:grid;place-items:center}
+.rooms button i:empty{display:none}
+.roomframe{--rx:6;--ry:134;--rw:190;--rh:164;position:relative;width:100%;aspect-ratio:var(--rw)/var(--rh);max-height:70vh;overflow:hidden;border:2.5px solid var(--ink);border-radius:8px;background:#f2e2c4}
+.roomframe>.cscene{position:absolute;aspect-ratio:4/3;width:calc(100% * 400 / var(--rw));left:calc(-100% * var(--rx) / var(--rw));top:calc(-100% * var(--ry) / var(--rh));
+  border:0;border-radius:0;transition:left .5s cubic-bezier(.25,1,.5,1),top .5s cubic-bezier(.25,1,.5,1),width .5s cubic-bezier(.25,1,.5,1)}
+.cscene .pond,#fishfishBtn,.roomframe:not(.all) .workboard{display:none!important}
+
+/* v57 the village as one line: Home is the interchange, every place a station */
+:root{--vl:#009645;--vl-ink:#00753a}
+@media (prefers-color-scheme:dark){:root{--vl:#1fb35f;--vl-ink:#4fd38a}}
+.vline{position:relative;background:var(--card);border-radius:8px;padding:14px 10px 10px 0;box-shadow:0 1px 0 var(--line)}
+.vline-name{display:flex;align-items:center;gap:8px;margin:0 0 6px 56px;font:700 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.vline-name::before{content:"";width:28px;height:8px;border-radius:4px;background:var(--vl)}
+#villLots{position:relative;display:grid}
+#villLots::before{content:"";position:absolute;left:28px;top:40px;bottom:40px;width:8px;margin-left:-4px;border-radius:4px;background:var(--vl)}
+.vst{position:relative;display:grid;grid-template-columns:56px 84px minmax(0,1fr);align-items:center;gap:10px;min-height:80px;padding:6px 8px 6px 0;border:0;border-radius:6px;
+  background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.vst:hover,.vst.sel{background:var(--track)}
+.vst::before{content:"";justify-self:center;width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:var(--card);border:4px solid var(--vl);z-index:1}
+.vst.fund::before,.vst.site::before{border-color:var(--walked)}
+.vst.building::before{border-color:#e0a800}
+.vst.xchg::before{width:30px;height:30px;border:5px solid var(--ink)}
+.vst-art{display:block;width:84px;height:63px;border-radius:4px;overflow:hidden;background:var(--track)}
+.vst-art svg{display:block;width:100%;height:100%}
+.vst-tx{display:grid;gap:4px;min-width:0}
+.vst-tx b{font:800 19px/1.05 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.vst-tx small{font:600 13px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.vst.open .vst-tx small{color:var(--vl-ink)}
+.vst.xchg .vst-tx small{color:var(--muted)}
+.vst-tx i{display:block;max-width:150px;height:6px;border-radius:3px;background:var(--track);overflow:hidden}
+.vst-tx i u{display:block;height:100%;background:#e0a800}
+.vcard .vhero.lake{margin:0;aspect-ratio:16/10;border-radius:6px;overflow:hidden}
+.vcard .vhero.lake svg{width:100%;max-width:none;height:100%}
+
+@media (prefers-reduced-motion:reduce){.roomframe>.cscene{transition:none}}
 </style>
 </head>
 <body class="booting">
@@ -1202,15 +1220,14 @@ body.calm .lane .bar i::after{animation:none!important}
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
           <li><b>1–10%</b> of someone's coins every time you zap them (one zap per person every 10 minutes). They lose what you get.</li>
-          <li><b>Fishing</b> in the yard's pond, as often as you like. Sell your catch to Mr. Fishfish (he's in the yard 12–2 pm and 7–10 pm), from 1 coin for a boot to 200 for the golden fish, and far more for the 5 legendary fish (under 0.1% each).</li>
+          <li><b>Fishing</b> at the Lake in the village, as often as you like. Sell your catch to Mr. Fishfish (he's at the Lake 12–2 pm and 7–10 pm), from 1 coin for a boot to 200 for the golden fish, and far more for the 5 legendary fish (under 0.1% each).</li>
           <li><b>+2</b> for watering a plant, <b>+2</b> for petting the cat, <b>+3</b> from the vending machine, once a day each.</li>
           <li>Selling something gives half its price back.</li>
         </ul>
       </details>
     </div>
     <div class="village" id="villView" hidden>
-      <div class="vscene" id="villScene"><div class="vbg" id="villBg"></div><div id="villLots"></div>
-        <button class="vhome" id="villHome" type="button" aria-label="Back to the cave"><b>Home</b></button></div>
+      <div class="vline" id="villScene"><p class="vline-name">Village Line</p><div id="villLots"></div></div>
       <div class="vback" id="villBack" hidden></div>
       <div class="vcard" id="villCard" role="dialog" aria-modal="true" hidden></div>
     </div>
@@ -1307,7 +1324,7 @@ body.calm .lane .bar i::after{animation:none!important}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v56.0</span>
+    <span>v57.0</span>
   </div>
 </div>
 
@@ -2430,6 +2447,23 @@ function homeMembers(){
     return {p,r,f,atWork,left:r.offSec-ns};
   });
 }
+// v57: the home is seen one room at a time (a camera move between them); the whole house is the last tab.
+// Crops are x, y, width, height in scene units (the scene is 400 x 300).
+const ROOM_VIEW={bedroom:[6,18,166,122],study:[160,18,166,122],living:[6,134,190,164],kitchen:[176,134,170,164],yard:[286,156,114,144],all:[0,0,400,300]};
+let homeRoom=null;
+{const cs=$("caveScene"),fr=document.createElement("div");fr.className="roomframe";fr.id="roomFrame";cs.before(fr);fr.appendChild(cs);
+  const t=document.createElement("div");t.className="rooms";t.id="roomTabs";t.setAttribute("role","tablist");t.setAttribute("aria-label","Rooms");fr.before(t);
+  Object.keys(ROOM_VIEW).forEach(k=>{const b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.dataset.room=k;
+    b.append(k==="all"?"Whole home":CAVE_HOME.ROOMS[k].label,document.createElement("i"));b.addEventListener("click",()=>setRoom(k));t.appendChild(b);});}
+function setRoom(k){
+  homeRoom=k;const [x,y,w,h]=ROOM_VIEW[k],fr=$("roomFrame");fr.classList.toggle("all",k==="all");
+  fr.style.setProperty("--rx",x);fr.style.setProperty("--ry",y);fr.style.setProperty("--rw",w);fr.style.setProperty("--rh",h);
+  $("roomTabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.room===k)));
+}
+function roomCounts(used){
+  $("roomTabs").querySelectorAll("button").forEach(b=>{const n=used[b.dataset.room]||0;b.lastChild.textContent=n?String(n):"";});
+  if(!homeRoom){const busiest=Object.keys(CAVE_HOME.ROOMS).sort((a,b)=>(used[b]||0)-(used[a]||0))[0];setRoom(used[busiest]?busiest:"living");}
+}
 function renderHomeMons(force){
   const ms=homeMembers();
   const sig=JSON.stringify(ms.map(m=>[m.p.id,m.p.name,m.p.monster,m.p.color,m.f.mood,m.atWork,m.atWork?Math.ceil(m.left/300):0]));
@@ -2446,6 +2480,7 @@ function renderHomeMons(force){
     const nm=document.createElement("span");nm.className="nm";nm.textContent=m.p.id===S.me.id?"You":m.p.name;el.appendChild(nm);
     L.appendChild(el);
   });
+  roomCounts(used);
   // the board by the door: who's still at work, and how long until they're home
   const list=$("workList");list.replaceChildren();
   work.sort((a,b)=>a.left-b.left).forEach(m=>{
@@ -2535,7 +2570,7 @@ function renderShop(){
   let kinds=Object.keys(CAVE_HOME.DECOR).sort((a,b)=>(P[a]||0)-(P[b]||0));
   if(shopFilter==="power") kinds=kinds.filter(k=>CAVE_HOME.DECOR[k].fn);
   if(shopFilter==="can") kinds=kinds.filter(k=>P[k]!=null&&P[k]<=coins);
-  if(!kinds.length){const n=document.createElement("p");n.className="tray-none";n.textContent="Nothing in reach yet. Payday is at clock-out, and the pond has fish.";box.appendChild(n);}
+  if(!kinds.length){const n=document.createElement("p");n.className="tray-none";n.textContent="Nothing in reach yet. Payday is at clock-out, and the Lake has fish.";box.appendChild(n);}
   kinds.forEach(k=>{
     const d=CAVE_HOME.DECOR[k], price=P[k];
     const b=document.createElement("button");b.type="button";b.dataset.kind=k;
@@ -2605,7 +2640,7 @@ $("decoDel").addEventListener("click",()=>{
 });
 /* ---------- things to do at home: water, pet, vending machine, fortune, jukebox, fishing ---------- */
 const FORTUNES=["A snack will find you today.","Someone in the cave is thinking of zapping you.","Your clock-out will feel faster than usual.","Great day to film something silly.",
-  "A fish is waiting for you in the pond.","Beware of meetings after 4 pm.","Your monster believes in you.","Coins come to those who clock out on time.",
+  "A fish is waiting for you at the Lake.","Beware of meetings after 4 pm.","Your monster believes in you.","Coins come to those who clock out on time.",
   "Today's lucky furniture: the sofa.","You will hear good news at lunch.","Do not trust the vending machine's top row.","Tonight, the bed wins."];
 let juke=null;
 function stopJuke(){if(!juke) return;const j=juke;juke=null;clearTimeout(j.t);try{j.m.fadeOut(.4);}catch(e){}setTimeout(()=>j.ac.close().catch(()=>{}),700);}
@@ -2665,14 +2700,14 @@ function closeFish(){
 function openFish(spot){
   if(homeEdit&&spot!=="sea") return;
   spot=spot==="sea"?"sea":"pond";
-  if((S.me.bag||[]).length>=(S.bagMax||24)){tipAt($("pondBtn"),"Your bag is full. Sell some fish or put them in an aquarium.","9%",4000);return;}
+  if((S.me.bag||[]).length>=(S.bagMax||24)){toast("Your bag is full. Sell some fish or put them in an aquarium.",4000);return;}
   const g=$("fishGame");if(g.parentNode!==document.body) document.body.appendChild(g); // out of the cave card: full screen
   g.className="fishgame"+(sceneNight()?" night":"");g.hidden=false;document.body.classList.add("fishing");
   const nt=sceneNight(), cols=spot==="sea"?(nt?["#0f1633","#463422"]:["#6ab8ff","#8c5d2e"]):(nt?["#0f1633","#2f5a3a"]:["#7cc6ff","#6cbf5c"]);
   g.style.setProperty("--fzTop",cols[0]);g.style.setProperty("--fzBot",cols[1]); // the scene carries on above and below
   $("fzBg").innerHTML=spot==="sea"?VILLAGE.sea(sceneNight()):CAVE_HOME.pond(sceneNight());
   $("fzMon").replaceChildren(monEl(S.me.monster,S.me.color,"","back"));
-  fz={state:"idle",spot};requestAnimationFrame(()=>{if(fz) fz.dim=fzSize();});fz.dim=fzSize();fishIdle(spot==="sea"?"Cast your line into the sea.":"Cast your line into the pond.");
+  fz={state:"idle",spot};requestAnimationFrame(()=>{if(fz) fz.dim=fzSize();});fz.dim=fzSize();fishIdle(spot==="sea"?"Cast your line into the sea.":"Cast your line into the lake.");
 }
 const bagFull=()=>(S.me.bag||[]).length>=(S.bagMax||24);
 function fzBagLine(){$("fzCasts").textContent=`Bag ${(S.me.bag||[]).length}/${S.bagMax||24}`;}
@@ -2878,13 +2913,13 @@ function renderBag(){
       :`Mr. Veggie buys crops. He's next in the yard at ${sgClock(vg.from)}${sgParts(vg.from).day!==sgParts(clockNow()).day?" tomorrow":""} (8–10 am and 5–7 pm every day).`;
   }
   const line=$("bagFishfish");line.classList.toggle("here",here);
-  if(!ff) line.textContent="Mr. Fishfish buys fish when he visits the yard.";
+  if(!ff) line.textContent="Mr. Fishfish buys fish when he visits the Lake.";
   else if(ff.allDay&&isBuilt("harbor")) line.textContent=`Mr. Fishfish lives at the harbor now and buys fish all day. Today he pays double for ${CAVE_HOME.FISH[ff.wants]?CAVE_HOME.FISH[ff.wants].name.toLowerCase():"fish"}.`;
   else{
     const want=CAVE_HOME.FISH[ff.wants]?CAVE_HOME.FISH[ff.wants].name.toLowerCase():"";
     const tomorrow=sgParts(ff.from).day!==sgParts(clockNow()).day;
-    line.textContent=here?`Mr. Fishfish is in the yard until ${sgClock(ff.until)}. Today he pays double for ${want}.`
-      :`Mr. Fishfish buys fish. He's next in the yard at ${sgClock(ff.from)}${tomorrow?" tomorrow":""} (12–2 pm and 7–10 pm every day).`;
+    line.textContent=here?`Mr. Fishfish is at the Lake until ${sgClock(ff.until)}. Today he pays double for ${want}.`
+      :`Mr. Fishfish buys fish. He's next at the Lake at ${sgClock(ff.from)}${tomorrow?" tomorrow":""} (12–2 pm and 7–10 pm every day).`;
   }
   const row=(f,acts)=>{
     const crop=!!VILLAGE.CROPS[f.kind]&&!CAVE_HOME.FISH[f.kind];
@@ -2896,7 +2931,7 @@ function renderBag(){
   };
   const room=homeItems.reduce((n,i)=>n+(TANK_ROOM[i.kind]||0),0);
   const list=$("bagList");list.replaceChildren();
-  if(!bag.length){const li=document.createElement("li");li.className="none";li.textContent=farmOn?"Nothing yet. Fish in the pond, or grow crops on the village farm.":"No fish yet. Tap the pond in the yard to go fishing.";list.appendChild(li);}
+  if(!bag.length){const li=document.createElement("li");li.className="none";li.textContent=farmOn?"Nothing yet. Fish at the Lake, or grow crops on the village farm.":"No fish yet. Go to the Lake in the village to fish.";list.appendChild(li);}
   bag.slice().sort((a,b)=>(b.worth||0)-(a.worth||0)).forEach(f=>list.appendChild(row(f,f.crop?[
     ...(vh?[[`Sell +${f.worth}`,b=>cropSell([f.id],b),"sell"]]:[]),
   ]:[
@@ -2943,9 +2978,12 @@ const BUILD_INFO={
   farm:"Six plots for the whole cave. Buy seeds, plant them and keep them watered: a day without water and they die. Watering someone else's crop pays 2 coins. Sell what you pick to Mr. Veggie.",
   harbor:"Fish at sea: squid, tuna, swordfish, anglerfish and the huge whale shark, and better odds on legendary fish. Mr. Fishfish moves in and buys fish all day.",
   cinema:"Every week's clips played back to back as one movie, with a title card and credits.",
+  lake:"The cave's fishing lake. Cast as often as you like: a shadow swims up, the float nibbles, then hook it and reel it in.",
   planner:"Finds where a day or two of leave turns public holidays into a long break, tells you 3 weeks ahead, and shows who else in the cave is taking the same days.",
 };
-const LOT_AT={weather:[24,45],cinema:[76,45],farm:[25,77],harbor:[83,88],planner:[53,90]};
+// v57: the village is one line, Home the interchange at the top and the Lake (fishing) the first stop
+const STATIONS=["home","lake","weather","farm","harbor","cinema","planner"];
+const ST_NAME={home:"Home",lake:"The Lake",weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"};
 let village=null, villSel=null, farm=null, farmSel=null;
 const SEED_PRICE={radish:10,tomato:25,pumpkin:60,monflower:150}; // same as CROPS on the server
 const mkEl=(tag,cls,text)=>{const e=document.createElement(tag);if(cls) e.className=cls;if(text!=null) e.textContent=text;return e;};
@@ -2956,13 +2994,12 @@ const lotArt=k=>{const st=lotState(k),b=village&&village[k];return st==="open"?V
 const durText=ms=>{const m=Math.max(1,Math.ceil(ms/60000)),h=Math.floor(m/60),d=Math.floor(h/24);return d>=2?`${d} days`:h?`${h}h ${m%60}m`:`${m}m`;};
 function showVillage(on){
   if(on&&homeEdit) setDecoEdit(false);
-  $("villView").hidden=!on;$("caveScene").hidden=on;$("villBtn").setAttribute("aria-pressed",String(on));
-  if(on){showBag(false);$("walletPanel").hidden=true;$("villBg").innerHTML=VILLAGE.map(sceneNight());renderVillage();loadVillage();}
+  $("villView").hidden=!on;$("caveScene").hidden=on;$("roomFrame").hidden=on;$("roomTabs").hidden=on;$("villBtn").setAttribute("aria-pressed",String(on));
+  if(on){showBag(false);$("walletPanel").hidden=true;renderVillage();loadVillage();}
   else{villSel=null;farmSel=null;$("villCard").hidden=true;$("villBack").hidden=true;}
 }
 const closeVillCard=()=>{villSel=null;farmSel=null;renderVillage();};
 $("villBack").addEventListener("click",closeVillCard);
-$("villHome").addEventListener("click",()=>showVillage(false)); // the cave in the middle of the map: back home
 $("villBtn").addEventListener("click",()=>showVillage($("villView").hidden));
 async function loadVillage(quiet){
   try{const d=await api("village");village=d.village;renderVillage();if(villSel==="farm"&&isBuilt("farm")) loadFarm(true);}
@@ -2975,29 +3012,27 @@ function selectLot(k){
 }
 function renderVillage(){
   if($("villView").hidden) return;
-  const box=$("villLots");
-  Object.keys(BUILD_INFO).forEach(k=>{
-    const st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD, pct=b?Math.floor(b.raised/b.price*100):0;
-    let el=box.querySelector(`.vlot[data-k="${k}"]`);
-    if(!el){el=mkEl("button","vlot");el.type="button";el.dataset.k=k;el.setAttribute("aria-label",B[k].name);
-      el.style.left=LOT_AT[k][0]+"%";el.style.top=LOT_AT[k][1]+"%";el.addEventListener("click",()=>selectLot(k));box.appendChild(el);}
-    el.className="vlot "+st+(villSel===k?" sel":"");
-    const sig=st+"|"+pct;
+  const box=$("villLots"), night=sceneNight();
+  STATIONS.forEach(k=>{
+    const fixed=k==="home"||k==="lake", st=fixed?"open":lotState(k), b=village&&village[k], pct=b?Math.floor(b.raised/b.price*100):0;
+    let el=box.querySelector(`.vst[data-k="${k}"]`);
+    if(!el){el=mkEl("button","vst");el.type="button";el.dataset.k=k;
+      el.addEventListener("click",()=>k==="home"?showVillage(false):selectLot(k));box.appendChild(el);}
+    el.className=`vst ${st}${k==="home"?" xchg":""}${villSel===k?" sel":""}`;
+    const here=k==="lake"&&(ffHere()||isBuilt("harbor")), sig=[st,pct,here,night].join("|");
     if(el.dataset.sig===sig) return; // nothing changed: leave it alone
     el.dataset.sig=sig;
-    el.innerHTML=`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;
-    if(st==="fund"||st==="site"){const i=mkEl("i"),u=mkEl("u");u.style.width=Math.min(100,pct)+"%";i.appendChild(u);el.appendChild(i);}
-    const short={weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"}[k];
-    const lab=mkEl("b","",short);
-    if(st==="building") lab.appendChild(mkEl("em","","opens soon"));else if(st!=="open") lab.appendChild(mkEl("em","",pct+"% paid"));
-    el.appendChild(lab);
+    const note=k==="home"?"Back to the cave":k==="lake"?(here?"Mr. Fishfish is buying":"Fish any time"):st==="open"?"Open":st==="building"?"Opens soon":`${pct}% paid`;
+    const art=k==="home"?CAVE_HOME.scene(night):k==="lake"?CAVE_HOME.pond(night):`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;
+    el.setAttribute("aria-label",`${ST_NAME[k]}: ${note}`);
+    el.innerHTML=`<span class="vst-art">${art}</span><span class="vst-tx"><b>${ST_NAME[k]}</b><small>${note}</small>${st==="fund"||st==="site"?`<i><u style="width:${Math.min(100,pct)}%"></u></i>`:""}</span>`;
   });
   renderVillCard();
 }
 function renderVillCard(){
   const card=$("villCard");
   if(!villSel||$("villView").hidden){card.hidden=true;$("villBack").hidden=true;document.body.classList.remove("vmodal");return;}
-  const k=villSel, st=lotState(k), b=village&&village[k], B=VILLAGE.BUILD[k];
+  const k=villSel, st=k==="lake"?"open":lotState(k), b=village&&village[k], B=k==="lake"?{name:ST_NAME.lake}:VILLAGE.BUILD[k];
   const wasOpen=!card.hidden&&card.dataset.k===k, sc=card.scrollTop;
   card.dataset.k=k;card.classList.toggle("pop",!wasOpen);
   card.hidden=false;$("villBack").hidden=false;document.body.classList.add("vmodal");card.replaceChildren();
@@ -3005,7 +3040,7 @@ function renderVillCard(){
   const top=mkEl("div","vtop");top.appendChild(mkEl("h3","",B.name));
   const x=mkEl("button","","✕");x.type="button";x.setAttribute("aria-label","Close");x.addEventListener("click",closeVillCard);top.appendChild(x);
   card.appendChild(top);
-  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div","vhero");hero.innerHTML=`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;card.appendChild(hero);}
+  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div",k==="lake"?"vhero lake":"vhero");hero.innerHTML=k==="lake"?CAVE_HOME.pond(sceneNight()):`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;card.appendChild(hero);}
   if(st!=="open"||(k!=="farm"&&k!=="planner")) card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
   if(st==="fund"||st==="site"){
     if(!b){card.appendChild(mkEl("p","","Loading…"));return;}
@@ -3034,6 +3069,14 @@ function renderVillCard(){
     if(k==="harbor"){
       card.appendChild(mkEl("p","",`Mr. Fishfish lives here now and buys fish all day.${S.fishfish&&CAVE_HOME.FISH[S.fishfish.wants]?` Today he pays double for ${CAVE_HOME.FISH[S.fishfish.wants].name.toLowerCase()}.`:""}`));
       const bt=mkEl("button","btn primary","Fish at sea");bt.type="button";bt.addEventListener("click",()=>{closeVillCard();openFish("sea");});acts.appendChild(bt);
+    }
+    if(k==="lake"){
+      const n=(S.me.bag||[]).length, ff=S.fishfish;
+      card.appendChild(mkEl("p","",`Your bag: ${n}/${S.bagMax||24}. `+(isBuilt("harbor")?"Mr. Fishfish lives at the harbor now and buys fish all day."
+        :ffHere()?`Mr. Fishfish is here until ${sgClock(ff.until)} and buys fish.`:"Mr. Fishfish comes by 12–2 pm and 7–10 pm to buy fish.")));
+      const bt=mkEl("button","btn primary","Go fishing");bt.type="button";bt.addEventListener("click",()=>{closeVillCard();openFish("pond");});acts.appendChild(bt);
+      if(n&&(ffHere()||isBuilt("harbor"))){const sb=mkEl("button","btn ghost","Sell fish");sb.type="button";
+        sb.addEventListener("click",()=>{showVillage(false);showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});acts.appendChild(sb);}
     }
     if(k==="planner") renderPlanner(card);
     if(k==="cinema"){
@@ -4742,14 +4785,17 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v55-strip",v:"v55.0–56.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
+  {id:"v55-strip",v:"v55.0–57.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
     "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go.",
     "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
     "Overtime turns the line red and dashed. When someone's off, their dot has reached the last station.",
-    "The village is a train network too: every building is a station with its own name plate, and Home is the interchange.",
+    "The village is now the Village Line: every building is a station, Home is the interchange at the top.",
+    "Fishing has its own place: the Lake, the first stop on the Village Line. Mr. Fishfish comes there to buy.",
+    "Home shows one room at a time, bigger: tap Bedroom, Study, Living room, Kitchen or Yard. Whole home is still there as the last tab.",
     "New lettering and square, sign-like buttons all through the app."],panels:[
     {art:"grid",title:"Everyone's line",text:"One line per friend. The grey part is the day done; the coloured part is what's left until the last stop."},
-    {art:"smooth",title:"Next stop: off",text:"The lit dot moves along all day. When it reaches the end, that friend is out."}]},
+    {art:"smooth",title:"Next stop: off",text:"The lit dot moves along all day. When it reaches the end, that friend is out."},
+    {art:"fishing",title:"Gone to the Lake",text:"Take the Village Line to the Lake to fish. Your home is now one room at a time, so everyone looks bigger."}]},
   {id:"v54-village",v:"v49.0–54.0",at:"2026-11-14T18:00",title:"The village, fishing that feels like it, and a faster app",changes:[
     "Everything is faster: the cave's records moved next to the server, so opening the app and every tap answer much sooner.",
     "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, then a day of finishing touches.",

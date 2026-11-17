@@ -1,9 +1,10 @@
-# Clock-out Countdown · v56.0
+# Clock-out Countdown · v57.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
 - **Caves.** Start a cave, then send its invite link or 6-letter code to friends. You live in one cave at a time. The owner can rename the cave, make a new code (the old link stops working) and remove people. If the owner leaves, the next member takes over. An empty cave is deleted.
 - **Countdown.** Each person sees **Time − XX mins** to their own clock-out (Singapore / Malaysia time). **+ OT** when staying late, then **Clock out** when leaving.
+- **Home.** The cave's home is shown one room at a time (Bedroom, Study, Living room, Kitchen, Yard), each tab with how many monsters are in it; Whole home is the last tab. It opens on the busiest room.
 - **Monsters.** Ten monsters (Jelly, Cyclo, Noodle, Spike, Bun, Tako, Mush, Chomp, Fluff, Dino). You get one when you join and keep it. It types at a laptop while you work, wilts on overtime and dances when you're off.
 - **Colours.** Pick your colour from 12 when you join, and change it any time in your account.
 - **⚡ Zap.** Buzz a cave-mate's phone with a push notification, once every 10 minutes per person. Each person decides with **Let friends buzz my phone** whether zaps vibrate or arrive quietly.
@@ -204,6 +205,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 
 **v56.** The train-map look reaches the village and the games. Village buildings are stations: charcoal name plates with a roundel (amber while being paid for, green once open), and Home is the interchange with two roundels. A building card opens under a charcoal sign band with a short slide up (no motion under reduced motion), and its savings bar is a line with start and terminus stations. The shop, bag, farm, cinema tabs and fishing buttons take the square sign corners and uppercase labels. Monster and fishing animations are unchanged. The v55 News entry covers both versions.
 
+**v57.** The home is shown one room at a time. A tab row (Bedroom, Study, Living room, Kitchen, Yard, Whole home) crops the same house scene to the chosen room with a short camera move, so monsters and decorations are drawn bigger; each tab counts the monsters in that room, it opens on the busiest one, and the at-work board only shows in Whole home. Decorating still works in every room. The village map is replaced by the Village Line, a vertical train line: Home is the interchange at the top, then the Lake, Weather, Farm, Harbor, Cinema and Holidays, each with a picture, its state and a savings bar. Fishing moved out of the yard to the Lake station, which has its own card (a big lake picture, Go fishing, and Sell fish when Mr. Fishfish is around); the pond and Mr. Fishfish buttons are gone from the yard, and the texts that pointed to the yard now point to the Lake. The News entry for v55 covers v55 to v57.
+
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
 Keys: `don/<cid>/<building>/<id>/<pid>/<coins>`, `built/<cid>/<building>/<openAt>`, `plot/<cid>/<n>/<id>/<crop>/<pid>/<plantedAt>`, `pw/<cid>/<cropId>/<at>/<pid>`; crops share the bag with fish (`bag/<pid>/<id>/<crop>/<stars>`). The test site also has a **+5000** coins button. Tests: `test/village.test.mjs`.
@@ -212,7 +215,7 @@ Keys: `don/<cid>/<building>/<id>/<pid>/<coins>`, `built/<cid>/<building>/<openAt
 
 ## Fishing, the bag and the shop (v45)
 
-**Fishing.** Tapping the pond opens a full-screen game seen from behind your monster (full screen since v46, so a finger can't land on the page behind it). There's no daily limit; each cast goes: cast, wait for the bite, tap **Hook!** within the window (too early or too late and it's gone), then hold and release anywhere on the screen to keep the fish inside the green band until the bar fills. Bigger fish dart more and have a narrower band. The server picks the fish when the line is cast (`fish/cast`) and the phone reports whether it was landed (`fish/land`), so a catch can't be invented, only a lost fish claimed as won.
+**Fishing.** Tapping **Go fishing** at the Lake (the first stop on the Village Line; before v57 it was a pond in the yard) opens a full-screen game seen from behind your monster (full screen since v46, so a finger can't land on the page behind it). There's no daily limit; each cast goes: cast, wait for the bite, tap **Hook!** within the window (too early or too late and it's gone), then hold and release anywhere on the screen to keep the fish inside the green band until the bar fills. Bigger fish dart more and have a narrower band. The server picks the fish when the line is cast (`fish/cast`) and the phone reports whether it was landed (`fish/land`), so a catch can't be invented, only a lost fish claimed as won.
 
 | Fish | Size | Worth | Odds |
 |---|---|---|---|
@@ -234,7 +237,7 @@ Together the legendary fish come up about once in 670 casts; a lucky cat doesn't
 
 **The bag** (button next to Shop) holds up to 24 fish. From it a fish can be sold or moved into an aquarium.
 
-**Mr. Fishfish** stands in the yard from 12 to 2 pm and 7 to 10 pm every day, and only then can fish be sold. Each day he wants one kind of fish and pays double for it.
+**Mr. Fishfish** comes to the Lake from 12 to 2 pm and 7 to 10 pm every day, and only then can fish be sold. Each day he wants one kind of fish and pays double for it.
 
 **Aquariums.** An aquarium holds 3 fish and a big fish tank 8, shared by the cave; the fish swim in it, still belong to whoever put them in, and can be taken back out. An aquarium can't be sold while it's needed for the fish in it.
 
