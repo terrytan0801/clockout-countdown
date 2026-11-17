@@ -3,6 +3,7 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
 import { makeHandler } from "../netlify/lib/handler.mjs";
 import { memStore } from "./mem-store.mjs";
 
@@ -18,7 +19,7 @@ if (seedMod) await seedMod.seed(store, now());
 // SEED_COINS=<n> gives the seeded Terry that many coins, so the shop can be tried without waiting for payday.
 if (seedMod && process.env.SEED_COINS) await store.set(`led/p-terry/0000000000001-aaaaaa/${Number(process.env.SEED_COINS) | 0}/test`, "0");
 const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".png": "image/png", ".webmanifest": "application/manifest+json" };
-const root = new URL("../public/", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../public/", import.meta.url));
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
