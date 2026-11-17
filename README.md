@@ -1,4 +1,4 @@
-# Clock-out Countdown · v62.0
+# Clock-out Countdown · v63.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -70,7 +70,9 @@ Open `/admin` on the site (for example `https://splendid-gnome-120c81.netlify.ap
 
 How it's measured: the app sends a small check-in when it opens and once a minute while it's on screen. Coming back after 5+ minutes away counts as a new open. What messages say is never recorded, only how many were sent. Stats are kept for 90 days, and deleting an account deletes that person's stats. New users see a short notice about this on the Join card.
 
-The admin key isn't stored in the code, only its SHA-256 hash. To change the key, add an environment variable `ADMIN_KEY` in Netlify (Project configuration → Environment variables, scope: Functions) and redeploy.
+The admin key lives only in the Netlify environment variable `ADMIN_KEY` (Project configuration → Environment variables, scope: Functions; set it for production and branch deploys) and takes effect on the next deploy. Without it the admin page stays shut. Before v62 there was a built-in key, but its plain text had been committed to a test file in this public repo, so it no longer works.
+
+The person sheet in the admin page can give someone who forgot their passcode a new one (or a random 6-digit one) and lifts any wrong-passcode lock; only a hash of each passcode is kept, so old ones can't be shown.
 
 ## About vibration
 
@@ -216,6 +218,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v61.** The station sign only stands tall on the Board. On Chat, Days and Home (`body[data-view]`, set in `setView`) it folds into a slim strip: the cave name and your time left side by side, with the account, cave and News buttons under them; the eyebrow and the Now clock are hidden there (the Offline notice still shows). On a phone this gives chat and the home about 120px more room. The v55 News entry covers v55 to v61.
 
 **v62.** Fix for the v54 move. The real store names folders with a trailing slash (`person/`), unlike the local emulator and the docs, so `allKeys` asked for `person//`, found nothing, and the first request after v61 went live marked an almost empty copy as done: no 503, every session and login gone (the old store in Singapore was never touched). `allKeys` now strips the slash, and before writing `sys/moved` the move lists both stores in full (no folders) and checks that every record in the old store is in the new one; anything missing is added to the list and copied on the next request, and `sys/moved` records the count it checked. The fake store in the tests now names folders with a slash too. To redo the move on the live site after this goes up, delete `sys/moved`, `sys/movelist` and `sys/movecur` from `clockout-near` (not `clockout`), and the `lock/` keys left by the failed logins.
+
+**v63.** Passcode reset, and a new admin key. Only a scrypt hash of each passcode is kept, so a forgotten one can't be read back; the person sheet in the admin page now sets a new one (`POST /api/admin/reset-pin {pid, pin?}`: an empty pin gives a random 6-digit one), lifts that name's wrong-passcode lock, keeps phones already logged in, and logs `ev/pinreset` (shown in the activity). The built-in admin key is gone: its plain text had been committed to `test/api.test.mjs` in this public repo since v17, and the live site had no `ADMIN_KEY`, so anyone could open the admin page. The key now comes only from `ADMIN_KEY` in Netlify; without it the admin page stays shut. Tests use `test-admin-key`, and the seeded dev server uses `demo-admin`.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

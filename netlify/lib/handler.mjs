@@ -824,6 +824,19 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
           const idx = await keys("myclip/");
           return json({ ...(await stats.report(days)), clips: { count: idx.length, bytes: idx.reduce((n, k) => n + (Number(k.split("_").pop()) || 0), 0) } });
         }
+        // v62: someone forgot their passcode. Only the hash is kept, so it can't be read back; set a new one
+        // (or a random 6-digit one) for Terry to pass on in private, and lift any wrong-passcode lock.
+        if (route === "admin/reset-pin" && method === "POST") {
+          const p = typeof body.pid === "string" && (await getPerson(body.pid));
+          if (!p) return json({ error: "No one with that id." }, 404);
+          const pin = body.pin == null || body.pin === "" ? String(randomInt(1000000)).padStart(6, "0") : body.pin;
+          if (!validPin(pin)) return json({ error: "The passcode needs 4 to 32 characters." }, 400);
+          const salt = randomBytes(16).toString("hex");
+          await putPerson({ ...p, salt, hash: hashPin(pin, salt) });
+          await store.delete(`lock/${nameKey(p.name)}`);
+          await stats.log("pinreset", p.id);
+          return json({ name: p.name, pin });
+        }
         return json({ error: "Not found." }, 404);
       }
 

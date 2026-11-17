@@ -142,6 +142,8 @@ tbody tr:hover{background:var(--bg)}
 .stat{background:var(--bg);border-radius:12px;padding:10px 12px}
 .stat .k{font:700 10px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .stat .v{font:700 18px/1.3 var(--f-mono);font-variant-numeric:tabular-nums}
+.pin-reset{display:flex;gap:8px;flex-wrap:wrap}
+.pin-reset input{flex:1 1 200px;width:auto}
 .section-label{font:700 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:2px 0 -4px}
 .rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rank li{display:grid;grid-template-columns:minmax(0,9em) 1fr 2.5em;gap:8px;align-items:center;font-size:14px}
@@ -252,6 +254,12 @@ tbody tr:hover{background:var(--bg)}
     </div>
     <div class="section-label">Recent activity</div>
     <ul class="log" id="pLog" style="max-height:260px"></ul>
+    <div class="section-label">Forgot their passcode?</div>
+    <form class="pin-reset" id="pinForm">
+      <input id="pinInput" type="text" autocomplete="off" spellcheck="false" maxlength="32" placeholder="New passcode (empty: random 6 digits)" aria-label="New passcode">
+      <button class="btn ghost" id="pinBtn" type="submit">Reset passcode</button>
+    </form>
+    <p class="dim" id="pinOut" aria-live="polite" style="margin:0"></p>
     <div style="display:flex;justify-content:flex-end"><button class="btn" id="pClose" type="button">Done</button></div>
   </div>
 </div>
@@ -498,6 +506,7 @@ function activityText(e,pid){
   switch(e.kind){
     case "login": return "Logged in";
     case "signup": return "Joined Clock-out";
+    case "pinreset": return "Passcode reset by the admin";
     case "msg": return "Sent a message";
     case "zap": return e.from===pid?`Zapped ${nameOf(e.to)}`:`Zapped by ${nameOf(e.from)}`;
     case "cave": return {create:"Started a cave",join:"Joined a cave",leave:"Left a cave",kick:"Was removed from a cave"}[e.action]||"Cave change";
@@ -505,7 +514,9 @@ function activityText(e,pid){
   return e.kind;
 }
 function openPerson(pid){
-  const p=byId()[pid];if(!p) return;openPid=pid;
+  const p=byId()[pid];if(!p) return;
+  if(pid!==openPid){$("pinInput").value="";$("pinOut").textContent="";} // the minute refresh keeps what's shown
+  openPid=pid;
   const m=$("pMon");m.replaceWith(Object.assign(monEl(p,"dance"),{id:"pMon"}));
   $("pName").textContent=p.name;
   $("pMeta").textContent=`${p.caveName||"No cave"} · clocks out ${sgFmt(Date.UTC(2026,0,1,p.h-8,p.m),{hour:"numeric",minute:"2-digit",hour12:true})} · buzz ${p.buzz?"on":"off"} · joined ${sgFmt(p.joinedAt,{day:"numeric",month:"short",year:"numeric"})}`;
@@ -529,6 +540,23 @@ function openPerson(pid){
     const w=document.createElement("span");w.className="when";w.textContent=when(e.at);li.append(l,w);ul.appendChild(li);
   });
 }
+// v62: set a new passcode for someone who forgot theirs (only its hash is kept, so the old one can't be shown).
+$("pinForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const pid=openPid,p=byId()[pid];if(!p) return;
+  const pin=$("pinInput").value.trim();
+  if(pin&&pin.length<4){$("pinOut").textContent="The passcode needs at least 4 characters.";return;}
+  if(!confirm(`Give ${p.name} a new passcode? Their old one stops working.`)) return;
+  $("pinBtn").disabled=true;
+  try{
+    const r=await fetch("/api/admin/reset-pin",{method:"POST",headers:{"content-type":"application/json","x-admin-key":key},body:JSON.stringify({pid,pin})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||"That didn't work. Try again.");
+    $("pinInput").value="";
+    $("pinOut").textContent=`New passcode for ${d.name}: ${d.pin}. Tell them in private; they can log in with it now.`;
+  }catch(err){$("pinOut").textContent=err.message;}
+  finally{$("pinBtn").disabled=false;}
+});
 $("pClose").addEventListener("click",()=>{$("personSheet").hidden=true;openPid=null;hideTip();});
 $("personSheet").addEventListener("click",e=>{if(e.target.id==="personSheet"){$("personSheet").hidden=true;openPid=null;hideTip();}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("personSheet").hidden=true;openPid=null;hideTip();}});

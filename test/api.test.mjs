@@ -161,18 +161,20 @@ assert.equal((await call("POST", "signup", { name: "Winnie", h: 18, m: 0, pin: "
   const s = memStore();
   clock = Date.UTC(2026, 10, 6, 1, 0, 0); // Fri 9:00 am SG
   const { call: c } = setup(s);
-  const ADMIN = "jxh56-gkkz6-2qgjs-yhak2";
+  const ADMIN = "test-admin-key"; // a test-only key; the real one is ADMIN_KEY in Netlify
   const admin = async (days = 30, key = ADMIN) => {
-    const res = await makeHandler({ store: s, webpush, now: () => clock })(new Request("https://x.test/api/admin/stats?days=" + days, { headers: key ? { "x-admin-key": key } : {} }));
+    const res = await makeHandler({ store: s, webpush, now: () => clock, adminKey: ADMIN })(new Request("https://x.test/api/admin/stats?days=" + days, { headers: key ? { "x-admin-key": key } : {} }));
     return { status: res.status, data: await res.json() };
   };
   assert.equal((await admin(30, null)).status, 401);
   assert.equal((await admin(30, "wrong")).status, 401);
-  assert.equal((await admin(30)).status, 200, "default admin key works");
+  assert.equal((await admin(30)).status, 200, "ADMIN_KEY works");
   {
-    const h = makeHandler({ store: s, webpush, now: () => clock, adminKey: "my-own-key" });
+    const h = makeHandler({ store: s, webpush, now: () => clock }); // no ADMIN_KEY set: the admin page is shut
     const res = await h(new Request("https://x.test/api/admin/stats", { headers: { "x-admin-key": ADMIN } }));
-    assert.equal(res.status, 401, "ADMIN_KEY replaces the default");
+    assert.equal(res.status, 401, "no built-in key any more");
+    const old = await h(new Request("https://x.test/api/admin/stats", { headers: { "x-admin-key": "" } }));
+    assert.equal(old.status, 401);
   }
 
   const T = (await c("POST", "signup", { name: "Terry", h: 17, m: 0, pin: "1234" })).data;
@@ -196,7 +198,31 @@ assert.equal((await call("POST", "signup", { name: "Winnie", h: 18, m: 0, pin: "
   await c("POST", "chat", { text: "hi" }, T.token);
   await c("POST", "chat", { text: "yo" }, K.token);
 
+  // v62: the admin sets a new passcode for someone who forgot theirs
+  {
+    const reset = async (body, key = ADMIN) => {
+      const res = await makeHandler({ store: s, webpush, now: () => clock, adminKey: ADMIN })(new Request("https://x.test/api/admin/reset-pin", { method: "POST", headers: key ? { "x-admin-key": key } : {}, body: JSON.stringify(body) }));
+      return { status: res.status, data: await res.json() };
+    };
+    for (let i = 0; i < 5; i++) await c("POST", "login", { name: "Sukee", pin: "0000" });
+    assert.equal((await c("POST", "login", { name: "Sukee", pin: "5555" })).status, 429, "locked after 5 wrong passcodes");
+    assert.equal((await reset({ pid: K.me.id, pin: "4321" }, null)).status, 401, "needs the admin key");
+    assert.equal((await reset({ pid: K.me.id, pin: "4321" }, "wrong")).status, 401);
+    assert.equal((await reset({ pid: "p-nobody", pin: "4321" })).status, 404);
+    assert.equal((await reset({ pid: K.me.id, pin: "12" })).status, 400, "too short");
+    let rr = await reset({ pid: K.me.id, pin: "4321" });
+    assert.equal(rr.status, 200); assert.deepEqual(rr.data, { name: "Sukee", pin: "4321" });
+    assert.equal((await c("POST", "login", { name: "Sukee", pin: "5555" })).status, 401, "the old passcode stops working");
+    assert.equal((await c("POST", "login", { name: "sukee", pin: "4321" })).status, 200, "the lock is lifted and the new one works");
+    rr = await reset({ pid: K.me.id });
+    assert.match(rr.data.pin, /^\d{6}$/, "empty: a random 6-digit passcode");
+    assert.equal((await c("POST", "login", { name: "Sukee", pin: rr.data.pin })).status, 200);
+    assert.equal((await c("GET", "state", null, K.token)).status, 200, "phones already logged in stay logged in");
+    assert.ok(![...s._m.keys()].some((x) => x.startsWith("lock/")));
+  }
+
   let r = await admin(7);
+  assert.ok(r.data.recent.some((e) => e.kind === "pinreset" && e.pid === K.me.id), "resets show in the activity");
   const t = r.data.people.find((p) => p.name === "Terry"), k = r.data.people.find((p) => p.name === "Sukee");
   assert.equal(t.opens, 2, "two opens");
   assert.equal(t.seconds, 240, "4 minutes in the app (the 10-minute gap doesn't count)");

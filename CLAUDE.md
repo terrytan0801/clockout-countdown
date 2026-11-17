@@ -17,7 +17,8 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
 - Work on the `dev` branch and push it. Merge `dev` into `main` (fast-forward) and push `main` only when Terry
   says "上线": each production deploy costs Netlify credits. `dev` deploys to `dev--splendid-gnome-120c81.netlify.app`
   with its own data (store `clockout-dev`).
-- Never put the admin key in code, commits, chat or anywhere public. Only its SHA-256 hash is in the code.
+- Never put the admin key in code, commits, chat or anywhere public. Since v62 it lives only in Netlify's `ADMIN_KEY`
+  (no built-in key; the old one leaked through a test file). Tests use `test-admin-key`.
 
 ## Layout
 
@@ -36,7 +37,7 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
 
 - `npm test`: 13 test files; each prints "All … checks passed."
 - Local server with demo data: `SEED=1 DEV=1 node test/dev-server.mjs 8888` (add `SEED_COINS=n` for coins).
-  Demo users Terry, Sukee and others, PIN 1234.
+  Demo users Terry, Sukee and others, PIN 1234; admin key `demo-admin` (seeded runs only).
 - Phone screenshots: Playwright with `devices["iPhone 13"]`.
 
 ## Gotchas
@@ -50,6 +51,6 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
 ## Status (17 Nov 2026)
 
 Production runs v61 (went live 17 Nov, 16:59 SGT). Its first request ran the v54 move with the folder-slash
-bug and marked an almost empty copy as done, so everyone was logged out. `dev` has v62 with the fix, waiting
-for "上线". After it goes live: delete `sys/moved`, `sys/movelist`, `sys/movecur` and the failed-login `lock/`
+bug and marked an almost empty copy as done, so everyone was logged out. `dev` has v62 (the fix) and v63
+(admin passcode reset; no built-in admin key, so `ADMIN_KEY` must be set in Netlify first), waiting for "上线". After it goes live: delete `sys/moved`, `sys/movelist`, `sys/movecur` and the failed-login `lock/`
 keys from store `clockout-near` (never from `clockout`); the next request copies everything again (787 keys).

@@ -14,7 +14,7 @@ const webpush = {
 const store = memStore();
 const now = () => Date.now() + Number(process.env.SHIFT_MS || 0);
 const seedMod = process.env.SEED ? await import("./seed.mjs") : null;
-const handle = makeHandler({ store, webpush, now, dev: process.env.DEV === "1", cache: {}, ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}) });
+const handle = makeHandler({ store, webpush, now, dev: process.env.DEV === "1", cache: {}, adminKey: process.env.ADMIN_KEY || (process.env.SEED === "1" ? "demo-admin" : null), ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}) });
 if (seedMod) await seedMod.seed(store, now());
 // SEED_COINS=<n> gives the seeded Terry that many coins, so the shop can be tried without waiting for payday.
 if (seedMod && process.env.SEED_COINS) await store.set(`led/p-terry/0000000000001-aaaaaa/${Number(process.env.SEED_COINS) | 0}/test`, "0");

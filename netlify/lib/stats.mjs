@@ -4,6 +4,7 @@
 //   ev/<kind>/<ts>_<a>_<b>_<c>      empty value; the key itself holds the event, so listing is enough
 //       ev/signup/<ts>_<pid>
 //       ev/login/<ts>_<pid>
+//       ev/pinreset/<ts>_<pid>     (v62: the admin set a new passcode)
 //       ev/zap/<ts>_<from>_<to>_<b|q|n>      b = phone buzzed, q = arrived quietly, n = they haven't turned on zaps
 //       ev/msg/<ts>_<pid>_<cid>
 //       ev/cave/<ts>_<pid>_<cid>_<create|join|leave|kick>
@@ -14,8 +15,8 @@ export const KEEP_DAYS = 90;
 const OPEN_GAP_MS = 5 * 60 * 1000;   // back after 5+ minutes away counts as a new open
 const PING_GAP_MS = 3 * 60 * 1000;   // pings further apart than this don't count as time in the app
 const PING_MAX_MS = 90 * 1000;       // one ping adds at most 90 seconds
-// SHA-256 of the admin key. The key itself is not in the code. Set ADMIN_KEY in Netlify to replace it.
-const DEFAULT_ADMIN_HASH = "fae948c3b5537be2a54be28239df35b7ebbb2956cbe629eb119c6f1d482a6f99";
+// v62: the admin key comes only from ADMIN_KEY in Netlify. The old built-in key leaked (its plain text sat in a
+// test file in this public repo), so there is no default any more: without ADMIN_KEY the admin page stays shut.
 
 const sha = (s) => createHash("sha256").update(String(s)).digest();
 const ts13 = (t) => String(t).padStart(13, "0");
@@ -29,11 +30,11 @@ export function sgDayOf(ms) {
 export function makeStats({ store, now, adminKey }) {
   const getJSON = async (k, fb = null) => (await store.get(k, { type: "json" })) ?? fb;
   const keys = async (prefix) => (await store.list({ prefix })).blobs.map((b) => b.key);
-  const expected = adminKey ? sha(adminKey) : Buffer.from(DEFAULT_ADMIN_HASH, "hex");
+  const expected = adminKey ? sha(adminKey) : null;
 
   function isAdmin(req) {
     const given = req.headers.get("x-admin-key");
-    return !!given && timingSafeEqual(sha(given.trim()), expected);
+    return !!expected && !!given && timingSafeEqual(sha(given.trim()), expected);
   }
 
   // Never let stats break the app.
@@ -142,6 +143,8 @@ export function makeStats({ store, now, adminKey }) {
         recent.push({ kind: "login", at: e.at, pid: e.p[0] });
       } else if (e.kind === "cave") {
         recent.push({ kind: "cave", at: e.at, pid: e.p[0], cave: e.p[1], action: e.p[2] });
+      } else if (e.kind === "pinreset") {
+        recent.push({ kind: "pinreset", at: e.at, pid: e.p[0] });
       }
     }
     recent.sort((a, b) => b.at - a.at);
