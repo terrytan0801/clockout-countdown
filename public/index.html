@@ -1086,6 +1086,11 @@ body.calm .lane .bar i::after{animation:none!important}
 .vcard .vhero.lake svg{width:100%;max-width:none;height:100%}
 
 @media (prefers-reduced-motion:reduce){.roomframe>.cscene{transition:none}}
+/* v58 a building nobody has paid into yet shows as its blueprint: white linework on a blue grid */
+.vst.fund .vst-art,.vcard .vhero.plan{background-color:#1d5fa6;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:10px 10px}
+.vst.fund .vst-art svg,.vcard .vhero.plan svg{filter:grayscale(1) brightness(2) contrast(.8);mix-blend-mode:screen;opacity:.92}
+.vcard .vhero.plan{position:relative;margin:0;padding:12px 0;border-radius:6px}
+.vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 </style>
 </head>
 <body class="booting">
@@ -1324,7 +1329,7 @@ body.calm .lane .bar i::after{animation:none!important}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v57.0</span>
+    <span>v58.0</span>
   </div>
 </div>
 
@@ -2990,7 +2995,7 @@ const mkEl=(tag,cls,text)=>{const e=document.createElement(tag);if(cls) e.classN
 const builtAt=k=>(S&&S.cave&&S.cave.built&&S.cave.built[k])||(village&&village[k]&&village[k].openAt)||null;
 const isBuilt=k=>{const at=builtAt(k);return !!at&&at<=clockNow();};
 const lotState=k=>isBuilt(k)?"open":builtAt(k)?"building":(village&&village[k]&&village[k].raised>0)?"site":"fund"; // v52: building starts with the first coin
-const lotArt=k=>{const st=lotState(k),b=village&&village[k];return st==="open"?VILLAGE.BUILD[k].svg:st==="building"?VILLAGE.site(1,true):st==="site"?VILLAGE.site(b.raised/b.price):VILLAGE.BUILD.lot.svg;};
+const lotArt=k=>{const st=lotState(k),b=village&&village[k];return st==="open"?VILLAGE.BUILD[k].svg:st==="building"?VILLAGE.site(1,true):st==="site"?VILLAGE.site(b.raised/b.price):VILLAGE.BUILD[k].svg;}; // v58: not started yet = its blueprint (styled by .fund / .plan)
 const durText=ms=>{const m=Math.max(1,Math.ceil(ms/60000)),h=Math.floor(m/60),d=Math.floor(h/24);return d>=2?`${d} days`:h?`${h}h ${m%60}m`:`${m}m`;};
 function showVillage(on){
   if(on&&homeEdit) setDecoEdit(false);
@@ -3040,7 +3045,7 @@ function renderVillCard(){
   const top=mkEl("div","vtop");top.appendChild(mkEl("h3","",B.name));
   const x=mkEl("button","","✕");x.type="button";x.setAttribute("aria-label","Close");x.addEventListener("click",closeVillCard);top.appendChild(x);
   card.appendChild(top);
-  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div",k==="lake"?"vhero lake":"vhero");hero.innerHTML=k==="lake"?CAVE_HOME.pond(sceneNight()):`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;card.appendChild(hero);}
+  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div",k==="lake"?"vhero lake":st==="fund"?"vhero plan":"vhero");hero.innerHTML=k==="lake"?CAVE_HOME.pond(sceneNight()):`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;card.appendChild(hero);}
   if(st!=="open"||(k!=="farm"&&k!=="planner")) card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
   if(st==="fund"||st==="site"){
     if(!b){card.appendChild(mkEl("p","","Loading…"));return;}
@@ -4785,11 +4790,11 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v55-strip",v:"v55.0–57.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
+  {id:"v55-strip",v:"v55.0–58.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
     "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go.",
     "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
     "Overtime turns the line red and dashed. When someone's off, their dot has reached the last station.",
-    "The village is now the Village Line: every building is a station, Home is the interchange at the top.",
+    "The village is now the Village Line: every building is a station, Home is the interchange at the top. Places nobody has paid into yet show their blueprint.",
     "Fishing has its own place: the Lake, the first stop on the Village Line. Mr. Fishfish comes there to buy.",
     "Home shows one room at a time, bigger: tap Bedroom, Study, Living room, Kitchen or Yard. Whole home is still there as the last tab.",
     "New lettering and square, sign-like buttons all through the app."],panels:[

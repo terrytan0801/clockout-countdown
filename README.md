@@ -1,4 +1,4 @@
-# Clock-out Countdown · v57.0
+# Clock-out Countdown · v58.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -206,6 +206,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v56.** The train-map look reaches the village and the games. Village buildings are stations: charcoal name plates with a roundel (amber while being paid for, green once open), and Home is the interchange with two roundels. A building card opens under a charcoal sign band with a short slide up (no motion under reduced motion), and its savings bar is a line with start and terminus stations. The shop, bag, farm, cinema tabs and fishing buttons take the square sign corners and uppercase labels. Monster and fishing animations are unchanged. The v55 News entry covers both versions.
 
 **v57.** The home is shown one room at a time. A tab row (Bedroom, Study, Living room, Kitchen, Yard, Whole home) crops the same house scene to the chosen room with a short camera move, so monsters and decorations are drawn bigger; each tab counts the monsters in that room, it opens on the busiest one, and the at-work board only shows in Whole home. Decorating still works in every room. The village map is replaced by the Village Line, a vertical train line: Home is the interchange at the top, then the Lake, Weather, Farm, Harbor, Cinema and Holidays, each with a picture, its state and a savings bar. Fishing moved out of the yard to the Lake station, which has its own card (a big lake picture, Go fishing, and Sell fish when Mr. Fishfish is around); the pond and Mr. Fishfish buttons are gone from the yard, and the texts that pointed to the yard now point to the Lake. The News entry for v55 covers v55 to v57.
+
+**v58.** A Village Line station nobody has paid into yet shows its finished building as a blueprint (white linework on a blue grid, from the same building art), in the line and on its card with a Plan tag, instead of the same empty lot for every station. Once the first coin comes in it shows the building site as before. The v55 News entry now covers v55 to v58.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
