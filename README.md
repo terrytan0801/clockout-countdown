@@ -1,4 +1,4 @@
-# Clock-out Countdown · v59.0
+# Clock-out Countdown · v60.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -210,6 +210,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v58.** A Village Line station nobody has paid into yet shows its finished building as a blueprint (white linework on a blue grid, from the same building art), in the line and on its card with a Plan tag, instead of the same empty lot for every station. Once the first coin comes in it shows the building site as before. The v55 News entry now covers v55 to v58.
 
 **v59.** The village becomes a small metro network instead of one line. Three lines run out from Home, the big interchange: the Water Line (blue) to the Lake and the Harbor, the Garden Line (green) to the Farm and the Weather station, and the Fun Line (purple) to the Cinema and Holidays. The Circle Line (orange) loops round Home through the Lake, the Farm and the Cinema, which makes them interchanges. Stations are white circles in their line's colour, interchanges are ringed in black, places not built yet have a grey ring and dotted track, and labels sit on the map with a halo, showing how much is paid or whether Mr. Fishfish is at the Lake. A legend names the four lines. Tapping a station opens its card as before. The line colours and the drawing style follow the look of Singapore's MRT map; the names and layout are the village's own.
+
+**v60.** The Lake is redrawn in layers (`CAVE_HOME.pond(phase)`): far mountains, hills and a mixed treeline with a little cabin across the water, their reflection in the lake, a glitter path under the sun or moon, two ducks, lily pads, reeds, rocks, and a dock with a rope rail, a lantern and a bucket. It has three times of day: day, a golden hour from 5 to 7 pm (clock-out time; the sun sets behind the hills and the lantern and cabin window light up) and night (moon, stars, fireflies). The glints, ducks, fireflies and a dragonfly move gently, and stop under Calm mode or reduced motion. The layout the fishing game measures against (horizon at y 117, water to y 330, the dock) is unchanged, each time of day has its own gradient ids, and the game now zooms open from the middle of the screen instead of the old yard corner. The v55 News entry covers v55 to v60.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
