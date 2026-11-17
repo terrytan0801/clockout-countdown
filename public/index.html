@@ -1061,36 +1061,39 @@ body.calm .lane .bar i::after{animation:none!important}
 /* v57 the village as one line: Home is the interchange, every place a station */
 :root{--vl:#009645;--vl-ink:#00753a}
 @media (prefers-color-scheme:dark){:root{--vl:#1fb35f;--vl-ink:#4fd38a}}
-.vline{position:relative;background:var(--card);border-radius:8px;padding:14px 10px 10px 0;box-shadow:0 1px 0 var(--line)}
-.vline-name{display:flex;align-items:center;gap:8px;margin:0 0 6px 56px;font:700 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
-.vline-name::before{content:"";width:28px;height:8px;border-radius:4px;background:var(--vl)}
-#villLots{position:relative;display:grid}
-#villLots::before{content:"";position:absolute;left:28px;top:40px;bottom:40px;width:8px;margin-left:-4px;border-radius:4px;background:var(--vl)}
-.vst{position:relative;display:grid;grid-template-columns:56px 84px minmax(0,1fr);align-items:center;gap:10px;min-height:80px;padding:6px 8px 6px 0;border:0;border-radius:6px;
   background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
-.vst:hover,.vst.sel{background:var(--track)}
-.vst::before{content:"";justify-self:center;width:20px;height:20px;box-sizing:border-box;border-radius:50%;background:var(--card);border:4px solid var(--vl);z-index:1}
 .vst.fund::before,.vst.site::before{border-color:var(--walked)}
-.vst.building::before{border-color:#e0a800}
-.vst.xchg::before{width:30px;height:30px;border:5px solid var(--ink)}
-.vst-art{display:block;width:84px;height:63px;border-radius:4px;overflow:hidden;background:var(--track)}
-.vst-art svg{display:block;width:100%;height:100%}
-.vst-tx{display:grid;gap:4px;min-width:0}
-.vst-tx b{font:800 19px/1.05 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
-.vst-tx small{font:600 13px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-.vst.open .vst-tx small{color:var(--vl-ink)}
-.vst.xchg .vst-tx small{color:var(--muted)}
-.vst-tx i{display:block;max-width:150px;height:6px;border-radius:3px;background:var(--track);overflow:hidden}
-.vst-tx i u{display:block;height:100%;background:#e0a800}
 .vcard .vhero.lake{margin:0;aspect-ratio:16/10;border-radius:6px;overflow:hidden}
 .vcard .vhero.lake svg{width:100%;max-width:none;height:100%}
 
 @media (prefers-reduced-motion:reduce){.roomframe>.cscene{transition:none}}
 /* v58 a building nobody has paid into yet shows as its blueprint: white linework on a blue grid */
-.vst.fund .vst-art,.vcard .vhero.plan{background-color:#1d5fa6;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:10px 10px}
-.vst.fund .vst-art svg,.vcard .vhero.plan svg{filter:grayscale(1) brightness(2) contrast(.8);mix-blend-mode:screen;opacity:.92}
+.vcard .vhero.plan{background-color:#1d5fa6;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:10px 10px}
+.vcard .vhero.plan svg{filter:grayscale(1) brightness(2) contrast(.8);mix-blend-mode:screen;opacity:.92}
 .vcard .vhero.plan{position:relative;margin:0;padding:12px 0;border-radius:6px}
 .vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
+/* v59 the village as a metro network: coloured lines, white stations, interchanges ringed in black, dashed track to places not built yet */
+.vnet{position:relative;background:var(--card);border-radius:8px;padding:12px 12px 14px;box-shadow:0 1px 0 var(--line)}
+.vnet-name{margin:0 0 4px;font:700 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+#villLots{position:relative;max-width:440px;margin:0 auto}
+.vnet-map{display:block;width:100%;height:auto}
+.vn-dot{fill:var(--card);stroke:var(--lc);stroke-width:4}
+.vn-dot.xchg{stroke:var(--ink);stroke-width:3.5}
+.vn-dot.off{stroke:var(--walked)}
+.vn-st{position:absolute;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink);transform:translate(-50%,-50%);cursor:pointer}
+.vn-st.home{width:40px;height:40px}
+.vn-st .lbl{position:absolute;display:grid;gap:2px;white-space:nowrap;padding:3px 6px;border-radius:3px;text-align:left;
+  text-shadow:0 0 2px var(--card),0 0 2px var(--card),0 0 3px var(--card),0 0 4px var(--card),0 0 6px var(--card)}
+.vn-st.r .lbl{left:100%;top:50%;transform:translateY(-50%)}
+.vn-st.t .lbl{left:50%;bottom:100%;transform:translateX(-50%);text-align:center}
+.vn-st .lbl b{font:800 15px/1 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.vn-st.home .lbl b{font-size:19px}
+.vn-st .lbl small{font:600 11.5px/1.1 var(--f-mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.vn-st:hover .lbl,.vn-st.sel .lbl{background:var(--sign);color:var(--sign-ink);text-shadow:none}
+.vn-st:hover .lbl small,.vn-st.sel .lbl small{color:var(--sign-muted)}
+.vlegend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0 0;padding:0;list-style:none;font:600 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.vlegend li{display:flex;align-items:center;gap:6px}
+.vlegend i{width:22px;height:7px;border-radius:4px;background:var(--lc)}
 </style>
 </head>
 <body class="booting">
@@ -1232,7 +1235,8 @@ body.calm .lane .bar i::after{animation:none!important}
       </details>
     </div>
     <div class="village" id="villView" hidden>
-      <div class="vline" id="villScene"><p class="vline-name">Village Line</p><div id="villLots"></div></div>
+      <div class="vnet" id="villScene"><p class="vnet-name">Village network</p><div id="villLots"></div>
+        <ul class="vlegend"><li style="--lc:#005ec4"><i></i>Water Line</li><li style="--lc:#009645"><i></i>Garden Line</li><li style="--lc:#9e28b5"><i></i>Fun Line</li><li style="--lc:#f39200"><i></i>Circle Line</li></ul></div>
       <div class="vback" id="villBack" hidden></div>
       <div class="vcard" id="villCard" role="dialog" aria-modal="true" hidden></div>
     </div>
@@ -1329,7 +1333,7 @@ body.calm .lane .bar i::after{animation:none!important}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v58.0</span>
+    <span>v59.0</span>
   </div>
 </div>
 
@@ -2986,7 +2990,12 @@ const BUILD_INFO={
   lake:"The cave's fishing lake. Cast as often as you like: a shadow swims up, the float nibbles, then hook it and reel it in.",
   planner:"Finds where a day or two of leave turns public holidays into a long break, tells you 3 weeks ahead, and shows who else in the cave is taking the same days.",
 };
-// v57: the village is one line, Home the interchange at the top and the Lake (fishing) the first stop
+// v59: the village is a small metro network. Three lines run out from Home (the big interchange); the Circle Line
+// loops round it through the Lake, the Farm and the Cinema, which makes those interchanges too.
+const VNET={w:340,h:380,y0:52,ring:[170,220,100],
+  at:{home:[170,220,"r"],lake:[99,149,"r"],harbor:[39,89,"r"],farm:[241,149,"r"],weather:[287,103,"t"],cinema:[170,320,"r"],planner:[170,405,"r"]},
+  lines:[["#005ec4",["home","lake","harbor"]],["#009645",["home","farm","weather"]],["#9e28b5",["home","cinema","planner"]]]};
+const VNET_XCHG={home:1,lake:1,farm:1,cinema:1}, VNET_COL={harbor:"#005ec4",weather:"#009645",planner:"#9e28b5"};
 const STATIONS=["home","lake","weather","farm","harbor","cinema","planner"];
 const ST_NAME={home:"Home",lake:"The Lake",weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"};
 let village=null, villSel=null, farm=null, farmSel=null;
@@ -3017,21 +3026,26 @@ function selectLot(k){
 }
 function renderVillage(){
   if($("villView").hidden) return;
-  const box=$("villLots"), night=sceneNight();
-  STATIONS.forEach(k=>{
-    const fixed=k==="home"||k==="lake", st=fixed?"open":lotState(k), b=village&&village[k], pct=b?Math.floor(b.raised/b.price*100):0;
-    let el=box.querySelector(`.vst[data-k="${k}"]`);
-    if(!el){el=mkEl("button","vst");el.type="button";el.dataset.k=k;
-      el.addEventListener("click",()=>k==="home"?showVillage(false):selectLot(k));box.appendChild(el);}
-    el.className=`vst ${st}${k==="home"?" xchg":""}${villSel===k?" sel":""}`;
-    const here=k==="lake"&&(ffHere()||isBuilt("harbor")), sig=[st,pct,here,night].join("|");
-    if(el.dataset.sig===sig) return; // nothing changed: leave it alone
-    el.dataset.sig=sig;
-    const note=k==="home"?"Back to the cave":k==="lake"?(here?"Mr. Fishfish is buying":"Fish any time"):st==="open"?"Open":st==="building"?"Opens soon":`${pct}% paid`;
-    const art=k==="home"?CAVE_HOME.scene(night):k==="lake"?CAVE_HOME.pond(night):`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;
-    el.setAttribute("aria-label",`${ST_NAME[k]}: ${note}`);
-    el.innerHTML=`<span class="vst-art">${art}</span><span class="vst-tx"><b>${ST_NAME[k]}</b><small>${note}</small>${st==="fund"||st==="site"?`<i><u style="width:${Math.min(100,pct)}%"></u></i>`:""}</span>`;
-  });
+  const box=$("villLots"), P=k=>VNET.at[k], open=k=>k==="home"||k==="lake"||lotState(k)==="open";
+  const pctOf=k=>{const v=village&&village[k];return v?Math.floor(v.raised/v.price*100):0;};
+  const note=k=>k==="home"?"":k==="lake"?(ffHere()||isBuilt("harbor")?"Fishfish buying":"Go fishing"):lotState(k)==="open"?"":lotState(k)==="building"?"Opens soon":pctOf(k)+"% paid";
+  const sig=STATIONS.map(k=>(open(k)?1:0)+note(k)).join("|")+"|"+villSel;
+  if(box.dataset.sig!==sig){
+    box.dataset.sig=sig;
+    const seg=(p,q,c)=>`<line x1="${P(p)[0]}" y1="${P(p)[1]}" x2="${P(q)[0]}" y2="${P(q)[1]}" stroke="${c}"${open(q)?"":' stroke-dasharray="1 13" opacity=".6"'}/>`;
+    let svg=`<svg class="vnet-map" viewBox="0 ${VNET.y0} ${VNET.w} ${VNET.h}" aria-hidden="true"><g fill="none" stroke-width="9" stroke-linecap="round"><circle cx="${VNET.ring[0]}" cy="${VNET.ring[1]}" r="${VNET.ring[2]}" stroke="#f39200"/>`;
+    VNET.lines.forEach(([c,ks])=>{for(let i=1;i<ks.length;i++) svg+=seg(ks[i-1],ks[i],c);});
+    svg+="</g>";
+    STATIONS.forEach(k=>{const [x,y]=P(k);svg+=`<circle cx="${x}" cy="${y}" r="${k==="home"?14:VNET_XCHG[k]?10:7.5}" class="vn-dot${VNET_XCHG[k]?" xchg":""}${open(k)?"":" off"}" style="--lc:${VNET_COL[k]||"var(--ink)"}"/>`;});
+    box.innerHTML=svg+"</svg>";
+    STATIONS.forEach(k=>{
+      const [x,y,side]=P(k), bt=mkEl("button",`vn-st ${side}${k==="home"?" home":""}${villSel===k?" sel":""}`), lb=mkEl("span","lbl"), n=note(k);
+      bt.type="button";bt.style.left=x/VNET.w*100+"%";bt.style.top=(y-VNET.y0)/VNET.h*100+"%";
+      bt.setAttribute("aria-label",ST_NAME[k]+(n?": "+n:k==="home"?": back to the cave":""));
+      lb.append(mkEl("b","",ST_NAME[k]));if(n) lb.append(mkEl("small","",n));bt.appendChild(lb);
+      bt.addEventListener("click",()=>k==="home"?showVillage(false):selectLot(k));box.appendChild(bt);
+    });
+  }
   renderVillCard();
 }
 function renderVillCard(){
@@ -4790,17 +4804,17 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v55-strip",v:"v55.0–58.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
+  {id:"v55-strip",v:"v55.0–59.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
     "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go.",
     "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
     "Overtime turns the line red and dashed. When someone's off, their dot has reached the last station.",
-    "The village is now the Village Line: every building is a station, Home is the interchange at the top. Places nobody has paid into yet show their blueprint.",
-    "Fishing has its own place: the Lake, the first stop on the Village Line. Mr. Fishfish comes there to buy.",
+    "The village is now a little metro map: the Water, Garden and Fun lines run out from Home, and the Circle Line loops round through the Lake, the Farm and the Cinema. Track to places not built yet is dotted, and their cards show the blueprint.",
+    "Fishing has its own place: the Lake, on the Water Line. Mr. Fishfish comes there to buy.",
     "Home shows one room at a time, bigger: tap Bedroom, Study, Living room, Kitchen or Yard. Whole home is still there as the last tab.",
     "New lettering and square, sign-like buttons all through the app."],panels:[
     {art:"grid",title:"Everyone's line",text:"One line per friend. The grey part is the day done; the coloured part is what's left until the last stop."},
     {art:"smooth",title:"Next stop: off",text:"The lit dot moves along all day. When it reaches the end, that friend is out."},
-    {art:"fishing",title:"Gone to the Lake",text:"Take the Village Line to the Lake to fish. Your home is now one room at a time, so everyone looks bigger."}]},
+    {art:"fishing",title:"Gone to the Lake",text:"Take the Water Line to the Lake to fish. Your home is now one room at a time, so everyone looks bigger."}]},
   {id:"v54-village",v:"v49.0–54.0",at:"2026-11-14T18:00",title:"The village, fishing that feels like it, and a faster app",changes:[
     "Everything is faster: the cave's records moved next to the server, so opening the app and every tap answer much sooner.",
     "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, then a day of finishing touches.",
