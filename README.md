@@ -1,4 +1,4 @@
-# Clock-out Countdown · v63.0
+# Clock-out Countdown · v64.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -220,6 +220,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v62.** Fix for the v54 move. The real store names folders with a trailing slash (`person/`), unlike the local emulator and the docs, so `allKeys` asked for `person//`, found nothing, and the first request after v61 went live marked an almost empty copy as done: no 503, every session and login gone (the old store in Singapore was never touched). `allKeys` now strips the slash, and before writing `sys/moved` the move lists both stores in full (no folders) and checks that every record in the old store is in the new one; anything missing is added to the list and copied on the next request, and `sys/moved` records the count it checked. The fake store in the tests now names folders with a slash too. To redo the move on the live site after this goes up, delete `sys/moved`, `sys/movelist` and `sys/movecur` from `clockout-near` (not `clockout`), and the `lock/` keys left by the failed logins.
 
 **v63.** Passcode reset, and a new admin key. Only a scrypt hash of each passcode is kept, so a forgotten one can't be read back; the person sheet in the admin page now sets a new one (`POST /api/admin/reset-pin {pid, pin?}`: an empty pin gives a random 6-digit one), lifts that name's wrong-passcode lock, keeps phones already logged in, and logs `ev/pinreset` (shown in the activity). The built-in admin key is gone: its plain text had been committed to `test/api.test.mjs` in this public repo since v17, and the live site had no `ADMIN_KEY`, so anyone could open the admin page. The key now comes only from `ADMIN_KEY` in Netlify; without it the admin page stays shut. Tests use `test-admin-key`, and the seeded dev server uses `demo-admin`.
+
+**v64.** No change to the app: a redeploy so a new `ADMIN_KEY` set in Netlify takes effect (environment variables are read at deploy time). Netlify can't show a secret variable's value once saved, so a forgotten admin key is replaced, not recovered.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
