@@ -1,4 +1,4 @@
-# Clock-out Countdown · v75.0
+# Clock-out Countdown · v76.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -245,6 +245,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v74.** FoodSpin gets choices and a new home. The lists now include cafés (`amenity=cafe`) and bakeries (`shop=bakery`), coded `k` and `b` (Singapore 9,182 places, 143 KB gzipped; Johor Bahru 3,209; Klang Valley 9,593), and the live search asks for them too. A budget row (Any, $ Cheap, $$ Restaurant) and kind chips (Chinese, Malay, Indian, Japanese & Korean, Western, Rice, Noodles, Bread & cakes, Coffee & tea, Fast food, Hawker; several at once means any of them) narrow the wheel, with a count of how many nearby places match. Kinds come from the OpenStreetMap type and cuisine plus words in the name (mee, nasi, kopi, 面, 饭 and so on); budget is a guess from the type, since OpenStreetMap has almost no prices: hawker centres, food courts, fast food, cafés and bakeries are $, other restaurants $$. With no kind picked the wheel only holds places for a meal (no cafés or bakeries unless they're kopitiams). The choices are remembered on the phone. The FoodSpin button next to Village, Bag and Shop is gone: a little wheel with a bobbing Dinner? tag sits on the kitchen counter (hidden while decorating) and opens it; the button on your own lane before clock-out stays.
 
 **v75.** FoodSpin's live search (outside Singapore, Johor Bahru and the Klang Valley) asks Photon first, komoot's free OpenStreetMap search (`photon.komoot.io/reverse` with `osm_tag` filters for restaurants, fast food, food courts, cafés and bakeries; it allows calls from any site). It answers in about a second but returns only the nearest 50 per call, so FoodSpin asks from five spots at once (here and 1.2 km north, south, east and west) and keeps what's within 2 km: in central Penang about 200 places. Photon gives no cuisine, so kinds there come from names. Overpass stays as the fallback if Photon doesn't answer within 10 s. Photon's terms ask for fair use (heavy use gets throttled); results are kept on the phone for a day per 100 m spot.
+
+**v76.** FoodSpin's choices move behind one Filter button. The sheet shows the button ("Filter · 2" when two choices are set, filled in) and how many nearby places match; tapping it swaps the wheel for a panel with the budget row, the kind chips and, on the dev site, the test location, then Show places deals the wheel again and Clear all resets the choices. While the panel is open, each tap only updates the count. FoodSpin always opens on the wheel.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

@@ -1181,7 +1181,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .fs-filters{display:grid;gap:8px}
 .fs-budget{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .fs-budget button,.fs-kinds button{font:700 12.5px/1.1 var(--f-mono);text-transform:uppercase;letter-spacing:.04em;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:4px;min-height:36px;padding:6px 8px;cursor:pointer}
-.fs-kinds{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px 2px} /* one row that scrolls sideways, so the wheel stays in view */
+.fs-kinds{display:flex;flex-wrap:wrap;gap:6px}
 .fs-kinds::-webkit-scrollbar{display:none}
 .fs-kinds button{flex:none}
 .fs-kinds button{min-height:34px;padding:6px 10px}
@@ -1195,6 +1195,15 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .cscene.editing .fsprop{display:none}
 body.calm .fsprop span{animation:none}
 @media (prefers-reduced-motion:reduce){.fsprop span{animation:none}.fsprop:hover svg{transform:none}}
+/* v76 FoodSpin choices live behind one Filter button; the wheel steps aside while they're open */
+.fs-bar{display:flex;align-items:center;gap:10px}
+.fs-bar .fs-count{flex:1;min-width:0}
+.fs-fbtn{min-height:38px;padding:0 14px}
+.fs-fbtn.on{background:var(--sign);border-color:var(--sign);color:var(--sign-ink)}
+.fs-panel{display:grid;gap:8px;padding:12px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg)}
+.fs-panel[hidden]{display:none}
+.fs-sec{font:700 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.sheet-card.fs-open .fs-wheel,.sheet-card.fs-open .fs-result,.sheet-card.fs-open #spinRow{display:none}
 </style>
 </head>
 <body class="booting">
@@ -1435,7 +1444,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v75.0</span>
+    <span>v76.0</span>
   </div>
 </div>
 
@@ -1600,22 +1609,25 @@ body.calm .fsprop span{animation:none}
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="spinTitle">
     <div class="sheet-row split"><div class="sheet-msg" id="spinTitle">FoodSpin</div><button class="btn ghost" type="button" id="spinClose">Close</button></div>
     <p class="sheet-hint">Somewhere to eat within 2 km of you. Spin, and the wheel decides.</p>
-    <label class="fs-where" id="spinWhereWrap" hidden>Test location (dev only)
-      <select id="spinWhere">
-        <option value="gps">My location</option>
-        <option value="1.2840,103.8515">Raffles Place</option><option value="1.3048,103.8318">Orchard</option><option value="1.3180,103.8930">Paya Lebar</option>
-        <option value="1.3331,103.7425">Jurong East</option><option value="1.3526,103.9447">Tampines</option><option value="1.4370,103.7865">Woodlands</option>
-        <option value="1.3644,103.9915">Changi Airport</option><option value="1.3294,103.8021">Bukit Timah</option>
-        <option value="1.4630,103.7640">Johor Bahru city</option><option value="1.4270,103.6420">Iskandar Puteri</option><option value="3.1579,101.7123">Kuala Lumpur (KLCC)</option><option value="3.1180,101.6770">Mid Valley</option><option value="3.0730,101.6070">Petaling Jaya / Subang</option><option value="5.4141,100.3288">Penang (no file: live search)</option>
-      </select></label>
-    <div class="fs-filters">
+    <div class="fs-bar"><button class="btn ghost fs-fbtn" type="button" id="spinFilterBtn" aria-expanded="false" aria-controls="spinFilters">Filter</button><p class="fs-count" id="spinCount" aria-live="polite"></p></div>
+    <div class="fs-panel" id="spinFilters" hidden>
+      <label class="fs-where" id="spinWhereWrap" hidden>Test location (dev only)
+        <select id="spinWhere">
+          <option value="gps">My location</option>
+          <option value="1.2840,103.8515">Raffles Place</option><option value="1.3048,103.8318">Orchard</option><option value="1.3180,103.8930">Paya Lebar</option>
+          <option value="1.3331,103.7425">Jurong East</option><option value="1.3526,103.9447">Tampines</option><option value="1.4370,103.7865">Woodlands</option>
+          <option value="1.3644,103.9915">Changi Airport</option><option value="1.3294,103.8021">Bukit Timah</option>
+          <option value="1.4630,103.7640">Johor Bahru city</option><option value="1.4270,103.6420">Iskandar Puteri</option><option value="3.1579,101.7123">Kuala Lumpur (KLCC)</option><option value="3.1180,101.6770">Mid Valley</option><option value="3.0730,101.6070">Petaling Jaya / Subang</option><option value="5.4141,100.3288">Penang (no file: live search)</option>
+        </select></label>
+      <b class="fs-sec">Budget</b>
       <div class="fs-budget" id="spinBudget" role="group" aria-label="Budget"><button type="button" data-b="any">Any budget</button><button type="button" data-b="1">$ Cheap</button><button type="button" data-b="2">$$ Restaurant</button></div>
+      <b class="fs-sec">What do you feel like?</b>
       <div class="fs-kinds" id="spinKinds" role="group" aria-label="What kind of food"></div>
-      <p class="fs-count" id="spinCount" aria-live="polite"></p>
+      <div class="sheet-row split"><button class="btn ghost" type="button" id="spinClear">Clear all</button><button class="btn" type="button" id="spinDone">Show places</button></div>
     </div>
     <div class="fs-wheel" id="spinWheel"></div>
     <div class="fs-result" id="spinResult" hidden aria-live="polite"></div>
-    <div class="sheet-row"><button class="btn ghost" type="button" id="spinDeal" disabled>Other places</button><button class="btn" type="button" id="spinGo" disabled>Spin</button></div>
+    <div class="sheet-row" id="spinRow"><button class="btn ghost" type="button" id="spinDeal" disabled>Other places</button><button class="btn" type="button" id="spinGo" disabled>Spin</button></div>
     <p class="sheet-hint">Places from OpenStreetMap (© OpenStreetMap contributors). In Singapore, Johor Bahru and the Klang Valley your location stays on your phone; elsewhere it goes to a public OpenStreetMap search service (Photon by komoot) to find places.</p>
   </div>
 </div>
@@ -3172,11 +3184,24 @@ function fsPool(){
     if(fsBudget==="1"&&!p.cheap||fsBudget==="2"&&p.cheap) return false;
     return fsWant.size?[...fsWant].some(w=>k.has(w)):p.meal;});
 }
+function fsCount(){
+  const pool=fsPool();
+  $("spinCount").textContent=fsAll.length?(pool.length?`${pool.length} of ${fsAll.length} places nearby`:"Nothing nearby matches. Try fewer choices."):"";
+  return pool;
+}
 function fsFilters(){
   $("spinBudget").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.b===fsBudget)));
   $("spinKinds").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(fsWant.has(b.dataset.k))));
   try{lsSet("clockout.fs.filters",JSON.stringify({b:fsBudget,k:[...fsWant]}));}catch(e){}
-  if(fsAll.length) fsDeal();
+  const n=(fsBudget==="any"?0:1)+fsWant.size;
+  $("spinFilterBtn").textContent=n?`Filter · ${n}`:"Filter";$("spinFilterBtn").classList.toggle("on",!!n);
+  fsCount();
+  if(fsAll.length&&$("spinFilters").hidden) fsDeal();
+}
+function fsPanel(open){
+  $("spinFilters").hidden=!open;$("spinFilterBtn").setAttribute("aria-expanded",String(open));
+  $("spinFilters").closest(".sheet-card").classList.toggle("fs-open",open);
+  if(!open&&fsAll.length) fsDeal();
 }
 function fsMsg(text){const m=mkEl("div","fs-msg",text);$("spinWheel").replaceChildren(m);$("spinGo").disabled=true;$("spinDeal").disabled=true;}
 function fsNear(list,lat,lon){
@@ -3229,7 +3254,7 @@ async function fsPlaces(lat,lon){
   return fsNear(await fsLive(lat,lon),lat,lon);
 }
 function openSpin(){
-  $("spinSheet").hidden=false;$("spinResult").hidden=true;
+  $("spinSheet").hidden=false;$("spinResult").hidden=true;fsPanel(false);
   if(fsAll.length){fsDeal();return;}
   const where=$("spinWhere").value;
   if(where==="gps"&&!navigator.geolocation){fsMsg("This phone can't share its location.");return;}
@@ -3254,8 +3279,7 @@ function fsLines(name){
 }
 // eight places at random onto the wheel
 function fsDeal(){
-  const pool=fsPool();
-  $("spinCount").textContent=fsAll.length?(pool.length?`${pool.length} of ${fsAll.length} places nearby match`:"Nothing nearby matches. Try fewer choices."):"";
+  const pool=fsCount();
   if(!pool.length){fsSet=[];$("spinResult").hidden=true;fsMsg("Nothing within 2 km matches. Try another budget or kind.");return;}for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   fsSet=pool.slice(0,FS_SLICES);fsTurn=0;$("spinResult").hidden=true;
   const n=fsSet.length, seg=360/n, R=86, pt=(a,r)=>{const t=(a-90)*Math.PI/180;return [(r*Math.cos(t)).toFixed(2),(r*Math.sin(t)).toFixed(2)];};
@@ -3306,6 +3330,9 @@ $("spinProp").addEventListener("click",openSpin); // v74: the little wheel on th
 FS_KINDS.forEach(([id,label])=>{const b=document.createElement("button");b.textContent=label;b.type="button";b.dataset.k=id; // mkEl is defined further down
   b.addEventListener("click",()=>{fsWant.has(id)?fsWant.delete(id):fsWant.add(id);fsFilters();});$("spinKinds").appendChild(b);});
 $("spinBudget").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{fsBudget=b.dataset.b;fsFilters();}));
+$("spinFilterBtn").addEventListener("click",()=>fsPanel($("spinFilters").hidden));
+$("spinDone").addEventListener("click",()=>fsPanel(false));
+$("spinClear").addEventListener("click",()=>{fsBudget="any";fsWant.clear();fsFilters();});
 fsFilters();
 // testers on the dev site (and local runs) can search from other places
 $("spinWhereWrap").hidden=!(document.documentElement.classList.contains("dev")||/^(localhost|127\.0\.0\.1)$/.test(location.hostname));
@@ -5153,9 +5180,9 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v69-foodspin",v:"v69.0–75.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+  {id:"v69-foodspin",v:"v69.0–76.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap the little wheel on the kitchen counter at home (or FoodSpin on your own card from an hour before clock-out).",
-    "Set a budget and what you feel like (Chinese, rice, noodles, bread, coffee and more) and the wheel only picks from those.",
+    "Tap Filter to set a budget and what you feel like (Chinese, rice, noodles, bread, coffee and more), and the wheel only picks from those.",
     "It finds restaurants, hawker centres, fast food, cafés and bakeries within 2 km of you and puts eight of them on a lit-up wheel with your monster in the middle. Spin, and that's dinner.",
     "In Singapore, Johor Bahru and the Klang Valley the list is built into the app, so it's there at once and your location stays on your phone.",
     "Tap the pick to open it in Google Maps, where Directions is one tap away. Share in chat puts the pick in the cave chat so friends can join.",
