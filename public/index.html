@@ -1417,7 +1417,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v70.0</span>
+    <span>v71.0</span>
   </div>
 </div>
 
@@ -1588,12 +1588,12 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
         <option value="1.2840,103.8515">Raffles Place</option><option value="1.3048,103.8318">Orchard</option><option value="1.3180,103.8930">Paya Lebar</option>
         <option value="1.3331,103.7425">Jurong East</option><option value="1.3526,103.9447">Tampines</option><option value="1.4370,103.7865">Woodlands</option>
         <option value="1.3644,103.9915">Changi Airport</option><option value="1.3294,103.8021">Bukit Timah</option>
-        <option value="1.4630,103.7640">Johor Bahru (outside the Singapore file)</option><option value="3.1579,101.7123">Kuala Lumpur (outside the Singapore file)</option>
+        <option value="1.4630,103.7640">Johor Bahru city</option><option value="1.4270,103.6420">Iskandar Puteri</option><option value="3.1579,101.7123">Kuala Lumpur (KLCC)</option><option value="3.1180,101.6770">Mid Valley</option><option value="3.0730,101.6070">Petaling Jaya / Subang</option><option value="5.4141,100.3288">Penang (no file: live search)</option>
       </select></label>
     <div class="fs-wheel" id="spinWheel"></div>
     <div class="fs-result" id="spinResult" hidden aria-live="polite"></div>
     <div class="sheet-row"><button class="btn ghost" type="button" id="spinDeal" disabled>Other places</button><button class="btn" type="button" id="spinGo" disabled>Spin</button></div>
-    <p class="sheet-hint">Places from OpenStreetMap (© OpenStreetMap contributors). In Singapore your location stays on your phone; elsewhere it goes to OpenStreetMap's search service to find places.</p>
+    <p class="sheet-hint">Places from OpenStreetMap (© OpenStreetMap contributors). In Singapore, Johor Bahru and the Klang Valley your location stays on your phone; elsewhere it goes to OpenStreetMap's search service to find places.</p>
   </div>
 </div>
 <div class="sheet" id="noteSheet" hidden>
@@ -3103,11 +3103,14 @@ $("bagSellAll").addEventListener("click",e=>fishSell((S.me.bag||[]).filter(f=>!f
 $("fishfishBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
 
 /* ================= FoodSpin (v69, v70): dinner within 2 km, from OpenStreetMap, picked by a wheel ================= */
-// In Singapore the places come from /food-sg.json (built by scripts/food-data.mjs), so nothing waits on the busy public
-// Overpass servers. Elsewhere it asks Overpass live and keeps the answer on the phone for a day.
+// In Singapore, Johor Bahru and the Klang Valley the places come from /food-<region>.json (built by scripts/food-data.mjs),
+// so nothing waits on the busy public Overpass servers. Elsewhere it asks Overpass live and keeps the answer for a day.
 const FS_API=["https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter","https://overpass-api.de/api/interpreter"],
   FS_R=2000, FS_SLICES=8, FS_COLS=["#d42e12","#009645","#005ec4","#9e28b5","#f39200","#00a3a3","#e0458b","#7a5cff"], FS_TYPE={r:"restaurant",f:"fast_food",c:"food_court"};
-let fsAll=[], fsSet=[], fsTurn=0, fsSpinning=false, fsSG=null;
+// boxes (south, west, north, east): must match REGIONS in scripts/food-data.mjs
+const FS_REGIONS={sg:[1.15,103.59,1.48,104.1],jb:[1.38,103.55,1.66,103.98],kl:[2.85,101.35,3.35,101.85]};
+let fsAll=[], fsSet=[], fsTurn=0, fsSpinning=false;
+const fsFiles={};
 // metres between two points (haversine)
 const fsDist=(a,b,c,d)=>{const t=Math.PI/180,h=Math.sin((c-a)*t/2)**2+Math.cos(a*t)*Math.cos(c*t)*Math.sin((d-b)*t/2)**2;return 2*6371e3*Math.asin(Math.sqrt(h));};
 const fsKind=p=>{const c=(p.cuisine.split(/[;,]/)[0]||"").replace(/_/g," ").trim();
@@ -3136,11 +3139,14 @@ async function fsLive(lat,lon){
   throw new Error("overpass unreachable");
 }
 async function fsPlaces(lat,lon){
-  if(!fsSG) fsSG=fetch("/food-sg.json").then(r=>r.ok?r.json():null).catch(()=>null);
-  const sg=await fsSG;
-  const m=.02; // about 2 km: only use the file when the whole 2 km circle is inside it (near Johor or Batam, ask live)
-  if(sg&&lat>=sg.bbox[0]+m&&lat<=sg.bbox[2]-m&&lon>=sg.bbox[1]+m&&lon<=sg.bbox[3]-m)
-    return fsNear(sg.p.map(([name,la,lo,t,c])=>({name,lat:la,lon:lo,amenity:FS_TYPE[t],cuisine:c||""})),lat,lon);
+  const m=.02; // about 2 km: a region's file is used only when the whole 2 km circle is inside its box
+  const id=Object.keys(FS_REGIONS).find(k=>{const b=FS_REGIONS[k];return lat>=b[0]+m&&lat<=b[2]-m&&lon>=b[1]+m&&lon<=b[3]-m;});
+  if(id){
+    if(!fsFiles[id]) fsFiles[id]=fetch(`/food-${id}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
+    const d=await fsFiles[id];
+    if(d) return fsNear(d.p.map(([name,la,lo,t,c])=>({name,lat:la,lon:lo,amenity:FS_TYPE[t],cuisine:c||""})),lat,lon);
+    fsFiles[id]=null; // not there (or offline): fetch it again next time, and ask live now
+  }
   return fsNear(await fsLive(lat,lon),lat,lon);
 }
 function openSpin(){
@@ -5056,10 +5062,10 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v69-foodspin",v:"v69.0–70.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+  {id:"v69-foodspin",v:"v69.0–71.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap FoodSpin (next to Village, Bag and Shop, or on your own card from an hour before clock-out).",
     "It finds restaurants, hawker centres and fast food within 2 km of you and puts eight of them on a lit-up wheel with your monster in the middle. Spin, and that's dinner.",
-    "In Singapore the list is built into the app, so it's there at once and your location stays on your phone.",
+    "In Singapore, Johor Bahru and the Klang Valley the list is built into the app, so it's there at once and your location stays on your phone.",
     "Directions opens Google Maps with the walking route. Share in chat puts the pick in the cave chat so friends can join.",
     "Don't like the ten? Other places deals a fresh set."],panels:[
     {art:"dinner",title:"What's for dinner?",text:"Eight places near you on a wheel. Spin it and go."},
