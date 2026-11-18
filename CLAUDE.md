@@ -43,14 +43,17 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
 ## Gotchas
 
 - Global CSS class names clash (`.win`, `.bite` and others are already styled). Prefix new classes (`fz-`, `v`).
+  Never name one `.dev`: the dev deploy puts `dev` on `<html>` (v67 fixed giant icons caused by that).
 - Dev deploys speed up crops (60x) and finish buildings in a minute.
 - Netlify Blobs here has no compare-and-swap, so one-time actions use "everything in the key" patterns
   (`claimKey`, `payOnce`).
 - Malaysia's 2027 public holidays aren't in `netlify/lib/holidays.mjs` yet.
 
-## Status (17 Nov 2026)
+## Status (18 Nov 2026)
 
-Production runs v64; the redone move worked (requests 0.3 to 0.5 s). `dev` has v65 waiting for "上线": the
-service worker keeps a per-version offline copy (`shell-<version>`, written with `waitUntil`) instead of
-`shell-v1`, which on iPhones held pages from v48 or earlier, and the fishing scene hides the page behind it and
-drops finished splash elements. `ADMIN_KEY` in Netlify only takes effect on the next deploy.
+Production runs v79 (dev and main are the same). Since v65: a train-map look (v55-61), the village as a metro map
+with developing blueprints (v59-67), a home shown room by room with furnished rooms (v68), FoodSpin (v69-77), and
+wages of 250 a day with an active bonus, Ranks, and wages paid by the clock at clock-out, double on public
+holidays (v78-79). FoodSpin data: `public/food-{sg,jb,kl}.json`, rebuilt from a Geofabrik extract with
+`scripts/food-data-pbf.mjs` (the public Overpass servers are often too busy). The fishing ranks only count
+catches from v78 on.
