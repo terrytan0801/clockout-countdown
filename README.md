@@ -1,11 +1,11 @@
-# Clock-out Countdown · v73.0
+# Clock-out Countdown · v74.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
 - **Caves.** Start a cave, then send its invite link or 6-letter code to friends. You live in one cave at a time. The owner can rename the cave, make a new code (the old link stops working) and remove people. If the owner leaves, the next member takes over. An empty cave is deleted.
 - **Countdown.** Each person sees **Time − XX mins** to their own clock-out (Singapore / Malaysia time). **+ OT** when staying late, then **Clock out** when leaving.
 - **Home.** The cave's home is shown one room at a time (Bedroom, Study, Living room, Kitchen, Yard, then Whole home): arrows on the picture or a sideways swipe move between rooms, a name plate says how many are there, and dots underneath show which rooms have someone in. It opens on the busiest room.
-- **FoodSpin.** A wheel that picks dinner: places to eat within 2 km of you (from OpenStreetMap; in Singapore, Johor Bahru and the Klang Valley from lists built into the app), eight at a time, a tap to open the pick in Google Maps, and a button to share it in the cave chat.
+- **FoodSpin.** A wheel that picks dinner, opened from the little wheel on the kitchen counter at home: places to eat within 2 km of you, narrowed by budget and kind, (from OpenStreetMap; in Singapore, Johor Bahru and the Klang Valley from lists built into the app), eight at a time, a tap to open the pick in Google Maps, and a button to share it in the cave chat.
 - **Monsters.** Ten monsters (Jelly, Cyclo, Noodle, Spike, Bun, Tako, Mush, Chomp, Fluff, Dino). You get one when you join and keep it. It types at a laptop while you work, wilts on overtime and dances when you're off.
 - **Colours.** Pick your colour from 12 when you join, and change it any time in your account.
 - **⚡ Zap.** Buzz a cave-mate's phone with a push notification, once every 10 minutes per person. Each person decides with **Let friends buzz my phone** whether zaps vibrate or arrive quietly.
@@ -241,6 +241,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v72.** FoodSpin opens the pick itself in Google Maps instead of starting a walking route: the place's name and the Open in Google Maps button both link to `google.com/maps/search/<name>/@<lat>,<lon>,18z`, a search for the name with the map on that spot, so Google shows the nearest match and Directions is one tap away there. (A search for the name plus coordinates in the query listed look-alike names across the island; coordinates alone drop a pin without the place's details.)
 
 **v73.** Fix: from the second FoodSpin spin on, the pick lit up and the result showed about 0.3 s into the spin. The losing slices fade back to full colour when a new spin starts, and that fade's `transitionend` bubbled up to the wheel and was taken for the end of the spin. Now only the wheel's own `transform` transition ends a spin (the 4.6 s timer stays as the fallback).
+
+**v74.** FoodSpin gets choices and a new home. The lists now include cafés (`amenity=cafe`) and bakeries (`shop=bakery`), coded `k` and `b` (Singapore 9,182 places, 143 KB gzipped; Johor Bahru 3,209; Klang Valley 9,593), and the live search asks for them too. A budget row (Any, $ Cheap, $$ Restaurant) and kind chips (Chinese, Malay, Indian, Japanese & Korean, Western, Rice, Noodles, Bread & cakes, Coffee & tea, Fast food, Hawker; several at once means any of them) narrow the wheel, with a count of how many nearby places match. Kinds come from the OpenStreetMap type and cuisine plus words in the name (mee, nasi, kopi, 面, 饭 and so on); budget is a guess from the type, since OpenStreetMap has almost no prices: hawker centres, food courts, fast food, cafés and bakeries are $, other restaurants $$. With no kind picked the wheel only holds places for a meal (no cafés or bakeries unless they're kopitiams). The choices are remembered on the phone. The FoodSpin button next to Village, Bag and Shop is gone: a little wheel with a bobbing Dinner? tag sits on the kitchen counter (hidden while decorating) and opens it; the button on your own lane before clock-out stays.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

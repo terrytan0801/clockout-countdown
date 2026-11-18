@@ -1,4 +1,4 @@
-// Builds public/food-<region>.json from a Geofabrik extract instead of the public Overpass servers (which are often
+// Builds public/food-<region>.json (restaurants, fast food, food courts, cafes and bakeries) from a Geofabrik extract instead of the public Overpass servers (which are often
 // too busy to answer). Same output as scripts/food-data.mjs. © OpenStreetMap contributors, ODbL.
 //   1. download https://download.geofabrik.de/asia/malaysia-singapore-brunei-latest.osm.pbf (about 250 MB)
 //   2. npm i --no-save osm-pbf-parser@2.3.0   (or point PBF_TOOL at a folder that has it in node_modules)
@@ -16,7 +16,8 @@ const REGIONS = { sg: [1.15, 103.59, 1.48, 104.1], jb: [1.38, 103.55, 1.66, 103.
 const [file, ...want] = process.argv.slice(2);
 if (!file || !fs.existsSync(file)) { console.error("usage: node scripts/food-data-pbf.mjs <file.osm.pbf> [region ...]"); process.exit(1); }
 const ids = want.length ? want : Object.keys(REGIONS);
-const T = { restaurant: "r", fast_food: "f", food_court: "c" };
+const T = { restaurant: "r", fast_food: "f", food_court: "c", cafe: "k" }; // plus shop=bakery as "b"
+const kind = (t) => (t.shop === "bakery" ? "b" : T[t.amenity]);
 const inAny = (lat, lon) => ids.some((k) => { const b = REGIONS[k]; return lat >= b[0] && lat <= b[2] && lon >= b[1] && lon <= b[3]; });
 
 function pass(onItem) {
@@ -31,7 +32,7 @@ function pass(onItem) {
 const places = [], ways = []; // ways: [tags, refs]
 await pass((it) => {
   const t = it.tags;
-  if (!t || !T[t.amenity] || !(t["name:en"] || t.name)) return;
+  if (!t || !kind(t) || !(t["name:en"] || t.name)) return;
   if (it.type === "node") { if (inAny(it.lat, it.lon)) places.push([t, it.lat, it.lon]); }
   else if (it.type === "way" && it.refs && it.refs.length) ways.push([t, it.refs]);
 });
@@ -55,7 +56,7 @@ for (const id of ids) {
     const name = String(t["name:en"] || t.name).trim().slice(0, 60), key = name.toLowerCase() + "|" + lat.toFixed(3) + "|" + lon.toFixed(3);
     if (!name || seen.has(key)) continue;
     seen.add(key);
-    out.push([name, +lat.toFixed(5), +lon.toFixed(5), T[t.amenity], String(t.cuisine || "").split(/[;,]/)[0].trim().slice(0, 24)]);
+    out.push([name, +lat.toFixed(5), +lon.toFixed(5), kind(t), String(t.cuisine || "").split(/[;,]/)[0].trim().slice(0, 24)]);
   }
   if (out.length < 300) throw new Error(`${id}: suspiciously few places (${out.length})`);
   const f = `public/food-${id}.json`;

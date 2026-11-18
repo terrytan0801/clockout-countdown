@@ -16,7 +16,7 @@ const TILE = 0.09; // degrees: a whole region in one query times out on the publ
 const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
 
 async function tile(s, w, n, e) {
-  const q = `[out:json][timeout:90];nwr["amenity"~"^(restaurant|fast_food|food_court)$"]["name"](${s},${w},${n},${e});out center tags;`;
+  const q = `[out:json][timeout:90];(nwr["amenity"~"^(restaurant|fast_food|food_court|cafe)$"]["name"](${s},${w},${n},${e});nwr["shop"="bakery"]["name"](${s},${w},${n},${e}););out center tags;`;
   for (let attempt = 0; attempt < 4; attempt++) {
     for (const u of SERVERS) {
       const t = Date.now(), ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 120000);
@@ -40,14 +40,14 @@ async function build(id) {
     console.log(`${id} tile ${i * nx + j + 1}/${nx * ny}`);
     elements.push(...(await tile(s, w, +(s + dy).toFixed(4), +(w + dx).toFixed(4))));
   }
-  const T = { restaurant: "r", fast_food: "f", food_court: "c" }, seen = new Set(), out = [];
+  const T = { restaurant: "r", fast_food: "f", food_court: "c", cafe: "k" }, kind = (t) => (t.shop === "bakery" ? "b" : T[t.amenity]), seen = new Set(), out = [];
   for (const e of elements) {
     const t = e.tags || {}, lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon, name = String(t["name:en"] || t.name || "").trim().slice(0, 60);
-    if (!name || lat == null || !T[t.amenity]) continue;
+    if (!name || lat == null || !kind(t)) continue;
     const key = name.toLowerCase() + "|" + lat.toFixed(3) + "|" + lon.toFixed(3); // same name far apart = different branches
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push([name, +lat.toFixed(5), +lon.toFixed(5), T[t.amenity], String(t.cuisine || "").split(/[;,]/)[0].trim().slice(0, 24)]);
+    out.push([name, +lat.toFixed(5), +lon.toFixed(5), kind(t), String(t.cuisine || "").split(/[;,]/)[0].trim().slice(0, 24)]);
   }
   if (out.length < 300) throw new Error(`${id}: suspiciously few places (${out.length})`);
   const file = `public/food-${id}.json`;
