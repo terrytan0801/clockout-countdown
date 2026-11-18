@@ -1,4 +1,4 @@
-# Clock-out Countdown · v72.0
+# Clock-out Countdown · v73.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -239,6 +239,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v71.** FoodSpin lists for Johor Bahru and the Klang Valley too. The public Overpass servers were too busy to download them (hours of timeouts), so `scripts/food-data-pbf.mjs` builds every region from Geofabrik's Malaysia-Singapore-Brunei extract instead: two passes over the .osm.pbf with `osm-pbf-parser` (not a project dependency; install it with `--no-save` or point `PBF_TOOL` at a folder that has it), the second finding the middle of places drawn as buildings, such as many hawker centres. It takes about 30 seconds. On 18 Nov 2026: `food-sg.json` 6,895 places (109 KB gzipped), `food-jb.json` 2,488 (40 KB), `food-kl.json` 7,521 (121 KB). `scripts/food-data.mjs` (Overpass, by tiles) still works when the servers are quiet; both take regions as arguments and share one table of boxes with `FS_REGIONS` in the page. The phone loads only the file for the region it's in, used when the whole 2 km circle fits inside that region's box; anywhere else it searches live as before. The dev-site test picker gained Johor Bahru city, Iskandar Puteri, KLCC, Mid Valley, Petaling Jaya and Penang (no file, to try the live search).
 
 **v72.** FoodSpin opens the pick itself in Google Maps instead of starting a walking route: the place's name and the Open in Google Maps button both link to `google.com/maps/search/<name>/@<lat>,<lon>,18z`, a search for the name with the map on that spot, so Google shows the nearest match and Directions is one tap away there. (A search for the name plus coordinates in the query listed look-alike names across the island; coordinates alone drop a pin without the place's details.)
+
+**v73.** Fix: from the second FoodSpin spin on, the pick lit up and the result showed about 0.3 s into the spin. The losing slices fade back to full colour when a new spin starts, and that fade's `transitionend` bubbled up to the wheel and was taken for the end of the spin. Now only the wheel's own `transform` transition ends a spin (the 4.6 s timer stays as the fallback).
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

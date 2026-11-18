@@ -1417,7 +1417,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v72.0</span>
+    <span>v73.0</span>
   </div>
 </div>
 
@@ -3203,7 +3203,9 @@ function fsSpin(){
   disc.style.transform=`rotate(${fsTurn}deg)`;
   let fin=false;const finish=()=>{if(!fin){fin=true;done();}};
   if(matchMedia("(prefers-reduced-motion: reduce)").matches) finish();
-  else{disc.addEventListener("transitionend",finish,{once:true});setTimeout(finish,4600);} // a page in the background never sends transitionend
+  else{ // only the wheel's own turn counts: the slices' fade back to full colour also sends transitionend, 0.3 s in
+    const end=e=>{if(e.target!==disc||e.propertyName!=="transform") return;disc.removeEventListener("transitionend",end);finish();};
+    disc.addEventListener("transitionend",end);setTimeout(finish,4600);} // a page in the background never sends transitionend
 }
 function fsShow(p){
   const box=$("spinResult"), km=p.m>=1000?(p.m/1000).toFixed(1)+" km":p.m+" m", walk=Math.max(1,Math.round(p.m/80));
@@ -5066,7 +5068,7 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v69-foodspin",v:"v69.0–72.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+  {id:"v69-foodspin",v:"v69.0–73.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap FoodSpin (next to Village, Bag and Shop, or on your own card from an hour before clock-out).",
     "It finds restaurants, hawker centres and fast food within 2 km of you and puts eight of them on a lit-up wheel with your monster in the middle. Spin, and that's dinner.",
     "In Singapore, Johor Bahru and the Klang Valley the list is built into the app, so it's there at once and your location stays on your phone.",
