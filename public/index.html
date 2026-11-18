@@ -1435,7 +1435,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v74.0</span>
+    <span>v75.0</span>
   </div>
 </div>
 
@@ -1616,7 +1616,7 @@ body.calm .fsprop span{animation:none}
     <div class="fs-wheel" id="spinWheel"></div>
     <div class="fs-result" id="spinResult" hidden aria-live="polite"></div>
     <div class="sheet-row"><button class="btn ghost" type="button" id="spinDeal" disabled>Other places</button><button class="btn" type="button" id="spinGo" disabled>Spin</button></div>
-    <p class="sheet-hint">Places from OpenStreetMap (© OpenStreetMap contributors). In Singapore, Johor Bahru and the Klang Valley your location stays on your phone; elsewhere it goes to OpenStreetMap's search service to find places.</p>
+    <p class="sheet-hint">Places from OpenStreetMap (© OpenStreetMap contributors). In Singapore, Johor Bahru and the Klang Valley your location stays on your phone; elsewhere it goes to a public OpenStreetMap search service (Photon by komoot) to find places.</p>
   </div>
 </div>
 <div class="sheet" id="noteSheet" hidden>
@@ -3184,9 +3184,25 @@ function fsNear(list,lat,lon){
   return list.map(p=>({...p,m:Math.round(fsDist(lat,lon,p.lat,p.lon))}))
     .filter(p=>{const k=p.name.toLowerCase();if(!p.name||p.m>FS_R||seen.has(k)) return false;seen.add(k);return true;});
 }
+// v75: outside the built-in regions, Photon (komoot's OpenStreetMap search) answers in about a second. It returns the
+// nearest 50 per ask, so it's asked from five spots: here and 1.2 km north, south, east and west, which together cover
+// most of the 2 km circle. It has no cuisine, so kinds come from names there. Overpass is the fallback.
+async function fsPhoton(lat,lon){
+  const tags=["amenity:restaurant","amenity:fast_food","amenity:food_court","amenity:cafe","shop:bakery"].map(t=>"&osm_tag="+t).join(""), d=.0108;
+  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),10000);
+  try{
+    const res=await Promise.all([[0,0],[d,0],[-d,0],[0,d],[0,-d]].map(([a,b])=>
+      fetch(`https://photon.komoot.io/reverse?lat=${(lat+a).toFixed(5)}&lon=${(lon+b).toFixed(5)}&radius=2&limit=50${tags}`,{signal:ctl.signal})
+        .then(x=>x.ok?x.json():null).catch(()=>null)));
+    if(!res.some(Boolean)) throw new Error("photon unreachable");
+    return res.filter(Boolean).flatMap(x=>x.features||[]).map(ft=>{const p=ft.properties||{},c=(ft.geometry&&ft.geometry.coordinates)||[];
+      return {name:String(p.name||"").slice(0,60),lat:c[1],lon:c[0],amenity:p.osm_key==="shop"?"bakery":p.osm_value,cuisine:""};}).filter(x=>x.name&&x.lat!=null);
+  }finally{clearTimeout(t);}
+}
 async function fsLive(lat,lon){
   const key=`clockout.fs.${lat.toFixed(3)},${lon.toFixed(3)}`;
   try{const c=JSON.parse(lsGet(key)||"null");if(c&&Date.now()-c.at<864e5) return c.p;}catch(e){}
+  try{const p=await fsPhoton(lat,lon);if(p.length){try{lsSet(key,JSON.stringify({at:Date.now(),p}));}catch(e){}return p;}}catch(e){}
   const q=`[out:json][timeout:20];(nwr["amenity"~"^(restaurant|fast_food|food_court|cafe)$"]["name"](around:${FS_R},${lat},${lon});nwr["shop"="bakery"]["name"](around:${FS_R},${lat},${lon}););out center tags;`;
   for(const u of FS_API){ // one at a time: asking all of them at once gets every one of them to say "too many requests"
     const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),20000);
@@ -5137,7 +5153,7 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v69-foodspin",v:"v69.0–74.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+  {id:"v69-foodspin",v:"v69.0–75.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap the little wheel on the kitchen counter at home (or FoodSpin on your own card from an hour before clock-out).",
     "Set a budget and what you feel like (Chinese, rice, noodles, bread, coffee and more) and the wheel only picks from those.",
     "It finds restaurants, hawker centres, fast food, cafés and bakeries within 2 km of you and puts eight of them on a lit-up wheel with your monster in the middle. Spin, and that's dinner.",
