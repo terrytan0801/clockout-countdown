@@ -1,4 +1,4 @@
-# Clock-out Countdown · v77.0
+# Clock-out Countdown · v78.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -249,6 +249,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v76.** FoodSpin's choices move behind one Filter button. The sheet shows the button ("Filter · 2" when two choices are set, filled in) and how many nearby places match; tapping it swaps the wheel for a panel with the budget row, the kind chips and, on the dev site, the test location, then Show places deals the wheel again and Clear all resets the choices. While the panel is open, each tap only updates the count. FoodSpin always opens on the wheel.
 
 **v77.** FoodSpin fixes. The wheel spun 5 turns in 4.2 s with a sharp start, about 40 degrees a frame at first against 45-degree slices, so it seemed to jump or run backwards; it now turns 3 times over 5 s with a gentler curve (at most about 13 degrees a frame), and the pointer ticks more softly. The test-location picker is gone (FoodSpin always uses where you are); the Filter panel gains How far? (500 m, 1 km, 2 km), counted in the Filter badge and remembered with the other choices, and the count line says "N places within 1 km". The little wheel moved from the kitchen counter, where it covered the name tags of monsters cooking there, to a small new shelf above the stove.
+
+**v78.** A pay rise, an active bonus and Ranks. `COINS.day` goes from 50 to 250 a workday; shop and village prices stay as they were. The wage gets an active bonus from the last 7 days in the cave (`activeBonus`): 1 point per chat message (up to 20), 2 per zap sent (up to 10), 5 per vlog clip (up to 6); 10 points +5%, 25 +10%, 45 +20% (`COINS.active`). It reads the admin stats log (`ev/msg`, `ev/zap`, `ev/clip`, kept 90 days) through `evSince`, which lists only the ~28-hour key slices that cover the time asked for. Landed fish are now logged too (`ev/fish/<ts>_<pid>_<cid>_<kind>_<size>`), so fishing ranks start from v78. `GET /api/ranks` returns the cave's boards, worked out at most once a minute per cave: richest, longest streak and village builder (all time); most fish, biggest catch, most overtime (from `ot/<day>/<pid>` against each clock-out), most zaps, chattiest and most vlogs (this week from Monday, SG time); legendary fish (last 90 days); plus your own points. A Ranks button next to Village, Bag and Shop opens them, top 5 per board and your own row if you're further down. The coin test's running totals are now written in terms of `COINS.day`, and it checks a +5% wage after 10 chat messages and the ranks reply.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

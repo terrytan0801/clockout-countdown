@@ -1202,6 +1202,24 @@ body.calm .fsprop span{animation:none}
 .fs-panel[hidden]{display:none}
 .fs-sec{font:700 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
 .sheet-card.fs-open .fs-wheel,.sheet-card.fs-open .fs-result,.sheet-card.fs-open #spinRow{display:none}
+/* v78 Ranks: your active bonus on top, then one small board per thing */
+.rk-me{display:grid;gap:4px;padding:12px;border-radius:6px;background:var(--sign);color:var(--sign-ink)}
+.rk-me b{font:800 18px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.rk-me span{font-size:13.5px;line-height:1.35;color:var(--sign-muted)}
+.rk-list{display:grid;gap:10px}
+.rk-board{border:1.5px solid var(--line);border-radius:6px;padding:10px 12px}
+.rk-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+.rk-head b{font:800 16px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.rk-head small{font:600 11.5px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rk-rows{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.rk-rows li{display:grid;grid-template-columns:20px 28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:3px 6px;border-radius:4px}
+.rk-rows li.me{background:var(--track);font-weight:700}
+.rk-rows li i{font:800 14px/1 var(--f-display);font-style:normal;text-align:center;color:var(--muted)}
+.rk-rows li:first-child i{color:#b8900a}
+.rk-rows li .mon{width:28px;height:28px}
+.rk-rows li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-rows li b{font:700 13px/1.2 var(--f-mono);text-align:right;white-space:nowrap}
+.rk-none{margin:0;color:var(--muted);font-size:13.5px}
 </style>
 </head>
 <body class="booting">
@@ -1315,6 +1333,7 @@ body.calm .fsprop span{animation:none}
         <button class="btn ghost" id="villBtn" type="button" aria-pressed="false">Village</button>
         <button class="btn ghost" id="bagBtn" type="button" aria-pressed="false">Bag<span id="bagCount"></span></button>
         <button class="btn ghost" id="decoBtn" type="button" aria-pressed="false">Shop</button>
+        <button class="btn ghost" id="rankBtn" type="button">Ranks</button>
       </div>
     </div>
     <div class="bagpanel" id="bagPanel" hidden>
@@ -1332,7 +1351,8 @@ body.calm .fsprop span{animation:none}
       <ul class="w-log" id="wLog"></ul>
       <details><summary>How to earn monster coins</summary>
         <ul class="w-how">
-          <li><b>+50</b> for every workday you open the app, paid from your clock-out time. Overtime pays nothing extra.</li>
+          <li><b>+250</b> for every workday you open the app, paid from your clock-out time. Overtime pays nothing extra.</li>
+          <li><b>+5% to +20%</b> on that wage for being active in the cave over the last 7 days: 1 point a chat message, 2 a zap, 5 a vlog. 10 points +5%, 25 +10%, 45 +20%. Your points are on Ranks.</li>
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
           <li><b>1–10%</b> of someone's coins every time you zap them (one zap per person every 10 minutes). They lose what you get.</li>
@@ -1442,7 +1462,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v77.0</span>
+    <span>v78.0</span>
   </div>
 </div>
 
@@ -1603,6 +1623,13 @@ body.calm .fsprop span{animation:none}
 </div>
 
 <!-- Tako: stick a note -->
+<div class="sheet" id="rankSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="rankTitle">
+    <div class="sheet-row split"><div class="sheet-msg" id="rankTitle">Ranks</div><button class="btn ghost" type="button" id="rankClose">Close</button></div>
+    <div class="rk-me" id="rankMe" aria-live="polite"></div>
+    <div class="rk-list" id="rankList"></div>
+  </div>
+</div>
 <div class="sheet" id="spinSheet" hidden>
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="spinTitle">
     <div class="sheet-row split"><div class="sheet-msg" id="spinTitle">FoodSpin</div><button class="btn ghost" type="button" id="spinClose">Close</button></div>
@@ -3332,6 +3359,33 @@ $("spinClose").addEventListener("click",()=>{$("spinSheet").hidden=true;});
 $("spinGo").addEventListener("click",fsSpin);
 $("spinDeal").addEventListener("click",fsDeal);
 
+/* ================= Ranks (v78): the cave's boards, and your active bonus ================= */
+const RANK_WHEN={all:"All time",week:"This week",["90d"]:"Last 90 days"};
+async function openRanks(){
+  $("rankSheet").hidden=false;$("rankMe").replaceChildren();$("rankList").replaceChildren(mkEl("p","sheet-hint","Loading…"));
+  try{renderRanks(await api("ranks"));}catch(e){$("rankList").replaceChildren(mkEl("p","err",e.message||"Couldn't load the ranks."));}
+}
+function renderRanks(d){
+  const m=d.me||{points:0,pct:0,msgs:0,zaps:0,clips:0};
+  $("rankMe").replaceChildren(mkEl("b","",m.pct?`Active bonus: +${m.pct}% on your wage`:"No active bonus yet"),
+    mkEl("span","",`${m.points} points in the last 7 days: ${m.msgs} messages, ${m.zaps} zaps, ${m.clips} vlogs. 10 points +5%, 25 +10%, 45 +20%.`));
+  const list=$("rankList");list.replaceChildren();
+  for(const b of d.boards){
+    const sec=mkEl("section","rk-board"), head=mkEl("div","rk-head");
+    head.append(mkEl("b","",b.title),mkEl("small","",RANK_WHEN[b.period]||""));sec.appendChild(head);
+    if(!b.rows.length){sec.appendChild(mkEl("p","rk-none","Nobody yet."));list.appendChild(sec);continue;}
+    const ol=mkEl("ol","rk-rows"), mine=b.rows.findIndex(x=>x.pid===S.me.id);
+    const row=(x,i)=>{const li=mkEl("li",x.pid===S.me.id?"me":"");
+      li.append(mkEl("i","",String(i+1)),monEl(x.monster,x.color,"dance still","mini"),mkEl("span","",x.pid===S.me.id?"You":x.name),
+        mkEl("b","",`${x.v.toLocaleString()} ${b.unit}${x.note?` · ${x.note}`:""}`));ol.appendChild(li);};
+    b.rows.slice(0,5).forEach(row);
+    if(mine>=5) row(b.rows[mine],mine); // you, if you're further down
+    sec.appendChild(ol);list.appendChild(sec);
+  }
+}
+$("rankBtn").addEventListener("click",openRanks);
+$("rankClose").addEventListener("click",()=>{$("rankSheet").hidden=true;});
+
 /* ================= the village (v50): buildings the cave pays for together ================= */
 const BUILD_INFO={
   weather:"Weather for everyone in the cave: the forecast at your clock-out time on your card, a rain alert before you leave, and 3 days ahead. Set your city in your account.",
@@ -3996,9 +4050,9 @@ $("leaveBtn").addEventListener("click",async()=>{
 /* sheets close on Escape / backdrop, except the log-in sheet while signed out */
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  ["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet","spinSheet"].forEach(id=>$(id).hidden=true);
+  ["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet","spinSheet","rankSheet"].forEach(id=>$(id).hidden=true);
 });
-["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet","spinSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
+["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet","spinSheet","rankSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
 
 /* ================= push / zaps ================= */
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -5171,6 +5225,12 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v78-pay",v:"v78.0",at:"2026-11-18T20:00",title:"A pay rise, an active bonus, and Ranks",changes:[
+    "Wages go up from 50 to 250 monster coins for every workday you open the app. Prices stay the same.",
+    "Being active in the cave pays more: chat, zaps and vlogs over the last 7 days add 5%, 10% or 20% to your wage.",
+    "New Ranks board (next to Village, Bag and Shop): richest, longest streak, village builder, and this week's most fish, biggest catch, most overtime, most zaps, chattiest and most vlogs."],panels:[
+    {art:"gift",title:"Pay rise",text:"250 coins a workday, paid at clock-out. Chat, zap and film to earn up to 20% more."},
+    {art:"together",title:"Who's top?",text:"Tap Ranks to see who's richest, who caught the biggest fish and who worked latest this week."}]},
   {id:"v69-foodspin",v:"v69.0–77.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap the little wheel above the stove in the kitchen at home (or FoodSpin on your own card from an hour before clock-out).",
     "Tap Filter to set how far you'll walk, a budget and what you feel like (Chinese, rice, noodles, bread, coffee and more), and the wheel only picks from those.",

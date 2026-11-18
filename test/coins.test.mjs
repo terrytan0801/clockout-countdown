@@ -39,28 +39,29 @@ const app2 = makeApp({ store, webpush, now: () => clock, cache: {} });
 await app2.handle(new Request("https://x.test/api/ping", { method: "POST", headers: { authorization: "Bearer " + A.t }, body: "{}" }));
 assert.equal(await coins(A), COINS.welcome + COINS.day);
 let log = (await me(A)).coinLog;
-assert.deepEqual(log.map((e) => [e.amt, e.why]), [[100, "welcome"], [50, "pay.2026-11-10"]]);
+assert.deepEqual(log.map((e) => [e.amt, e.why]), [[100, "welcome"], [COINS.day, "pay.2026-11-10"]]);
 
 // Wed: only opened in the morning, so that day is paid the next time the app is opened
 clock = SG(11, 9); await open(A);
-assert.equal(await coins(A), 150);
+assert.equal(await coins(A), COINS.welcome + COINS.day);
 clock = SG(12, 8); await open(A);
-assert.equal(await coins(A), 200, "yesterday's wage arrives");
+assert.equal(await coins(A), COINS.welcome + 2 * COINS.day, "yesterday's wage arrives");
 // Thu and Fri worked; the weekend pays nothing; a day off pays nothing
-clock = SG(12, 19); await open(A); assert.equal(await coins(A), 250);
-clock = SG(13, 19); await open(A); assert.equal(await coins(A), 300);
+clock = SG(12, 19); await open(A); assert.equal(await coins(A), COINS.welcome + 3 * COINS.day);
+clock = SG(13, 19); await open(A); assert.equal(await coins(A), COINS.welcome + 4 * COINS.day);
 clock = SG(14, 19); await open(A); clock = SG(15, 19); await open(A);
-assert.equal(await coins(A), 300, "Saturday and Sunday: no wage");
+assert.equal(await coins(A), COINS.welcome + 4 * COINS.day, "Saturday and Sunday: no wage");
 // Mon is the 5th workday in a row: wage + streak bonus
 clock = SG(16, 19); await open(A);
-assert.equal(await coins(A), 300 + COINS.day + COINS.streak, "5 workdays in a row");
+assert.equal(await coins(A), COINS.welcome + 5 * COINS.day + COINS.streak, "5 workdays in a row");
 assert.ok((await me(A)).coinLog.some((e) => e.why === "streak.5"));
 clock = SG(17, 9); await call("POST", "me", { action: "dayoff", on: true }, A.t);
 clock = SG(17, 19); await open(A);
-assert.equal(await coins(A), 400, "a day off isn't paid");
+assert.equal(await coins(A), COINS.welcome + 5 * COINS.day + COINS.streak, "a day off isn't paid");
 // overtime changes nothing: still one wage
 clock = SG(18, 9); await call("POST", "ot", { on: true, end: null }, A.t); clock = SG(18, 23); await open(A);
-assert.equal(await coins(A), 450);
+const paidA = COINS.welcome + 6 * COINS.day + COINS.streak;
+assert.equal(await coins(A), paidA);
 
 /* ---------- filming ---------- */
 const upload = async (who) => {
@@ -71,18 +72,18 @@ const upload = async (who) => {
 };
 const rings = ringTimes(cave.id, "2026-11-19");
 clock = rings[0] + 60e3; assert.equal(await upload(A), 200);
-assert.equal(await coins(A), 450 + COINS.clip, "on time");
+assert.equal(await coins(A), paidA + COINS.clip, "on time");
 assert.equal(await upload(A), 200);
-assert.equal(await coins(A), 450 + COINS.clip, "a retake isn't paid again");
+assert.equal(await coins(A), paidA + COINS.clip, "a retake isn't paid again");
 clock = rings[1] + 30 * 60e3; assert.equal(await upload(A), 200);
-assert.equal(await coins(A), 450 + COINS.clip + COINS.clipLate, "late");
+assert.equal(await coins(A), paidA + COINS.clip + COINS.clipLate, "late");
 
 /* ---------- zap loot ---------- */
 await call("POST", "subscribe", { subscription: { endpoint: "https://push.test/a", keys: { p256dh: "k", auth: "a" } } }, A.t);
 await open(B); // Ben: 100 welcome
 give(B, 900);  // Ben now has 1000
 const a0 = await coins(A), b0 = await coins(B);
-assert.equal(b0, 1000 + ((await me(B)).coinLog.filter((e) => e.why.startsWith("pay.")).length * 50));
+assert.equal(b0, 1000 + ((await me(B)).coinLog.filter((e) => e.why.startsWith("pay.")).length * COINS.day));
 const vA = (await call("GET", "state", null, A.t)).data.v;
 pushes.length = 0;
 let z = (await call("POST", "zap", { to: A.id }, B.t)).data;
@@ -168,6 +169,17 @@ clock += 10 * 3600e3; await open(B);
 const paidDays = (await me(B)).coinLog.filter((e) => e.why.startsWith("pay.")).pop();
 assert.equal(paidDays.amt, COINS.day + COINS.coffee, "wage with the coffee machine");
 assert.ok(await coins(B) >= b4 + COINS.day + COINS.coffee);
+
+/* ---------- v78: the active bonus on wages, and the cave's rank boards ---------- */
+for (let i = 0; i < 10; i++) { clock += 1000; assert.equal((await call("POST", "chat", { text: "hi " + i }, B.t)).status, 200); }
+do clock += 864e5; while ([0, 6].includes(new Date(clock + 8 * 3600e3).getUTCDay()));
+clock = clock - (clock % 864e5) + 1 * 3600e3; await open(B);          // 9 am SG: the day counts
+clock += 10 * 3600e3; await open(B);                                  // 7 pm SG: paid, with 10 points (+5%)
+const bonusPay = (await me(B)).coinLog.filter((e) => e.why.startsWith("pay.")).pop();
+assert.equal(bonusPay.amt, Math.round((COINS.day + COINS.coffee) * 1.05), "10 chat messages in a week: +5% on the wage");
+const ranks = (await call("GET", "ranks", null, B.t)).data;
+assert.ok(ranks.boards.some((b) => b.id === "coins" && b.rows.some((r) => r.pid === B.id)), "B is on the coins board");
+assert.equal(ranks.me.msgs, 10); assert.equal(ranks.me.pct, 5);
 
 /* ---------- a long ledger is folded, and the balance stays the same ---------- */
 for (let i = 0; i < 60; i++) { clock += 1000; give(C, 1); }

@@ -79,7 +79,10 @@ export const HOME_KINDS = Object.keys(SHOP);
 // How monster coins are earned and lost. Change the numbers here to rebalance.
 export const COINS = {
   welcome: 100,          // once, so everyone can buy something on day one; since v48 also given the first time someone is zapped
-  day: 50, coffee: 10,   // per workday you opened the app, paid from your clock-out time (+10 with your coffee machine at home)
+  day: 250, coffee: 10,  // per workday you opened the app, paid from your clock-out time (+10 with your coffee machine at home); 50 until v78
+  // v78: an active bonus on the wage, from the last 7 days in the cave: 1 point a chat message (up to 20), 2 a zap sent
+  // (up to 10 zaps), 5 a vlog clip (up to 6). [points, % more] from the top tier down.
+  active: [[45, 20], [25, 10], [10, 5]],
   streakEvery: 5, streak: 50, // every 5 workdays in a row
   clip: 15, clipLate: 5, // filming a ring on time / late (the first take only)
   water: 2, pet: 2, vend: 3, // once a day each: water a plant, pet the cat, use the vending machine
@@ -378,6 +381,21 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return { coins: ((base && base.bal) || 0) + log.reduce((n, e) => n + e.amt, 0), log, base };
   }
   const touchWallet = (pid) => store.setJSON(`wv/${pid}`, rv());
+  // v78: events since a time, from the stats log (ev/<kind>/<ts13>_<parts>). The log is listed in 1e8 ms (~28 h) slices
+  // by the first 5 digits of the time, so a week is about 7 small listings instead of 90 days of events.
+  async function evSince(kind, since) {
+    const a = Math.floor(since / 1e8), b = Math.floor(now() / 1e8), pre = `ev/${kind}/`;
+    const lists = await Promise.all(Array.from({ length: b - a + 1 }, (_, i) => keys(pre + String(a + i).padStart(5, "0"))));
+    return lists.flat().map((k) => k.slice(pre.length).split("_")).filter((p) => Number(p[0]) >= since);
+  }
+  // The active bonus (v78): chat, zaps and vlogs over the last 7 days.
+  async function activeBonus(pid) {
+    const [m, z, c] = await Promise.all(["msg", "zap", "clip"].map((k) => evSince(k, now() - 7 * 864e5)));
+    const n = (list) => list.filter((e) => e[1] === pid).length, msgs = n(m), zaps = n(z), clips = n(c);
+    const points = Math.min(msgs, 20) + 2 * Math.min(zaps, 10) + 5 * Math.min(clips, 6);
+    const tier = COINS.active.find(([at]) => points >= at);
+    return { msgs, zaps, clips, points, pct: tier ? tier[1] : 0 };
+  }
   const fishOf = (k, at) => { const seg = k.split("/"); return { id: seg[at], kind: seg[at + 1], size: Number(seg[at + 2]), ...(seg[at + 3] ? { by: seg[at + 3] } : {}) }; };
   const bagOf = async (pid) => (await keys(`bag/${pid}/`)).map((k) => fishOf(k, 2)).filter((f) => FISH[f.kind] || CROPS[f.kind]); // fish and (v50) crops
   // The village: what each building costs, what's been given and by whom, and when it opens.
@@ -444,9 +462,9 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     // A worked day is paid from clock-out time on; a day you only opened before clocking out is paid the next time you open.
     const due = [...days].filter((d) => d < day || sec >= offSec).sort();
     if (due.length) {
-      const bonus = (await hasAtHome(me.cave, me.id, "coffee")) ? COINS.coffee : 0;
+      const [bonus, act] = await Promise.all([hasAtHome(me.cave, me.id, "coffee").then((y) => (y ? COINS.coffee : 0)), activeBonus(me.id)]);
       for (const d of due) {
-        if (await payOnce(me.id, d, "pay")) await credit(me.id, COINS.day + bonus, `pay.${d}`);
+        if (await payOnce(me.id, d, "pay")) await credit(me.id, Math.round((COINS.day + bonus) * (1 + act.pct / 100)), `pay.${d}`);
         await store.delete(`work/${me.id}/${d}`);
       }
     }
@@ -1297,6 +1315,52 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       // Cast: decides what's on the line (as many casts as you like; a new cast replaces a line left in the water).
       // The phone then plays the reeling game.
       /* ---------- the village (v50) ---------- */
+      // v78: the cave's rank boards. All-time: coins, streak, village giving; this week (from Monday): fish, overtime,
+      // zaps, chat, vlogs; legendary fish over the 90 days the log keeps. Worked out at most once a minute per cave.
+      if (route === "ranks" && method === "GET") {
+        if (!me.cave) return json({ error: "Join a cave first." }, 409);
+        const cid = me.cave, t = now(), mine = await activeBonus(me.id);
+        cache.ranks ||= new Map();
+        const hit = cache.ranks.get(cid);
+        if (hit && t - hit.at < 60e3) return json({ ...hit.v, me: mine });
+        const today = sgDay(t), back = (weekdayOf(today) + 6) % 7, monday = addDays(today, -back);
+        const weekStart = t - back * 864e5 - sgSeconds(t) * 1000;
+        const days = []; for (let d = monday; d <= today; d = addDays(d, 1)) days.push(d);
+        const ms = await caveMembers(cid);
+        const [wallets, lvls, dons, fish, legend, zaps, msgs, clips, ots] = await Promise.all([
+          Promise.all(ms.map((p) => wallet(p.id))), Promise.all(ms.map((p) => getJSON(`lvl/${p.id}`))), keys(`don/${cid}/`),
+          evSince("fish", weekStart), evSince("fish", t - 90 * 864e5), evSince("zap", weekStart), evSince("msg", weekStart), evSince("clip", weekStart),
+          Promise.all(days.flatMap((d) => ms.map((p) => getJSON(`ot/${d}/${p.id}`).then((o) => [d, p, o]))))]);
+        const count = (list, pid) => list.filter((e) => e[1] === pid).length;
+        const otMin = {};
+        for (const [d, p, o] of ots) {
+          if (!o || !o.on) continue;
+          const off = p.h * 3600 + p.m * 60, end = o.end != null ? o.end : d === today ? sgSeconds(t) : off;
+          otMin[p.id] = (otMin[p.id] || 0) + Math.max(0, Math.round((end - off) / 60));
+        }
+        const given = {};
+        for (const k of dons) { const seg = k.split("/"); given[seg[5]] = (given[seg[5]] || 0) + (Number(seg[6]) || 0); }
+        const biggest = {};
+        for (const e of fish) { const s = Number(e[4]) || 0; if (!biggest[e[1]] || s > biggest[e[1]].v) biggest[e[1]] = { v: s, note: (FISH[e[3]] && FISH[e[3]].name) || e[3] }; }
+        const board = (id, title, unit, period, val) => ({ id, title, unit, period,
+          rows: ms.map((p, i) => { const x = val(p, i), o = typeof x === "object" ? x : { v: x };
+            return { pid: p.id, name: p.name, color: p.color, monster: p.monster, v: o.v || 0, ...(o.note ? { note: o.note } : {}) }; })
+            .filter((r) => r.v > 0).sort((a, b) => b.v - a.v) });
+        const v = { at: t, boards: [
+          board("coins", "Richest", "coins", "all", (p, i) => wallets[i].coins),
+          board("streak", "Longest streak", "workdays in a row", "all", (p, i) => (lvls[i] && lvls[i].streak) || 0),
+          board("give", "Village builder", "coins given", "all", (p) => given[p.id] || 0),
+          board("fish", "Most fish", "fish", "week", (p) => count(fish, p.id)),
+          board("bigfish", "Biggest catch", "cm", "week", (p) => biggest[p.id] || 0),
+          board("legend", "Legendary fish", "legendary", "90d", (p) => legend.filter((e) => e[1] === p.id && FISHING.legend.includes(e[3])).length),
+          board("ot", "Most overtime", "minutes", "week", (p) => otMin[p.id] || 0),
+          board("zaps", "Most zaps", "zaps sent", "week", (p) => count(zaps, p.id)),
+          board("chat", "Chattiest", "messages", "week", (p) => count(msgs, p.id)),
+          board("vlog", "Most vlogs", "clips", "week", (p) => count(clips, p.id)),
+        ] };
+        cache.ranks.set(cid, { at: t, v });
+        return json({ ...v, me: mine });
+      }
       if (route === "village" && method === "GET") {
         if (!me.cave) return json({ error: "Join a cave first." }, 409);
         return json({ village: await villageOf(me.cave), now: now() });
@@ -1430,7 +1494,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         await store.delete(`cast/${me.id}`);
         if (body.ok !== true) return json({ kept: false });
         const id = now().toString(36) + randomBytes(3).toString("hex");
-        await Promise.all([store.setJSON(`bag/${me.id}/${id}/${c.kind}/${c.size}`, 0), touchWallet(me.id)]);
+        await Promise.all([store.setJSON(`bag/${me.id}/${id}/${c.kind}/${c.size}`, 0), touchWallet(me.id), stats.log("fish", me.id, me.cave || "-", c.kind, c.size)]);
         const harbor = isOpen(await builtOf(me.cave), "harbor", now());
         return json({ kept: true, fish: { id, kind: c.kind, size: c.size, worth: fishPrice(c.kind, c.size, (fishmonger(now(), harbor || dev) || {}).wants) } });
       }
