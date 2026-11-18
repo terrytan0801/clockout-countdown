@@ -194,6 +194,27 @@ assert.equal(c1, c0 + wages, "same balance after folding (plus the wages that op
 clock += 12 * 3600e3; await open(C);
 assert.ok(await coins(C) >= c0);
 
+/* ---------- v79: wages arrive by themselves, twice over on a public holiday ---------- */
+{
+  const D = await mk("Dan"); await call("POST", "me", { action: "region", region: "sg" }, D.t);
+  const wages = async () => (await me(D)).coinLog.filter((e) => /^(pay|holiday)\./.test(e.why));
+  clock = Date.UTC(2026, 11, 24, 17 - 8);                        // Thu 24 Dec, 5 pm SG: before Dan's 6 pm clock-out
+  await app.payday(); assert.equal((await wages()).length, 0, "nothing before clock-out");
+  clock = Date.UTC(2026, 11, 24, 18 - 8, 5);                     // 6:05 pm, and Dan never opened the app
+  await app.payday(); assert.deepEqual((await wages()).map((e) => [e.amt, e.why]), [[COINS.day, "pay.2026-12-24"]], "paid without opening the app");
+  await app.payday(); assert.equal((await wages()).length, 1, "once a day");
+  clock = Date.UTC(2026, 11, 25, 18 - 8, 5);                     // Christmas Day: a public holiday in Singapore
+  await app.payday(); assert.deepEqual((await wages()).pop(), { ...(await wages()).pop(), amt: 2 * COINS.day, why: "holiday.2026-12-25" }, "double on a public holiday");
+  clock = Date.UTC(2026, 11, 26, 18 - 8, 5);                     // Saturday
+  await app.payday(); assert.equal((await wages()).length, 2, "no wage at the weekend");
+  clock = Date.UTC(2026, 11, 28, 9 - 8);                         // Monday: Dan takes the day off
+  await call("POST", "me", { action: "dayoff", on: true }, D.t);
+  clock = Date.UTC(2026, 11, 28, 18 - 8, 5);
+  await app.payday(); assert.equal((await wages()).length, 2, "a personal day off isn't paid");
+  clock = Date.UTC(2026, 11, 29, 18 - 8, 5); await open(D);       // opening the app the same evening pays once, not twice
+  await app.payday(); assert.equal((await wages()).filter((e) => e.why === "pay.2026-12-29").length, 1, "the app and the clock never both pay");
+}
+
 /* ---------- deleting the account removes the coins ---------- */
 await call("POST", "me", { action: "delete" }, C.t);
 assert.equal([...store._m.keys()].some((k) => ["led", "coinbase", "wv", "paid", "work"].some((p) => k === `${p}/${C.id}` || k.startsWith(`${p}/${C.id}/`))), false);

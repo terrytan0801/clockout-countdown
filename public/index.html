@@ -1351,7 +1351,8 @@ body.calm .fsprop span{animation:none}
       <ul class="w-log" id="wLog"></ul>
       <details><summary>How to earn monster coins</summary>
         <ul class="w-how">
-          <li><b>+250</b> for every workday you open the app, paid from your clock-out time. Overtime pays nothing extra.</li>
+          <li><b>+250</b> for every workday, paid by itself at your clock-out time (no need to open the app). Overtime pays nothing extra.</li>
+          <li><b>x2</b> on a public holiday: the wage still arrives at your clock-out time, twice over. Weekends and your own days off pay nothing.</li>
           <li><b>+5% to +20%</b> on that wage for being active in the cave over the last 7 days: 1 point a chat message, 2 a zap, 5 a vlog. 10 points +5%, 25 +10%, 45 +20%. Your points are on Ranks.</li>
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
@@ -1462,7 +1463,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v78.0</span>
+    <span>v79.0</span>
   </div>
 </div>
 
@@ -2711,7 +2712,7 @@ const nameOf=pid=>pid===S.me.id?"you":((members().find(p=>p.id===pid)||{}).name|
 function whyText(e){
   const [w,arg]=e.why.split(".");
   const thing=()=>(CAVE_HOME.DECOR[arg]||{name:arg}).name;
-  return {welcome:"Welcome gift",pay:"Wage",streak:`${arg}-day streak bonus`,clip:"Filmed on time",cliplate:"Filmed late",
+  return {welcome:"Welcome gift",pay:"Wage",holiday:"Public holiday pay (x2)",streak:`${arg}-day streak bonus`,clip:"Filmed on time",cliplate:"Filmed late",
     zap:`Zapped ${nameOf(arg)}`,zapby:`${nameOf(arg)} zapped you`,fishsale:`Sold ${arg} fish`,water:"Watered the plant",pet:"Petted the cat",vend:"Vending machine",
     buy:`Bought: ${thing()}`,sell:`Sold: ${thing()}`}[w]||"Coins";
 }
@@ -5225,8 +5226,9 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v78-pay",v:"v78.0",at:"2026-11-18T20:00",title:"A pay rise, an active bonus, and Ranks",changes:[
-    "Wages go up from 50 to 250 monster coins for every workday you open the app. Prices stay the same.",
+  {id:"v78-pay",v:"v78.0–79.0",at:"2026-11-18T20:00",title:"A pay rise, an active bonus, and Ranks",changes:[
+    "Wages go up from 50 to 250 monster coins a workday, and they arrive by themselves at your clock-out time: no need to open the app. Prices stay the same.",
+    "Public holidays pay double: the wage still comes at your clock-out time, twice over.",
     "Being active in the cave pays more: chat, zaps and vlogs over the last 7 days add 5%, 10% or 20% to your wage.",
     "New Ranks board (next to Village, Bag and Shop): richest, longest streak, village builder, and this week's most fish, biggest catch, most overtime, most zaps, chattiest and most vlogs."],panels:[
     {art:"gift",title:"Pay rise",text:"250 coins a workday, paid at clock-out. Chat, zap and film to earn up to 20% more."},

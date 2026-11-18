@@ -79,7 +79,8 @@ export const HOME_KINDS = Object.keys(SHOP);
 // How monster coins are earned and lost. Change the numbers here to rebalance.
 export const COINS = {
   welcome: 100,          // once, so everyone can buy something on day one; since v48 also given the first time someone is zapped
-  day: 250, coffee: 10,  // per workday you opened the app, paid from your clock-out time (+10 with your coffee machine at home); 50 until v78
+  day: 250, coffee: 10,  // per workday, paid at your clock-out time (+10 with your coffee machine at home); 50 until v78.
+                         // v79: paid by the clock without opening the app, and twice over on a public holiday
   // v78: an active bonus on the wage, from the last 7 days in the cave: 1 point a chat message (up to 20), 2 a zap sent
   // (up to 10 zaps), 5 a vlog clip (up to 6). [points, % more] from the top tier down.
   active: [[45, 20], [25, 10], [10, 5]],
@@ -388,6 +389,29 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const lists = await Promise.all(Array.from({ length: b - a + 1 }, (_, i) => keys(pre + String(a + i).padStart(5, "0"))));
     return lists.flat().map((k) => k.slice(pre.length).split("_")).filter((p) => Number(p[0]) >= since);
   }
+  // One day's wage, once (v79: shared by the app and the clock). times = 2 on a public holiday.
+  async function payWage(p, day, times = 1) {
+    if (!(await payOnce(p.id, day, "pay"))) return false;
+    const [coffee, act] = await Promise.all([hasAtHome(p.cave, p.id, "coffee"), activeBonus(p.id)]);
+    await credit(p.id, Math.round((COINS.day + (coffee ? COINS.coffee : 0)) * times * (1 + act.pct / 100)), `${times > 1 ? "holiday" : "pay"}.${day}`);
+    return true;
+  }
+  // v79: wages arrive on their own. Every 15 minutes the clock pays anyone whose clock-out has passed today: a workday's
+  // wage, or twice that on a public holiday in their region. Weekends and personal days off pay nothing, and nobody
+  // has to open the app (the 5-day streak bonus still comes from opening it).
+  async function payday() {
+    const t = now(), today = sgDay(t), sec = sgSeconds(t), wd = weekdayOf(today);
+    if (wd < 1 || wd > 5) return { paid: 0 };
+    let paid = 0;
+    const people = (await Promise.all((await keys("person/")).map((k) => getJSON(k)))).filter(Boolean);
+    for (const p of people) {
+      if (sec < p.h * 3600 + p.m * 60 || (await exists(`paid/${p.id}/${today}/pay`))) continue;
+      const holiday = !!holidayOf(regionOf(p), today);
+      if (!holiday && (await exists(`leave/${p.id}/${today}`))) continue; // their own day off
+      if (await payWage(p, today, holiday ? 2 : 1)) paid++;
+    }
+    return { paid };
+  }
   // The active bonus (v78): chat, zaps and vlogs over the last 7 days.
   async function activeBonus(pid) {
     const [m, z, c] = await Promise.all(["msg", "zap", "clip"].map((k) => evSince(k, now() - 7 * 864e5)));
@@ -462,9 +486,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     // A worked day is paid from clock-out time on; a day you only opened before clocking out is paid the next time you open.
     const due = [...days].filter((d) => d < day || sec >= offSec).sort();
     if (due.length) {
-      const [bonus, act] = await Promise.all([hasAtHome(me.cave, me.id, "coffee").then((y) => (y ? COINS.coffee : 0)), activeBonus(me.id)]);
       for (const d of due) {
-        if (await payOnce(me.id, d, "pay")) await credit(me.id, Math.round((COINS.day + bonus) * (1 + act.pct / 100)), `pay.${d}`);
+        await payWage(me, d);
         await store.delete(`work/${me.id}/${d}`);
       }
     }
@@ -1703,5 +1726,5 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return { sent };
   }
 
-  return { handle, rainAlerts, ringTick, holidayTips };
+  return { handle, rainAlerts, ringTick, holidayTips, payday };
 }
