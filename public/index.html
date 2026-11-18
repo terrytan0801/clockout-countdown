@@ -1160,6 +1160,23 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .fs-result span{color:var(--muted);font-size:14px}
 .fs-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 @media (prefers-reduced-motion:reduce){.fs-disc{transition:none}}
+/* v70 FoodSpin wheel: a lit rim, two-line names, your monster in the middle, the pick stays bright */
+.fs-wheel{width:min(320px,82vw)}
+.fs-wheel::after{top:-10px;border-width:0 15px;border-top:28px solid #d42e12;border-left-color:transparent;border-right-color:transparent;filter:drop-shadow(0 0 0 #fff) drop-shadow(0 2px 2px rgba(0,0,0,.35));transform-origin:50% 0}
+.fs-wheel.spinning::after{animation:fsTick .12s ease-in-out infinite alternate}
+@keyframes fsTick{from{transform:translateX(-50%) rotate(-7deg)}to{transform:translateX(-50%) rotate(7deg)}}
+.fs-disc text{font:800 10.5px/1 var(--f-mono);letter-spacing:0;stroke-width:2px}
+.fs-bulb{fill:#ffe9a8}.fs-bulb.b1{fill:#fff}
+.fs-wheel.spinning .fs-bulb{animation:fsBlink .35s steps(1) infinite}.fs-wheel.spinning .fs-bulb.b1{animation-delay:-.175s}
+@keyframes fsBlink{50%{fill:#5a5f66}}
+.fs-slice{transition:opacity .3s}.fs-slice.lose{opacity:.35}
+.fs-hub{position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:var(--card);box-shadow:0 0 0 4px var(--sign);display:grid;place-items:center;overflow:hidden;pointer-events:none}
+.fs-hub .mon{width:86%;height:86%}
+.fs-result.pop{animation:fsPop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes fsPop{from{transform:scale(.9);opacity:0}}
+@media (prefers-reduced-motion:reduce){.fs-wheel.spinning::after,.fs-wheel.spinning .fs-bulb,.fs-result.pop{animation:none}}
+.fs-where{display:grid;gap:4px;font:700 12px/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:#b3261e}
+.fs-where select{margin-top:0;text-transform:none;letter-spacing:0}
 </style>
 </head>
 <body class="booting">
@@ -1400,7 +1417,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v69.0</span>
+    <span>v70.0</span>
   </div>
 </div>
 
@@ -1565,10 +1582,18 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="spinTitle">
     <div class="sheet-row split"><div class="sheet-msg" id="spinTitle">FoodSpin</div><button class="btn ghost" type="button" id="spinClose">Close</button></div>
     <p class="sheet-hint">Somewhere to eat within 2 km of you. Spin, and the wheel decides.</p>
+    <label class="fs-where" id="spinWhereWrap" hidden>Test location (dev only)
+      <select id="spinWhere">
+        <option value="gps">My location</option>
+        <option value="1.2840,103.8515">Raffles Place</option><option value="1.3048,103.8318">Orchard</option><option value="1.3180,103.8930">Paya Lebar</option>
+        <option value="1.3331,103.7425">Jurong East</option><option value="1.3526,103.9447">Tampines</option><option value="1.4370,103.7865">Woodlands</option>
+        <option value="1.3644,103.9915">Changi Airport</option><option value="1.3294,103.8021">Bukit Timah</option>
+        <option value="1.4630,103.7640">Johor Bahru (outside the Singapore file)</option><option value="3.1579,101.7123">Kuala Lumpur (outside the Singapore file)</option>
+      </select></label>
     <div class="fs-wheel" id="spinWheel"></div>
     <div class="fs-result" id="spinResult" hidden aria-live="polite"></div>
     <div class="sheet-row"><button class="btn ghost" type="button" id="spinDeal" disabled>Other places</button><button class="btn" type="button" id="spinGo" disabled>Spin</button></div>
-    <p class="sheet-hint">Places come from OpenStreetMap. To find them, your location goes to its search service; Clock-out doesn't keep it.</p>
+    <p class="sheet-hint">Places from OpenStreetMap (© OpenStreetMap contributors). In Singapore your location stays on your phone; elsewhere it goes to OpenStreetMap's search service to find places.</p>
   </div>
 </div>
 <div class="sheet" id="noteSheet" hidden>
@@ -3077,59 +3102,98 @@ $("bagClose").addEventListener("click",()=>showBag(false));
 $("bagSellAll").addEventListener("click",e=>fishSell((S.me.bag||[]).filter(f=>!f.crop&&!CAVE_HOME.FISH[f.kind].legend).map(f=>f.id),e.currentTarget));
 $("fishfishBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
 
-/* ================= FoodSpin (v69): dinner within 2 km, from OpenStreetMap, picked by a wheel ================= */
-const FS_API=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"], FS_R=2000, FS_SLICES=10, FS_COLS=["#d42e12","#009645","#005ec4","#9e28b5","#f39200","#00a3a3","#e0458b","#7a5cff","#b8900a","#8a5a35"];
-let fsAll=[], fsSet=[], fsTurn=0, fsSpinning=false;
+/* ================= FoodSpin (v69, v70): dinner within 2 km, from OpenStreetMap, picked by a wheel ================= */
+// In Singapore the places come from /food-sg.json (built by scripts/food-data.mjs), so nothing waits on the busy public
+// Overpass servers. Elsewhere it asks Overpass live and keeps the answer on the phone for a day.
+const FS_API=["https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter","https://overpass-api.de/api/interpreter"],
+  FS_R=2000, FS_SLICES=8, FS_COLS=["#d42e12","#009645","#005ec4","#9e28b5","#f39200","#00a3a3","#e0458b","#7a5cff"], FS_TYPE={r:"restaurant",f:"fast_food",c:"food_court"};
+let fsAll=[], fsSet=[], fsTurn=0, fsSpinning=false, fsSG=null;
 // metres between two points (haversine)
 const fsDist=(a,b,c,d)=>{const t=Math.PI/180,h=Math.sin((c-a)*t/2)**2+Math.cos(a*t)*Math.cos(c*t)*Math.sin((d-b)*t/2)**2;return 2*6371e3*Math.asin(Math.sqrt(h));};
 const fsKind=p=>{const c=(p.cuisine.split(/[;,]/)[0]||"").replace(/_/g," ").trim();
   const base=p.amenity==="food_court"?"Food court / hawker":p.amenity==="fast_food"?"Fast food":"Restaurant";return c?`${c[0].toUpperCase()+c.slice(1)} · ${base}`:base;};
 function fsMsg(text){const m=mkEl("div","fs-msg",text);$("spinWheel").replaceChildren(m);$("spinGo").disabled=true;$("spinDeal").disabled=true;}
-async function fsFetch(lat,lon){
-  const q=`[out:json][timeout:20];nwr["amenity"~"^(restaurant|fast_food|food_court)$"]["name"](around:${FS_R},${lat},${lon});out center 400;`;
-  let d=null;
-  for(const u of FS_API){ // the public servers are free and sometimes busy: try the next one
-    try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)});if(r.ok){d=await r.json();break;}}catch(e){}
-  }
-  if(!d) throw new Error("overpass unreachable");
+function fsNear(list,lat,lon){
   const seen=new Set();
-  return (d.elements||[]).map(e=>{const t=e.tags||{}, la=e.lat??(e.center&&e.center.lat), lo=e.lon??(e.center&&e.center.lon);
-      return {name:String(t["name:en"]||t.name||"").slice(0,60),lat:la,lon:lo,amenity:t.amenity,cuisine:String(t.cuisine||""),m:la==null?1e9:Math.round(fsDist(lat,lon,la,lo))};})
+  return list.map(p=>({...p,m:Math.round(fsDist(lat,lon,p.lat,p.lon))}))
     .filter(p=>{const k=p.name.toLowerCase();if(!p.name||p.m>FS_R||seen.has(k)) return false;seen.add(k);return true;});
+}
+async function fsLive(lat,lon){
+  const key=`clockout.fs.${lat.toFixed(3)},${lon.toFixed(3)}`;
+  try{const c=JSON.parse(lsGet(key)||"null");if(c&&Date.now()-c.at<864e5) return c.p;}catch(e){}
+  const q=`[out:json][timeout:20];nwr["amenity"~"^(restaurant|fast_food|food_court)$"]["name"](around:${FS_R},${lat},${lon});out center tags;`;
+  for(const u of FS_API){ // one at a time: asking all of them at once gets every one of them to say "too many requests"
+    const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),20000);
+    try{
+      const r=await fetch(u,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)});
+      if(!r.ok) continue;
+      const d=await r.json();
+      const p=(d.elements||[]).map(e=>{const g=e.tags||{};return {name:String(g["name:en"]||g.name||"").slice(0,60),lat:e.lat??(e.center&&e.center.lat),lon:e.lon??(e.center&&e.center.lon),amenity:g.amenity,cuisine:String(g.cuisine||"")};}).filter(x=>x.name&&x.lat!=null);
+      try{lsSet(key,JSON.stringify({at:Date.now(),p}));}catch(e){}
+      return p;
+    }catch(e){}finally{clearTimeout(t);}
+  }
+  throw new Error("overpass unreachable");
+}
+async function fsPlaces(lat,lon){
+  if(!fsSG) fsSG=fetch("/food-sg.json").then(r=>r.ok?r.json():null).catch(()=>null);
+  const sg=await fsSG;
+  const m=.02; // about 2 km: only use the file when the whole 2 km circle is inside it (near Johor or Batam, ask live)
+  if(sg&&lat>=sg.bbox[0]+m&&lat<=sg.bbox[2]-m&&lon>=sg.bbox[1]+m&&lon<=sg.bbox[3]-m)
+    return fsNear(sg.p.map(([name,la,lo,t,c])=>({name,lat:la,lon:lo,amenity:FS_TYPE[t],cuisine:c||""})),lat,lon);
+  return fsNear(await fsLive(lat,lon),lat,lon);
 }
 function openSpin(){
   $("spinSheet").hidden=false;$("spinResult").hidden=true;
   if(fsAll.length){fsDeal();return;}
-  if(!navigator.geolocation){fsMsg("This phone can't share its location.");return;}
+  const where=$("spinWhere").value;
+  if(where==="gps"&&!navigator.geolocation){fsMsg("This phone can't share its location.");return;}
   fsMsg("Finding where you are…");
-  navigator.geolocation.getCurrentPosition(async pos=>{
+  const locate=(ok,fail,opt)=>{if(where==="gps"){navigator.geolocation.getCurrentPosition(ok,fail,opt);return;}
+    const [la,lo]=where.split(",").map(Number);ok({coords:{latitude:la,longitude:lo}});}; // a test location on the dev site
+  locate(async pos=>{
     fsMsg("Looking for dinner within 2 km…");
-    try{fsAll=await fsFetch(pos.coords.latitude,pos.coords.longitude);}catch(e){fsMsg("Couldn't reach OpenStreetMap. Try again in a moment.");return;}
+    const slow=setTimeout(()=>{if(!fsAll.length) fsMsg("The map service is busy. Still looking…");},6000);
+    try{fsAll=await fsPlaces(pos.coords.latitude,pos.coords.longitude);}catch(e){clearTimeout(slow);fsMsg("The map service isn't answering right now. Try again in a minute.");return;}
+    clearTimeout(slow);
     if(!fsAll.length){fsMsg("No places to eat found within 2 km of you.");return;}
     fsDeal();
   },err=>fsMsg(err.code===1?"Location is off for Clock-out. Allow it in your phone's settings to find food nearby.":"Couldn't get your location. Try again."),
   {enableHighAccuracy:false,timeout:15000,maximumAge:300000});
 }
-// up to ten places at random onto the wheel
+// a name on a slice: up to two lines of about 11 letters, broken between words (longer ones reach the hub)
+function fsLines(name){
+  const words=name.split(/\s+/), lines=[""];
+  for(const w of words){const l=lines[lines.length-1];if(!l||(l+" "+w).length<=11) lines[lines.length-1]=l?l+" "+w:w;else if(lines.length<2) lines.push(w);else{lines[1]+=" "+w;break;}}
+  return lines.map(l=>l.length>12?l.slice(0,11)+"…":l);
+}
+// eight places at random onto the wheel
 function fsDeal(){
   const pool=fsAll.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   fsSet=pool.slice(0,FS_SLICES);fsTurn=0;$("spinResult").hidden=true;
-  const n=fsSet.length, seg=360/n, short=p=>p.name.length>15?p.name.slice(0,14)+"…":p.name, pt=a=>{const r=(a-90)*Math.PI/180;return [(96*Math.cos(r)).toFixed(2),(96*Math.sin(r)).toFixed(2)];};
-  const slices=fsSet.map((p,i)=>{const [x1,y1]=pt(i*seg),[x2,y2]=pt((i+1)*seg),mid=(i+.5)*seg-90;
-    const path=n===1?`<circle r="96" fill="${FS_COLS[0]}"/>`:`<path d="M0 0L${x1} ${y1}A96 96 0 ${seg>180?1:0} 1 ${x2} ${y2}Z" fill="${FS_COLS[i%FS_COLS.length]}"/>`;
-    return path+`<text transform="rotate(${mid})" x="88" y="3" text-anchor="end"></text>`;}).join("");
-  $("spinWheel").innerHTML=`<svg class="fs-disc" id="spinDisc" viewBox="-100 -100 200 200" aria-hidden="true"><circle r="99" fill="var(--ink)"/>${slices}<circle r="13" fill="var(--card)" stroke="var(--ink)" stroke-width="3"/></svg>`;
-  $("spinDisc").querySelectorAll("text").forEach((t,i)=>{t.textContent=short(fsSet[i]);}); // names come from OpenStreetMap: text, never markup
+  const n=fsSet.length, seg=360/n, R=86, pt=(a,r)=>{const t=(a-90)*Math.PI/180;return [(r*Math.cos(t)).toFixed(2),(r*Math.sin(t)).toFixed(2)];};
+  const slices=fsSet.map((p,i)=>{const [x1,y1]=pt(i*seg,R),[x2,y2]=pt((i+1)*seg,R),mid=(i+.5)*seg-90, two=fsLines(p.name).length>1;
+    const path=n===1?`<circle r="${R}" fill="${FS_COLS[0]}"/>`:`<path d="M0 0L${x1} ${y1}A${R} ${R} 0 ${seg>180?1:0} 1 ${x2} ${y2}Z" fill="${FS_COLS[i%FS_COLS.length]}"/>`;
+    return `<g class="fs-slice">${path}<text transform="rotate(${mid})" text-anchor="end"><tspan x="80" y="${two?-2:3.5}"></tspan><tspan x="80" y="9"></tspan></text></g>`;}).join("");
+  const bulbs=Array.from({length:16},(_,i)=>{const [x,y]=pt(i*22.5+11.25,93);return `<circle class="fs-bulb b${i%2}" cx="${x}" cy="${y}" r="2.6"/>`;}).join("");
+  $("spinWheel").innerHTML=`<svg class="fs-disc" id="spinDisc" viewBox="-100 -100 200 200" aria-hidden="true"><circle r="99" fill="var(--sign)"/>${bulbs}${slices}</svg><span class="fs-hub" id="spinHub"></span>`;
+  // names come from OpenStreetMap: set as text, never as markup
+  $("spinDisc").querySelectorAll("text").forEach((t,i)=>{const ls=fsLines(fsSet[i].name),sp=t.querySelectorAll("tspan");sp[0].textContent=ls[0];sp[1].textContent=ls[1]||"";});
+  if(S&&S.me) $("spinHub").appendChild(monEl(S.me.monster,S.me.color,"dance"));
   $("spinWheel").setAttribute("aria-label",`${n} places on the wheel: ${fsSet.map(p=>p.name).join(", ")}`);
   $("spinGo").disabled=false;$("spinDeal").disabled=fsAll.length<=n;
 }
 function fsSpin(){
   if(fsSpinning||!fsSet.length) return;
-  const n=fsSet.length, seg=360/n, i=Math.floor(Math.random()*n), jitter=(Math.random()-.5)*seg*.7;
+  const n=fsSet.length, seg=360/n, i=Math.floor(Math.random()*n), jitter=(Math.random()-.5)*seg*.7, w=$("spinWheel");
   // slice i's middle ends under the pointer at the top
   fsTurn=(Math.ceil(fsTurn/360)+5)*360-((i+.5)*seg+jitter);
-  const disc=$("spinDisc"), done=()=>{fsSpinning=false;$("spinGo").disabled=false;$("spinDeal").disabled=fsAll.length<=n;fsShow(fsSet[i]);};
-  fsSpinning=true;$("spinGo").disabled=true;$("spinDeal").disabled=true;$("spinResult").hidden=true;
+  const disc=$("spinDisc");
+  disc.querySelectorAll(".fs-slice").forEach(g=>g.classList.remove("win","lose"));
+  const done=()=>{fsSpinning=false;w.classList.remove("spinning");$("spinGo").disabled=false;$("spinDeal").disabled=fsAll.length<=n;
+    disc.querySelectorAll(".fs-slice").forEach((g,k)=>g.classList.add(k===i?"win":"lose"));
+    if(navigator.vibrate) navigator.vibrate(40);fsShow(fsSet[i]);};
+  fsSpinning=true;w.classList.add("spinning");$("spinGo").disabled=true;$("spinDeal").disabled=true;$("spinResult").hidden=true;
   disc.style.transform=`rotate(${fsTurn}deg)`;
   let fin=false;const finish=()=>{if(!fin){fin=true;done();}};
   if(matchMedia("(prefers-reduced-motion: reduce)").matches) finish();
@@ -3137,6 +3201,7 @@ function fsSpin(){
 }
 function fsShow(p){
   const box=$("spinResult"), km=p.m>=1000?(p.m/1000).toFixed(1)+" km":p.m+" m", walk=Math.max(1,Math.round(p.m/80));
+  box.classList.remove("pop");void box.offsetWidth;box.classList.add("pop");
   box.replaceChildren(mkEl("small","","Tonight it's"),mkEl("b","",p.name),mkEl("span","",fsKind(p)),mkEl("span","",`${km} away · about ${walk} min on foot`));
   const acts=mkEl("div","fs-acts"), go=mkEl("a","btn","Directions");
   go.href=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`;go.target="_blank";go.rel="noopener";
@@ -3145,6 +3210,9 @@ function fsShow(p){
   acts.append(go,share);box.appendChild(acts);box.hidden=false;
 }
 $("spinBtn").addEventListener("click",openSpin);
+// testers on the dev site (and local runs) can search from other places
+$("spinWhereWrap").hidden=!(document.documentElement.classList.contains("dev")||/^(localhost|127\.0\.0\.1)$/.test(location.hostname));
+$("spinWhere").addEventListener("change",()=>{fsAll=[];fsSet=[];openSpin();});
 $("spinClose").addEventListener("click",()=>{$("spinSheet").hidden=true;});
 $("spinGo").addEventListener("click",fsSpin);
 $("spinDeal").addEventListener("click",fsDeal);
@@ -4988,12 +5056,13 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v69-foodspin",v:"v69.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+  {id:"v69-foodspin",v:"v69.0–70.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap FoodSpin (next to Village, Bag and Shop, or on your own card from an hour before clock-out).",
-    "It finds restaurants, hawker centres and fast food within 2 km of you and puts ten of them on a wheel. Spin, and that's dinner.",
+    "It finds restaurants, hawker centres and fast food within 2 km of you and puts eight of them on a lit-up wheel with your monster in the middle. Spin, and that's dinner.",
+    "In Singapore the list is built into the app, so it's there at once and your location stays on your phone.",
     "Directions opens Google Maps with the walking route. Share in chat puts the pick in the cave chat so friends can join.",
     "Don't like the ten? Other places deals a fresh set."],panels:[
-    {art:"dinner",title:"What's for dinner?",text:"Ten places near you on a wheel. Spin it and go."},
+    {art:"dinner",title:"What's for dinner?",text:"Eight places near you on a wheel. Spin it and go."},
     {art:"chat",title:"Bring friends",text:"Share the pick in chat: dinner tonight, who's in?"}]},
   {id:"v68-rooms",v:"v68.0",at:"2026-11-18T15:00",title:"A home you can walk around",changes:[
     "Every room is furnished now: a bed and a bedside lamp, a desk with a screen, a big window with curtains, a kitchen counter with a sink, and a fence and mailbox in the yard.",
