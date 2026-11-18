@@ -1,4 +1,4 @@
-# Clock-out Countdown · v65.0
+# Clock-out Countdown · v66.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -224,6 +224,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v64.** No change to the app: a redeploy so a new `ADMIN_KEY` set in Netlify takes effect (environment variables are read at deploy time). Netlify can't show a secret variable's value once saved, so a forgotten admin key is replaced, not recovered.
 
 **v65.** After a few catches the app could reload and show a page from v48 or earlier. Two causes. The service worker kept one offline copy of the page for every version (`shell-v1`) and wrote it without waiting, so an iPhone, which stops service workers quickly, often never finished the write; a reload that fell back to the copy (network slow for 4 seconds or failing) showed whatever old page was last written in full. Now each version saves its own complete set (page, styles, monsters, home and village art) into `shell-<version>` while it installs, waits for every later write (`waitUntil`), and deletes older sets when it takes over, so the copy is never older than the app. The reload itself is most likely the iPhone dropping a page that uses too much graphics memory: while the full-screen pond is open, the page behind it is now hidden with its animations paused, and the splash drops, plume and leaping fish are removed once their animation ends (before, about 30 stayed on the page after every catch).
+
+**v66.** Every village station has a small picture card beside it (the house for Home, the lake, each building) with a tag: OPEN in green, SOON once paid for, or the percentage paid. A place being paid for is a blueprint that develops into colour from the bottom up as coins come in (`devArt`: the same building drawn twice, the colour copy clipped to the paid share, with a thin white developing line), on the map and as the big picture on its card; this replaces the old building-site art there. Open stations are filled green, all stations use the interchange ring, and two lines join the map: the Red Line arcs over the top from the Harbor to the Weather station, and the White Line (white with a dark casing) runs round the right from the Weather station to Holidays, so every end station is an interchange. Track to places not open yet stays dotted. v55 to v65 are live, so v66 has its own News entry.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

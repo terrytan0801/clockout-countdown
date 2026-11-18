@@ -1071,29 +1071,11 @@ body.calm .lane .bar i::after{animation:none!important}
 
 @media (prefers-reduced-motion:reduce){.roomframe>.cscene{transition:none}}
 /* v58 a building nobody has paid into yet shows as its blueprint: white linework on a blue grid */
-.vcard .vhero.plan{background-color:#1d5fa6;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:10px 10px}
-.vcard .vhero.plan svg{filter:grayscale(1) brightness(2) contrast(.8);mix-blend-mode:screen;opacity:.92}
-.vcard .vhero.plan{position:relative;margin:0;padding:12px 0;border-radius:6px}
-.vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 /* v59 the village as a metro network: coloured lines, white stations, interchanges ringed in black, dashed track to places not built yet */
 .vnet{position:relative;background:var(--card);border-radius:8px;padding:12px 12px 14px;box-shadow:0 1px 0 var(--line)}
 .vnet-name{margin:0 0 4px;font:700 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 #villLots{position:relative;max-width:440px;margin:0 auto}
 .vnet-map{display:block;width:100%;height:auto}
-.vn-dot{fill:var(--card);stroke:var(--lc);stroke-width:4}
-.vn-dot.xchg{stroke:var(--ink);stroke-width:3.5}
-.vn-dot.off{stroke:var(--walked)}
-.vn-st{position:absolute;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink);transform:translate(-50%,-50%);cursor:pointer}
-.vn-st.home{width:40px;height:40px}
-.vn-st .lbl{position:absolute;display:grid;gap:2px;white-space:nowrap;padding:3px 6px;border-radius:3px;text-align:left;
-  text-shadow:0 0 2px var(--card),0 0 2px var(--card),0 0 3px var(--card),0 0 4px var(--card),0 0 6px var(--card)}
-.vn-st.r .lbl{left:100%;top:50%;transform:translateY(-50%)}
-.vn-st.t .lbl{left:50%;bottom:100%;transform:translateX(-50%);text-align:center}
-.vn-st .lbl b{font:800 15px/1 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
-.vn-st.home .lbl b{font-size:19px}
-.vn-st .lbl small{font:600 11.5px/1.1 var(--f-mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.vn-st:hover .lbl,.vn-st.sel .lbl{background:var(--sign);color:var(--sign-ink);text-shadow:none}
-.vn-st:hover .lbl small,.vn-st.sel .lbl small{color:var(--sign-muted)}
 .vlegend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0 0;padding:0;list-style:none;font:600 12px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .vlegend li{display:flex;align-items:center;gap:6px}
 .vlegend i{width:22px;height:7px;border-radius:4px;background:var(--lc)}
@@ -1117,6 +1099,41 @@ body[data-view]:not([data-view="board"]) header h1{font-size:20px}
 body[data-view]:not([data-view="board"]) .mytime{font-size:24px;margin:0;gap:5px}
 body[data-view]:not([data-view="board"]) .mytime small{font-size:11px}
 body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:not([data-view="board"]) header .actions .btn{min-height:36px}
+/* v62 every station is an interchange-style ring (solid green fill once open) with a small picture beside it.
+   A place being paid for is a blueprint that develops into colour from the bottom as coins come in (--p). */
+.vn-dot{fill:var(--card);stroke:var(--ink);stroke-width:3.5}
+.vn-dot.off{stroke:var(--walked)}
+.vn-dot.on{fill:#00a650;stroke:var(--ink)}
+.vn-st{position:absolute;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink);transform:translate(-50%,-50%);cursor:pointer}
+.vn-st.home{width:40px;height:40px}
+.vn-st .lbl{position:absolute;display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap;padding:3px;border-radius:5px}
+.vn-st.r .lbl{left:100%;top:50%;transform:translateY(-50%)}
+.vn-st.l .lbl{right:100%;top:50%;transform:translateY(-50%)}
+.vn-st.t .lbl{left:50%;bottom:100%;transform:translateX(-50%)}
+.vn-st .th{position:relative;flex:none;width:44px;height:34px;border-radius:4px;overflow:hidden;background:var(--track);box-shadow:0 0 0 2px var(--card),0 0 0 3.5px var(--line)}
+.vn-st.open .th{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px #00a650}
+.vn-st .th>svg,.vn-st .th .dev{display:block;width:100%;height:100%}
+.vn-st .th em{position:absolute;right:0;bottom:0;padding:1px 3px;border-top-left-radius:3px;font:700 9.5px/1.1 var(--f-mono);font-style:normal;letter-spacing:.04em;text-transform:uppercase;background:#e0a800;color:#2a1f00}
+.vn-st.open .th em{background:#00a650;color:#fff}
+.vn-st .lbl b{font:800 13px/1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;
+  text-shadow:0 0 2px var(--card),0 0 2px var(--card),0 0 3px var(--card),0 0 5px var(--card)}
+.vn-st.home .lbl b{font-size:16px}
+.vn-st:hover .lbl,.vn-st.sel .lbl{background:var(--sign)}
+.vn-st:hover .lbl b,.vn-st.sel .lbl b{color:var(--sign-ink);text-shadow:none}
+.vlegend li.white i{background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.dev{position:relative;display:block;background-color:#1d5fa6;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:8px 8px}
+.dev.big{background-size:12px 12px}
+.dev>span{position:absolute;inset:0}
+.dev svg{display:block;width:100%;height:100%}
+.dev-plan svg{filter:grayscale(1) brightness(2) contrast(.8);mix-blend-mode:screen;opacity:.92}
+.dev-col{clip-path:inset(calc(100% - var(--p)) 0 0 0);transition:clip-path .8s cubic-bezier(.25,1,.5,1)}
+.dev-col::after{content:"";position:absolute;left:0;right:0;top:calc(100% - var(--p));height:1.5px;background:#fff;opacity:.8}
+.dev.done .dev-col::after{display:none}
+.vcard .vhero.plan{position:relative;margin:0;padding:0;border-radius:6px;overflow:hidden;aspect-ratio:6/5;max-height:220px}
+.vcard .vhero.plan .dev{width:100%;height:100%}
+.vcard .vhero.plan .dev svg{width:100%;max-width:none;height:100%;padding:6% 0}
+.vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
+@media (prefers-reduced-motion:reduce){.dev-col{transition:none}}
 </style>
 </head>
 <body class="booting">
@@ -1259,7 +1276,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     </div>
     <div class="village" id="villView" hidden>
       <div class="vnet" id="villScene"><p class="vnet-name">Village network</p><div id="villLots"></div>
-        <ul class="vlegend"><li style="--lc:#005ec4"><i></i>Water Line</li><li style="--lc:#009645"><i></i>Garden Line</li><li style="--lc:#9e28b5"><i></i>Fun Line</li><li style="--lc:#f39200"><i></i>Circle Line</li></ul></div>
+        <ul class="vlegend"><li style="--lc:#005ec4"><i></i>Water Line</li><li style="--lc:#009645"><i></i>Garden Line</li><li style="--lc:#9e28b5"><i></i>Fun Line</li><li style="--lc:#f39200"><i></i>Circle Line</li><li style="--lc:#d42e12"><i></i>Red Line</li><li class="white" style="--lc:#fff"><i></i>White Line</li></ul></div>
       <div class="vback" id="villBack" hidden></div>
       <div class="vcard" id="villCard" role="dialog" aria-modal="true" hidden></div>
     </div>
@@ -1356,7 +1373,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v65.0</span>
+    <span>v66.0</span>
   </div>
 </div>
 
@@ -3017,10 +3034,11 @@ const BUILD_INFO={
 };
 // v59: the village is a small metro network. Three lines run out from Home (the big interchange); the Circle Line
 // loops round it through the Lake, the Farm and the Cinema, which makes those interchanges too.
-const VNET={w:340,h:380,y0:52,ring:[170,220,100],
-  at:{home:[170,220,"r"],lake:[99,149,"r"],harbor:[39,89,"r"],farm:[241,149,"r"],weather:[287,103,"t"],cinema:[170,320,"r"],planner:[170,405,"r"]},
-  lines:[["#005ec4",["home","lake","harbor"]],["#009645",["home","farm","weather"]],["#9e28b5",["home","cinema","planner"]]]};
-const VNET_XCHG={home:1,lake:1,farm:1,cinema:1}, VNET_COL={harbor:"#005ec4",weather:"#009645",planner:"#9e28b5"};
+const VNET={w:340,h:440,y0:0,ring:[170,230,92],
+  at:{home:[170,230,"r"],lake:[105,165,"r"],harbor:[46,106,"t"],farm:[235,165,"r"],weather:[294,106,"t"],cinema:[170,322,"r"],planner:[170,400,"l"]},
+  lines:[["#005ec4",["home","lake","harbor"]],["#009645",["home","farm","weather"]],["#9e28b5",["home","cinema","planner"]]],
+  curves:[["#d42e12","harbor","weather","M46 106 Q170 4 294 106"],["#fff","weather","planner","M294 106 C356 210 330 372 170 400"]]};
+const VNET_XCHG={home:1,lake:1,farm:1,cinema:1,harbor:1,weather:1,planner:1};
 const STATIONS=["home","lake","weather","farm","harbor","cinema","planner"];
 const ST_NAME={home:"Home",lake:"The Lake",weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"};
 let village=null, villSel=null, farm=null, farmSel=null;
@@ -3049,25 +3067,40 @@ function selectLot(k){
   if(villSel==="farm"&&isBuilt("farm")) loadFarm();if(villSel==="planner"&&isBuilt("planner")) loadPlanner();
   renderVillage();
 }
+// v62: a place being paid for is a blueprint that develops into colour from the bottom up as coins come in
+function devArt(k,big){
+  const st=k==="home"||k==="lake"?"open":lotState(k), v=village&&village[k];
+  if(k==="home") return CAVE_HOME.scene(sceneNight());
+  if(k==="lake") return CAVE_HOME.pond(lakePhase());
+  const svg=`<svg viewBox="0 0 120 100" aria-hidden="true">${VILLAGE.BUILD[k].svg}</svg>`;
+  if(st==="open") return svg;
+  const p=st==="building"?100:v?Math.min(100,Math.floor(v.raised/v.price*100)):0;
+  return `<span class="dev${big?" big":""}${st==="building"?" done":""}" style="--p:${p}%"><span class="dev-plan">${svg}</span><span class="dev-col">${svg}</span></span>`;
+}
 function renderVillage(){
   if($("villView").hidden) return;
-  const box=$("villLots"), P=k=>VNET.at[k], open=k=>k==="home"||k==="lake"||lotState(k)==="open";
+  const box=$("villLots"), P=k=>VNET.at[k], stOf=k=>k==="home"||k==="lake"?"open":lotState(k), open=k=>stOf(k)==="open";
   const pctOf=k=>{const v=village&&village[k];return v?Math.floor(v.raised/v.price*100):0;};
-  const note=k=>k==="home"?"":k==="lake"?(ffHere()||isBuilt("harbor")?"Fishfish buying":"Go fishing"):lotState(k)==="open"?"":lotState(k)==="building"?"Opens soon":pctOf(k)+"% paid";
-  const sig=STATIONS.map(k=>(open(k)?1:0)+note(k)).join("|")+"|"+villSel;
+  const tag=k=>k==="home"?"":open(k)?"Open":stOf(k)==="building"?"Soon":pctOf(k)+"%";
+  const note=k=>k==="home"?"back to the cave":k==="lake"?(ffHere()||isBuilt("harbor")?"open, Mr. Fishfish is buying":"open"):open(k)?"open":stOf(k)==="building"?"opens soon":pctOf(k)+"% paid";
+  const sig=STATIONS.map(k=>stOf(k)+pctOf(k)).join("|")+"|"+villSel+"|"+lakePhase();
   if(box.dataset.sig!==sig){
     box.dataset.sig=sig;
     const seg=(p,q,c)=>`<line x1="${P(p)[0]}" y1="${P(p)[1]}" x2="${P(q)[0]}" y2="${P(q)[1]}" stroke="${c}"${open(q)?"":' stroke-dasharray="1 13" opacity=".6"'}/>`;
-    let svg=`<svg class="vnet-map" viewBox="0 ${VNET.y0} ${VNET.w} ${VNET.h}" aria-hidden="true"><g fill="none" stroke-width="9" stroke-linecap="round"><circle cx="${VNET.ring[0]}" cy="${VNET.ring[1]}" r="${VNET.ring[2]}" stroke="#f39200"/>`;
+    let svg=`<svg class="vnet-map" viewBox="0 ${VNET.y0} ${VNET.w} ${VNET.h}" aria-hidden="true"><g fill="none" stroke-width="9" stroke-linecap="round">`;
+    VNET.curves.forEach(([c,p,q,d])=>{const dash=open(p)&&open(q)?"":' stroke-dasharray="1 13"';
+      svg+=c==="#fff"?`<path d="${d}" stroke="var(--ink)" stroke-width="12"${dash}/><path d="${d}" stroke="#fff" stroke-width="6"${dash}/>`:`<path d="${d}" stroke="${c}"${dash}${dash?' opacity=".6"':""}/>`;});
+    svg+=`<circle cx="${VNET.ring[0]}" cy="${VNET.ring[1]}" r="${VNET.ring[2]}" stroke="#f39200"/>`;
     VNET.lines.forEach(([c,ks])=>{for(let i=1;i<ks.length;i++) svg+=seg(ks[i-1],ks[i],c);});
     svg+="</g>";
-    STATIONS.forEach(k=>{const [x,y]=P(k);svg+=`<circle cx="${x}" cy="${y}" r="${k==="home"?14:VNET_XCHG[k]?10:7.5}" class="vn-dot${VNET_XCHG[k]?" xchg":""}${open(k)?"":" off"}" style="--lc:${VNET_COL[k]||"var(--ink)"}"/>`;});
+    STATIONS.forEach(k=>{const [x,y]=P(k);svg+=`<circle cx="${x}" cy="${y}" r="${k==="home"?14:10}" class="vn-dot xchg${open(k)?" on":" off"}"/>`;});
     box.innerHTML=svg+"</svg>";
     STATIONS.forEach(k=>{
-      const [x,y,side]=P(k), bt=mkEl("button",`vn-st ${side}${k==="home"?" home":""}${villSel===k?" sel":""}`), lb=mkEl("span","lbl"), n=note(k);
+      const [x,y,side]=P(k), st=stOf(k), bt=mkEl("button",`vn-st ${side} ${st}${k==="home"?" home":""}${villSel===k?" sel":""}`), lb=mkEl("span","lbl"), th=mkEl("span","th"), t=tag(k);
       bt.type="button";bt.style.left=x/VNET.w*100+"%";bt.style.top=(y-VNET.y0)/VNET.h*100+"%";
-      bt.setAttribute("aria-label",ST_NAME[k]+(n?": "+n:k==="home"?": back to the cave":""));
-      lb.append(mkEl("b","",ST_NAME[k]));if(n) lb.append(mkEl("small","",n));bt.appendChild(lb);
+      bt.setAttribute("aria-label",`${ST_NAME[k]}: ${note(k)}`);
+      th.innerHTML=devArt(k);if(t) th.appendChild(mkEl("em","",t));
+      lb.append(th,mkEl("b","",ST_NAME[k]));bt.appendChild(lb);
       bt.addEventListener("click",()=>k==="home"?showVillage(false):selectLot(k));box.appendChild(bt);
     });
   }
@@ -3084,7 +3117,7 @@ function renderVillCard(){
   const top=mkEl("div","vtop");top.appendChild(mkEl("h3","",B.name));
   const x=mkEl("button","","✕");x.type="button";x.setAttribute("aria-label","Close");x.addEventListener("click",closeVillCard);top.appendChild(x);
   card.appendChild(top);
-  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div",k==="lake"?"vhero lake":st==="fund"?"vhero plan":"vhero");hero.innerHTML=k==="lake"?CAVE_HOME.pond(lakePhase()):`<svg viewBox="0 0 120 100" aria-hidden="true">${lotArt(k)}</svg>`;card.appendChild(hero);}
+  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div",k==="lake"?"vhero lake":st==="open"?"vhero":"vhero plan");hero.innerHTML=k==="lake"?CAVE_HOME.pond(lakePhase()):devArt(k,true);card.appendChild(hero);}
   if(st!=="open"||(k!=="farm"&&k!=="planner")) card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
   if(st==="fund"||st==="site"){
     if(!b){card.appendChild(mkEl("p","","Loading…"));return;}
@@ -4829,6 +4862,13 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v66-map",v:"v66.0",at:"2026-11-18T12:00",title:"Every station has its picture, and blueprints come to life",changes:[
+    "Each place on the village map has a little picture beside it, so you can see what it is at a glance.",
+    "Places still being paid for are blueprints. Every coin the cave chips in fills the picture with colour from the bottom up, until the whole building is there.",
+    "Open places get a solid green station and an OPEN tag.",
+    "Two new lines: the Red Line over the top from the Harbor to the Weather station, and the White Line round the side to Holidays."],panels:[
+    {art:"site",title:"Watch it develop",text:"Chip in and the blueprint colours in from the bottom. At 100% the whole building is there."},
+    {art:"smooth",title:"More lines",text:"The Red Line and the White Line join the map, so every end of the line is an interchange."}]},
   {id:"v55-strip",v:"v55.0–61.0",at:"2026-11-17T18:00",title:"A new look: your cave as a train map",changes:[
     "Your own time left now sits big on the dark sign at the top, so one glance tells you how long to go. On Chat, Days and Home the sign folds into one slim strip to leave room.",
     "Each friend is a train line in their monster's colour. Stations mark start, lunch and clock-out, and the lit dot is where they are now.",
