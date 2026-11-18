@@ -72,7 +72,7 @@ ${night ? `<circle cx="114" cy="182" r="6" fill="#fff6c8"/><circle cx="111" cy="
 <rect x="200" y="252" width="70" height="38" fill="#7aa6c8"/><rect x="198" y="248" width="74" height="5" rx="1" fill="#8a5a35"/>
 <path d="M223 256V286M247 256V286" stroke="#5c88aa" stroke-width="1.5"/><circle cx="219" cy="270" r="1.4" fill="#fff"/><circle cx="227" cy="270" r="1.4" fill="#fff"/><circle cx="243" cy="270" r="1.4" fill="#fff"/><circle cx="251" cy="270" r="1.4" fill="#fff"/>
 <rect x="214" y="246" width="22" height="3" rx="1" fill="#b9c2cc"/><path d="M225 246 V238 Q225 234 230 234" stroke="#9aa3ad" stroke-width="2" fill="none"/>
-<rect x="204" y="226" width="58" height="3" rx="1" fill="#8a5a35"/>
+<rect x="204" y="226" width="58" height="3" rx="1" fill="#8a5a35"/><rect x="268" y="214" width="32" height="3" rx="1" fill="#8a5a35"/><path d="M272 217 l4 5 M296 217 l-4 5" stroke="#7a5233" stroke-width="1.5"/>
 <rect x="208" y="215" width="8" height="11" rx="2" fill="#f2c94c" opacity=".9"/><rect x="220" y="217" width="8" height="9" rx="2" fill="#e8583e" opacity=".9"/><rect x="232" y="214" width="8" height="12" rx="2" fill="#7cc46a" opacity=".9"/><rect x="246" y="218" width="10" height="8" rx="3" fill="#fbf6ee"/>
 </g>
 <!-- yard: a picket fence, stepping stones and a mailbox -->

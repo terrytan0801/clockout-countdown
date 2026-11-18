@@ -1,11 +1,11 @@
-# Clock-out Countdown · v76.0
+# Clock-out Countdown · v77.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
 - **Caves.** Start a cave, then send its invite link or 6-letter code to friends. You live in one cave at a time. The owner can rename the cave, make a new code (the old link stops working) and remove people. If the owner leaves, the next member takes over. An empty cave is deleted.
 - **Countdown.** Each person sees **Time − XX mins** to their own clock-out (Singapore / Malaysia time). **+ OT** when staying late, then **Clock out** when leaving.
 - **Home.** The cave's home is shown one room at a time (Bedroom, Study, Living room, Kitchen, Yard, then Whole home): arrows on the picture or a sideways swipe move between rooms, a name plate says how many are there, and dots underneath show which rooms have someone in. It opens on the busiest room.
-- **FoodSpin.** A wheel that picks dinner, opened from the little wheel on the kitchen counter at home: places to eat within 2 km of you, narrowed by budget and kind, (from OpenStreetMap; in Singapore, Johor Bahru and the Klang Valley from lists built into the app), eight at a time, a tap to open the pick in Google Maps, and a button to share it in the cave chat.
+- **FoodSpin.** A wheel that picks dinner, opened from the little wheel above the stove in the kitchen at home: places to eat within 2 km of you, narrowed by budget and kind, (from OpenStreetMap; in Singapore, Johor Bahru and the Klang Valley from lists built into the app), eight at a time, a tap to open the pick in Google Maps, and a button to share it in the cave chat.
 - **Monsters.** Ten monsters (Jelly, Cyclo, Noodle, Spike, Bun, Tako, Mush, Chomp, Fluff, Dino). You get one when you join and keep it. It types at a laptop while you work, wilts on overtime and dances when you're off.
 - **Colours.** Pick your colour from 12 when you join, and change it any time in your account.
 - **⚡ Zap.** Buzz a cave-mate's phone with a push notification, once every 10 minutes per person. Each person decides with **Let friends buzz my phone** whether zaps vibrate or arrive quietly.
@@ -247,6 +247,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v75.** FoodSpin's live search (outside Singapore, Johor Bahru and the Klang Valley) asks Photon first, komoot's free OpenStreetMap search (`photon.komoot.io/reverse` with `osm_tag` filters for restaurants, fast food, food courts, cafés and bakeries; it allows calls from any site). It answers in about a second but returns only the nearest 50 per call, so FoodSpin asks from five spots at once (here and 1.2 km north, south, east and west) and keeps what's within 2 km: in central Penang about 200 places. Photon gives no cuisine, so kinds there come from names. Overpass stays as the fallback if Photon doesn't answer within 10 s. Photon's terms ask for fair use (heavy use gets throttled); results are kept on the phone for a day per 100 m spot.
 
 **v76.** FoodSpin's choices move behind one Filter button. The sheet shows the button ("Filter · 2" when two choices are set, filled in) and how many nearby places match; tapping it swaps the wheel for a panel with the budget row, the kind chips and, on the dev site, the test location, then Show places deals the wheel again and Clear all resets the choices. While the panel is open, each tap only updates the count. FoodSpin always opens on the wheel.
+
+**v77.** FoodSpin fixes. The wheel spun 5 turns in 4.2 s with a sharp start, about 40 degrees a frame at first against 45-degree slices, so it seemed to jump or run backwards; it now turns 3 times over 5 s with a gentler curve (at most about 13 degrees a frame), and the pointer ticks more softly. The test-location picker is gone (FoodSpin always uses where you are); the Filter panel gains How far? (500 m, 1 km, 2 km), counted in the Filter badge and remembered with the other choices, and the count line says "N places within 1 km". The little wheel moved from the kitchen counter, where it covered the name tags of monsters cooking there, to a small new shelf above the stove.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
