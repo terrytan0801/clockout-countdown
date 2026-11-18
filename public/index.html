@@ -1147,7 +1147,19 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .rm-prev,.rm-next{position:absolute;top:50%;z-index:60;width:40px;height:52px;margin-top:-26px;border:0;padding:0;background:rgba(37,40,45,.55);color:#fff;font:700 30px/1 var(--f-display);cursor:pointer}
 .rm-prev{left:0;border-radius:0 6px 6px 0}.rm-next{right:0;border-radius:6px 0 0 6px}
 .rm-prev:hover,.rm-next:hover{background:rgba(37,40,45,.8)}
-.roomframe{max-height:none}
+.roomframe{max-height:none;isolation:isolate} /* its plate and arrows stay under sheets */
+/* v69 FoodSpin: a wheel of places to eat nearby, a pointer at the top, the pick underneath */
+.fs-wheel{position:relative;width:min(300px,78vw);aspect-ratio:1;margin:8px auto 2px}
+.fs-wheel::after{content:"";position:absolute;left:50%;top:-8px;transform:translateX(-50%);border:13px solid transparent;border-top:24px solid var(--ink);border-bottom:0;filter:drop-shadow(0 2px 0 var(--card))}
+.fs-disc{display:block;width:100%;height:100%;transition:transform 4.2s cubic-bezier(.12,.62,.08,1)}
+.fs-disc text{fill:#fff;font:700 8.5px/1 var(--f-mono);letter-spacing:.02em;paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:1.6px}
+.fs-msg{position:absolute;inset:0;display:grid;place-items:center;padding:28px;border-radius:50%;background:var(--track);color:var(--muted);text-align:center;font-size:14px;line-height:1.4}
+.fs-result{display:grid;gap:4px;padding:12px;border:2px solid var(--ink);border-radius:6px}
+.fs-result small{font:700 11px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.fs-result b{font:800 24px/1.05 var(--f-display);text-transform:uppercase;overflow-wrap:anywhere}
+.fs-result span{color:var(--muted);font-size:14px}
+.fs-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+@media (prefers-reduced-motion:reduce){.fs-disc{transition:none}}
 </style>
 </head>
 <body class="booting">
@@ -1261,6 +1273,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
         <button class="btn ghost" id="villBtn" type="button" aria-pressed="false">Village</button>
         <button class="btn ghost" id="bagBtn" type="button" aria-pressed="false">Bag<span id="bagCount"></span></button>
         <button class="btn ghost" id="decoBtn" type="button" aria-pressed="false">Shop</button>
+        <button class="btn ghost" id="spinBtn" type="button">FoodSpin</button>
       </div>
     </div>
     <div class="bagpanel" id="bagPanel" hidden>
@@ -1387,7 +1400,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v68.0</span>
+    <span>v69.0</span>
   </div>
 </div>
 
@@ -1548,6 +1561,16 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 </div>
 
 <!-- Tako: stick a note -->
+<div class="sheet" id="spinSheet" hidden>
+  <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="spinTitle">
+    <div class="sheet-row split"><div class="sheet-msg" id="spinTitle">FoodSpin</div><button class="btn ghost" type="button" id="spinClose">Close</button></div>
+    <p class="sheet-hint">Somewhere to eat within 2 km of you. Spin, and the wheel decides.</p>
+    <div class="fs-wheel" id="spinWheel"></div>
+    <div class="fs-result" id="spinResult" hidden aria-live="polite"></div>
+    <div class="sheet-row"><button class="btn ghost" type="button" id="spinDeal" disabled>Other places</button><button class="btn" type="button" id="spinGo" disabled>Spin</button></div>
+    <p class="sheet-hint">Places come from OpenStreetMap. To find them, your location goes to its search service; Clock-out doesn't keep it.</p>
+  </div>
+</div>
 <div class="sheet" id="noteSheet" hidden>
   <div class="sheet-card narrow" role="dialog" aria-modal="true" aria-labelledby="noteTitle">
     <div class="sheet-msg" id="noteTitle">Stick a note</div>
@@ -2018,6 +2041,8 @@ function buildLanes(){
       const y=document.createElement("span");y.className="you";y.textContent="You";el.querySelector(".who").appendChild(y);
       const ot=document.createElement("button");ot.type="button";ot.className="lbtn";
       ot.addEventListener("click",()=>onOT(el));acts.appendChild(ot);p.otBtn=ot;
+      const fsb=document.createElement("button");fsb.type="button";fsb.className="lbtn";fsb.textContent="FoodSpin";fsb.hidden=true;
+      fsb.addEventListener("click",openSpin);acts.appendChild(fsb);p.spinBtn=fsb;
       if(S.me.power==="dino"&&S.me.level>=1){const rb=document.createElement("button");rb.type="button";rb.className="lbtn";rb.textContent="Roar";
         rb.title="Tell the whole cave you're out";rb.addEventListener("click",onRoar);acts.appendChild(rb);p.roarBtn=rb;}
     }else{
@@ -2095,6 +2120,7 @@ function tick(){
       p.otBtn.hidden=state==="weekend"||state==="off";
       if(state!=="weekend"&&state!=="off"){p.otBtn.textContent=labels[state];p.otBtn.classList.toggle("solid",state==="ot");}
     }
+    if(p.spinBtn) p.spinBtn.hidden=!(isDone||(state.startsWith("before")&&left<=3600)); // dinner is the question from an hour before clock-out
     if(p.zapBtn){
       const z=p.zapBtn, ts=S.cave.zaps[p.id], wait=ts?S.cooldownMs-(clockNow()-ts):0;
       const reachable=S.cave.reachable.includes(p.id);
@@ -3051,6 +3077,78 @@ $("bagClose").addEventListener("click",()=>showBag(false));
 $("bagSellAll").addEventListener("click",e=>fishSell((S.me.bag||[]).filter(f=>!f.crop&&!CAVE_HOME.FISH[f.kind].legend).map(f=>f.id),e.currentTarget));
 $("fishfishBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
 
+/* ================= FoodSpin (v69): dinner within 2 km, from OpenStreetMap, picked by a wheel ================= */
+const FS_API=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"], FS_R=2000, FS_SLICES=10, FS_COLS=["#d42e12","#009645","#005ec4","#9e28b5","#f39200","#00a3a3","#e0458b","#7a5cff","#b8900a","#8a5a35"];
+let fsAll=[], fsSet=[], fsTurn=0, fsSpinning=false;
+// metres between two points (haversine)
+const fsDist=(a,b,c,d)=>{const t=Math.PI/180,h=Math.sin((c-a)*t/2)**2+Math.cos(a*t)*Math.cos(c*t)*Math.sin((d-b)*t/2)**2;return 2*6371e3*Math.asin(Math.sqrt(h));};
+const fsKind=p=>{const c=(p.cuisine.split(/[;,]/)[0]||"").replace(/_/g," ").trim();
+  const base=p.amenity==="food_court"?"Food court / hawker":p.amenity==="fast_food"?"Fast food":"Restaurant";return c?`${c[0].toUpperCase()+c.slice(1)} · ${base}`:base;};
+function fsMsg(text){const m=mkEl("div","fs-msg",text);$("spinWheel").replaceChildren(m);$("spinGo").disabled=true;$("spinDeal").disabled=true;}
+async function fsFetch(lat,lon){
+  const q=`[out:json][timeout:20];nwr["amenity"~"^(restaurant|fast_food|food_court)$"]["name"](around:${FS_R},${lat},${lon});out center 400;`;
+  let d=null;
+  for(const u of FS_API){ // the public servers are free and sometimes busy: try the next one
+    try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)});if(r.ok){d=await r.json();break;}}catch(e){}
+  }
+  if(!d) throw new Error("overpass unreachable");
+  const seen=new Set();
+  return (d.elements||[]).map(e=>{const t=e.tags||{}, la=e.lat??(e.center&&e.center.lat), lo=e.lon??(e.center&&e.center.lon);
+      return {name:String(t["name:en"]||t.name||"").slice(0,60),lat:la,lon:lo,amenity:t.amenity,cuisine:String(t.cuisine||""),m:la==null?1e9:Math.round(fsDist(lat,lon,la,lo))};})
+    .filter(p=>{const k=p.name.toLowerCase();if(!p.name||p.m>FS_R||seen.has(k)) return false;seen.add(k);return true;});
+}
+function openSpin(){
+  $("spinSheet").hidden=false;$("spinResult").hidden=true;
+  if(fsAll.length){fsDeal();return;}
+  if(!navigator.geolocation){fsMsg("This phone can't share its location.");return;}
+  fsMsg("Finding where you are…");
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    fsMsg("Looking for dinner within 2 km…");
+    try{fsAll=await fsFetch(pos.coords.latitude,pos.coords.longitude);}catch(e){fsMsg("Couldn't reach OpenStreetMap. Try again in a moment.");return;}
+    if(!fsAll.length){fsMsg("No places to eat found within 2 km of you.");return;}
+    fsDeal();
+  },err=>fsMsg(err.code===1?"Location is off for Clock-out. Allow it in your phone's settings to find food nearby.":"Couldn't get your location. Try again."),
+  {enableHighAccuracy:false,timeout:15000,maximumAge:300000});
+}
+// up to ten places at random onto the wheel
+function fsDeal(){
+  const pool=fsAll.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  fsSet=pool.slice(0,FS_SLICES);fsTurn=0;$("spinResult").hidden=true;
+  const n=fsSet.length, seg=360/n, short=p=>p.name.length>15?p.name.slice(0,14)+"…":p.name, pt=a=>{const r=(a-90)*Math.PI/180;return [(96*Math.cos(r)).toFixed(2),(96*Math.sin(r)).toFixed(2)];};
+  const slices=fsSet.map((p,i)=>{const [x1,y1]=pt(i*seg),[x2,y2]=pt((i+1)*seg),mid=(i+.5)*seg-90;
+    const path=n===1?`<circle r="96" fill="${FS_COLS[0]}"/>`:`<path d="M0 0L${x1} ${y1}A96 96 0 ${seg>180?1:0} 1 ${x2} ${y2}Z" fill="${FS_COLS[i%FS_COLS.length]}"/>`;
+    return path+`<text transform="rotate(${mid})" x="88" y="3" text-anchor="end"></text>`;}).join("");
+  $("spinWheel").innerHTML=`<svg class="fs-disc" id="spinDisc" viewBox="-100 -100 200 200" aria-hidden="true"><circle r="99" fill="var(--ink)"/>${slices}<circle r="13" fill="var(--card)" stroke="var(--ink)" stroke-width="3"/></svg>`;
+  $("spinDisc").querySelectorAll("text").forEach((t,i)=>{t.textContent=short(fsSet[i]);}); // names come from OpenStreetMap: text, never markup
+  $("spinWheel").setAttribute("aria-label",`${n} places on the wheel: ${fsSet.map(p=>p.name).join(", ")}`);
+  $("spinGo").disabled=false;$("spinDeal").disabled=fsAll.length<=n;
+}
+function fsSpin(){
+  if(fsSpinning||!fsSet.length) return;
+  const n=fsSet.length, seg=360/n, i=Math.floor(Math.random()*n), jitter=(Math.random()-.5)*seg*.7;
+  // slice i's middle ends under the pointer at the top
+  fsTurn=(Math.ceil(fsTurn/360)+5)*360-((i+.5)*seg+jitter);
+  const disc=$("spinDisc"), done=()=>{fsSpinning=false;$("spinGo").disabled=false;$("spinDeal").disabled=fsAll.length<=n;fsShow(fsSet[i]);};
+  fsSpinning=true;$("spinGo").disabled=true;$("spinDeal").disabled=true;$("spinResult").hidden=true;
+  disc.style.transform=`rotate(${fsTurn}deg)`;
+  let fin=false;const finish=()=>{if(!fin){fin=true;done();}};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) finish();
+  else{disc.addEventListener("transitionend",finish,{once:true});setTimeout(finish,4600);} // a page in the background never sends transitionend
+}
+function fsShow(p){
+  const box=$("spinResult"), km=p.m>=1000?(p.m/1000).toFixed(1)+" km":p.m+" m", walk=Math.max(1,Math.round(p.m/80));
+  box.replaceChildren(mkEl("small","","Tonight it's"),mkEl("b","",p.name),mkEl("span","",fsKind(p)),mkEl("span","",`${km} away · about ${walk} min on foot`));
+  const acts=mkEl("div","fs-acts"), go=mkEl("a","btn","Directions");
+  go.href=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`;go.target="_blank";go.rel="noopener";
+  const share=mkEl("button","btn ghost","Share in chat");share.type="button";
+  share.addEventListener("click",()=>{$("spinSheet").hidden=true;setView("chat");$("chatInput").value=`Dinner tonight: ${p.name} (${km} away). Who's in?`;$("chatInput").focus();});
+  acts.append(go,share);box.appendChild(acts);box.hidden=false;
+}
+$("spinBtn").addEventListener("click",openSpin);
+$("spinClose").addEventListener("click",()=>{$("spinSheet").hidden=true;});
+$("spinGo").addEventListener("click",fsSpin);
+$("spinDeal").addEventListener("click",fsDeal);
+
 /* ================= the village (v50): buildings the cave pays for together ================= */
 const BUILD_INFO={
   weather:"Weather for everyone in the cave: the forecast at your clock-out time on your card, a rain alert before you leave, and 3 days ahead. Set your city in your account.",
@@ -3715,9 +3813,9 @@ $("leaveBtn").addEventListener("click",async()=>{
 /* sheets close on Escape / backdrop, except the log-in sheet while signed out */
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
-  ["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet"].forEach(id=>$(id).hidden=true);
+  ["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet","spinSheet"].forEach(id=>$(id).hidden=true);
 });
-["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
+["acctSheet","caveSheet","shotSheet","noteSheet","roarSheet","wxSheet","spinSheet"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id) $(id).hidden=true;}));
 
 /* ================= push / zaps ================= */
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -4890,6 +4988,13 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v69-foodspin",v:"v69.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+    "Can't decide what to eat? Tap FoodSpin (next to Village, Bag and Shop, or on your own card from an hour before clock-out).",
+    "It finds restaurants, hawker centres and fast food within 2 km of you and puts ten of them on a wheel. Spin, and that's dinner.",
+    "Directions opens Google Maps with the walking route. Share in chat puts the pick in the cave chat so friends can join.",
+    "Don't like the ten? Other places deals a fresh set."],panels:[
+    {art:"dinner",title:"What's for dinner?",text:"Ten places near you on a wheel. Spin it and go."},
+    {art:"chat",title:"Bring friends",text:"Share the pick in chat: dinner tonight, who's in?"}]},
   {id:"v68-rooms",v:"v68.0",at:"2026-11-18T15:00",title:"A home you can walk around",changes:[
     "Every room is furnished now: a bed and a bedside lamp, a desk with a screen, a big window with curtains, a kitchen counter with a sink, and a fence and mailbox in the yard.",
     "One room fills the picture. Tap the arrows or swipe to walk to the next room; the dots underneath show where you are and which rooms have someone in.",
