@@ -423,7 +423,7 @@ body.fishing>.wrap *{animation-play-state:paused!important}
 .rflame{transform-origin:50px 84px;animation:hd-fire .25s ease-in-out infinite alternate}
 .home{display:flex;flex-direction:column;gap:12px}
 .home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-.home-head h2{font:800 24px/1.1 var(--f-display);margin:0}
+.home-head h2{display:none} /* v68: the sign above already names the cave */
 .home-sub{margin:4px 0 0;color:var(--muted);font-size:13px}
 #decoBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
 .cscene{position:relative;z-index:0;isolation:isolate;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;border:2.5px solid var(--ink);background:#f2e2c4;touch-action:pan-y;user-select:none;-webkit-user-select:none}
@@ -1132,6 +1132,22 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .vcard .vhero.plan .bpv svg{width:100%;max-width:none;height:100%;padding:6% 0}
 .vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 @media (prefers-reduced-motion:reduce){.bpv-col{transition:none}}
+/* v68 the home: one room fills the picture; the switcher sits on it (name plate, side arrows, dots) */
+.home-head{align-items:center;flex-wrap:wrap;gap:8px 12px}
+.home-sub{margin:0}
+.home-btns .btn{min-height:38px;padding:0 12px}
+.roomframe .rooms{position:absolute;left:0;right:0;bottom:8px;z-index:60;display:flex;justify-content:center;gap:4px;overflow:visible;padding:0}
+.roomframe .rooms button{flex:none;width:28px;height:28px;min-height:0;padding:0;border:0;border-radius:50%;background:transparent;display:grid;place-items:center}
+.roomframe .rooms button::before{content:"";width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 0 1.5px rgba(37,40,45,.55)}
+.roomframe .rooms button.busy::before{background:#00a650}
+.roomframe .rooms button[aria-selected="true"]::before{width:22px;border-radius:5px;background:var(--sign);box-shadow:0 0 0 1.5px #fff}
+.rm-name{position:absolute;left:10px;top:10px;z-index:60;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;background:var(--sign);color:var(--sign-ink);pointer-events:none}
+.rm-name b{font:800 15px/1 var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.rm-name i{font:700 11px/1 var(--f-mono);font-style:normal;text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;border-radius:3px;background:#00a650;color:#fff}
+.rm-prev,.rm-next{position:absolute;top:50%;z-index:60;width:40px;height:52px;margin-top:-26px;border:0;padding:0;background:rgba(37,40,45,.55);color:#fff;font:700 30px/1 var(--f-display);cursor:pointer}
+.rm-prev{left:0;border-radius:0 6px 6px 0}.rm-next{right:0;border-radius:6px 0 0 6px}
+.rm-prev:hover,.rm-next:hover{background:rgba(37,40,45,.8)}
+.roomframe{max-height:none}
 </style>
 </head>
 <body class="booting">
@@ -1371,7 +1387,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v67.0</span>
+    <span>v68.0</span>
   </div>
 </div>
 
@@ -2498,20 +2514,34 @@ function homeMembers(){
 }
 // v57: the home is seen one room at a time (a camera move between them); the whole house is the last tab.
 // Crops are x, y, width, height in scene units (the scene is 400 x 300).
-const ROOM_VIEW={bedroom:[6,18,166,122],study:[160,18,166,122],living:[6,134,190,164],kitchen:[176,134,170,164],yard:[286,156,114,144],all:[0,0,400,300]};
+const ROOM_VIEW={bedroom:[6,18,166,122],study:[160,18,166,122],living:[6,134,190,164],kitchen:[180,138,132,154],yard:[302,158,98,142],all:[0,0,400,300]};
 let homeRoom=null;
 {const cs=$("caveScene"),fr=document.createElement("div");fr.className="roomframe";fr.id="roomFrame";cs.before(fr);fr.appendChild(cs);
-  const t=document.createElement("div");t.className="rooms";t.id="roomTabs";t.setAttribute("role","tablist");t.setAttribute("aria-label","Rooms");fr.before(t);
+  const plate=document.createElement("div");plate.className="rm-name";plate.id="roomName";plate.setAttribute("aria-live","polite");
+  const arrow=(cls,label,d)=>{const b=document.createElement("button");b.type="button";b.className=cls;b.setAttribute("aria-label",label);b.textContent=d>0?"›":"‹";b.addEventListener("click",()=>stepRoom(d));return b;};
+  const t=document.createElement("div");t.className="rooms";t.id="roomTabs";t.setAttribute("role","tablist");t.setAttribute("aria-label","Rooms");
   Object.keys(ROOM_VIEW).forEach(k=>{const b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.dataset.room=k;
-    b.append(k==="all"?"Whole home":CAVE_HOME.ROOMS[k].label,document.createElement("i"));b.addEventListener("click",()=>setRoom(k));t.appendChild(b);});}
+    b.setAttribute("aria-label",roomLabel(k));b.addEventListener("click",()=>setRoom(k));t.appendChild(b);});
+  fr.append(plate,arrow("rm-prev","Previous room",-1),arrow("rm-next","Next room",1),t);
+  // a sideways swipe on the picture changes room (not while decorating, when a drag moves furniture)
+  let sx=null,sy=0;
+  fr.addEventListener("pointerdown",e=>{if(homeEdit||e.target.closest("button")) return;sx=e.clientX;sy=e.clientY;});
+  fr.addEventListener("pointerup",e=>{if(sx==null) return;const dx=e.clientX-sx,dy=e.clientY-sy;sx=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5) stepRoom(dx<0?1:-1);});}
+function roomLabel(k){return k==="all"?"Whole home":CAVE_HOME.ROOMS[k].label;}
+let roomUsed={};
+function stepRoom(d){const ks=Object.keys(ROOM_VIEW),i=ks.indexOf(homeRoom||"living");setRoom(ks[(i+d+ks.length)%ks.length]);}
 function setRoom(k){
   homeRoom=k;const [x,y,w,h]=ROOM_VIEW[k],fr=$("roomFrame");fr.classList.toggle("all",k==="all");
   fr.style.setProperty("--rx",x);fr.style.setProperty("--ry",y);fr.style.setProperty("--rw",w);fr.style.setProperty("--rh",h);
   $("roomTabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.room===k)));
+  const n=k==="all"?Object.values(roomUsed).reduce((a,b)=>a+b,0):roomUsed[k]||0;
+  $("roomName").innerHTML=`<b>${roomLabel(k)}</b>${n?`<i>${n} here</i>`:""}`;
 }
 function roomCounts(used){
-  $("roomTabs").querySelectorAll("button").forEach(b=>{const n=used[b.dataset.room]||0;b.lastChild.textContent=n?String(n):"";});
+  roomUsed=used;
+  $("roomTabs").querySelectorAll("button").forEach(b=>b.classList.toggle("busy",!!used[b.dataset.room]));
   if(!homeRoom){const busiest=Object.keys(CAVE_HOME.ROOMS).sort((a,b)=>(used[b]||0)-(used[a]||0))[0];setRoom(used[busiest]?busiest:"living");}
+  else setRoom(homeRoom);
 }
 function renderHomeMons(force){
   const ms=homeMembers();
@@ -4860,6 +4890,13 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v68-rooms",v:"v68.0",at:"2026-11-18T15:00",title:"A home you can walk around",changes:[
+    "Every room is furnished now: a bed and a bedside lamp, a desk with a screen, a big window with curtains, a kitchen counter with a sink, and a fence and mailbox in the yard.",
+    "One room fills the picture. Tap the arrows or swipe to walk to the next room; the dots underneath show where you are and which rooms have someone in.",
+    "Monsters stand in the middle of the room instead of squeezing into a corner, and lamps light up at night.",
+    "The Village, Bag and Shop buttons sit in one tidy row above the picture."],panels:[
+    {art:"home",title:"Room by room",text:"Swipe the picture to go from the bedroom to the yard. Green dots mean someone's there."},
+    {art:"decor",title:"Still yours to decorate",text:"Everything you bought stays where you put it. Lamps glow after dark."}]},
   {id:"v66-map",v:"v66.0",at:"2026-11-18T12:00",title:"Every station has its picture, and blueprints come to life",changes:[
     "Each place on the village map has a little picture beside it, so you can see what it is at a glance.",
     "Places still being paid for are blueprints. Every coin the cave chips in fills the picture with colour from the bottom up, until the whole building is there.",

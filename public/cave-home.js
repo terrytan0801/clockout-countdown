@@ -3,11 +3,11 @@
 (function () {
   // Bottom-centre spots in each room (scene units). A monster goes to the room for what it's doing.
   const ROOMS = {
-    bedroom: { label: "Bedroom", spots: [[38, 132], [74, 132], [110, 132], [146, 132], [56, 118], [92, 118], [128, 118]] },
-    study: { label: "Study", spots: [[192, 132], [226, 132], [208, 120]] },
-    living: { label: "Living room", spots: [[44, 290], [82, 290], [120, 290], [158, 290], [63, 276], [101, 276], [139, 276], [177, 276]] },
-    kitchen: { label: "Kitchen", spots: [[222, 290], [252, 290], [282, 290], [237, 278], [267, 278]] },
-    yard: { label: "Yard", spots: [[344, 297], [376, 297], [360, 284]] },
+    bedroom: { label: "Bedroom", spots: [[96, 132], [62, 132], [130, 132], [34, 132], [80, 122], [114, 122], [148, 132]] },
+    study: { label: "Study", spots: [[212, 132], [186, 132], [240, 132]] },
+    living: { label: "Living room", spots: [[96, 290], [60, 290], [132, 290], [30, 290], [160, 290], [78, 278], [114, 278], [146, 278]] },
+    kitchen: { label: "Kitchen", spots: [[236, 290], [212, 290], [260, 290], [224, 278], [248, 278]] },
+    yard: { label: "Yard", spots: [[340, 298], [372, 298], [318, 292]] },
   };
   const ROOM_OF = {
     nap: "bedroom", read: "study", paint: "study", zen: "study",
@@ -21,7 +21,11 @@
     return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
 <defs><linearGradient id="chSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>
 <pattern id="chTile" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#f4ede0"/><rect width="5" height="5" fill="#e6dccb"/><rect x="5" y="5" width="5" height="5" fill="#e6dccb"/></pattern>
-<pattern id="chWood" width="14" height="8" patternUnits="userSpaceOnUse"><rect width="14" height="8" fill="#c9965f"/><path d="M0 7.5H14M7 0V7.5" stroke="#b07d48" stroke-width="1"/></pattern></defs>
+<pattern id="chWood" width="14" height="8" patternUnits="userSpaceOnUse"><rect width="14" height="8" fill="#c9965f"/><path d="M0 7.5H14M7 0V7.5" stroke="#b07d48" stroke-width="1"/></pattern>
+<pattern id="chStripe" width="9" height="9" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="#f1dfc0"/><rect width="4" height="9" fill="#ead3ac"/></pattern>
+<pattern id="chDot" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#f3e3c8"/><circle cx="6" cy="6" r="1.2" fill="#e2c79c"/></pattern>
+<clipPath id="chIn"><path d="M14 300 L14 70 Q20 22 86 18 Q170 10 246 24 Q308 36 314 90 L314 170 Q302 192 300 236 L300 300Z"/></clipPath>
+<radialGradient id="chGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd98a" stop-opacity=".75"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></radialGradient></defs>
 <rect width="400" height="300" fill="url(#chSky)"/>
 ${night ? `<circle cx="370" cy="38" r="13" fill="#fff6c8"/><circle cx="364" cy="34" r="13" fill="#33407a" opacity=".9"/><g fill="#fff">${[[340, 20], [390, 70], [356, 92], [384, 16], [330, 60]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2"/>`).join("")}</g>`
       : `<circle cx="368" cy="40" r="15" fill="#ffd34d"/><g fill="#fff" opacity=".9"><ellipse cx="340" cy="78" rx="18" ry="7"/><ellipse cx="354" cy="72" rx="12" ry="8"/></g>`}
@@ -32,7 +36,12 @@ ${night ? `<circle cx="370" cy="38" r="13" fill="#fff6c8"/><circle cx="364" cy="
 <path d="M0 300 L0 58 Q8 6 84 4 Q172 -4 252 10 Q326 22 334 84 L334 178 Q322 196 320 236 L320 300Z" fill="#8c7b69"/>
 <path d="M14 300 L14 70 Q20 22 86 18 Q170 10 246 24 Q308 36 314 90 L314 170 Q302 192 300 236 L300 300Z" fill="#f2e2c4"/>
 <path d="M14 70 Q20 22 86 18 Q170 10 246 24 Q308 36 314 90 L314 104 Q300 50 244 40 Q170 26 88 34 Q30 38 24 86Z" fill="#e4cfa8"/>
-<g fill="#8c7b69" opacity=".35"><circle cx="40" cy="200" r="3"/><circle cx="120" cy="60" r="2.5"/><circle cx="270" cy="200" r="2.5"/><circle cx="200" cy="80" r="2"/></g>
+<g clip-path="url(#chIn)">
+<rect x="14" y="20" width="149" height="112" fill="url(#chStripe)"/>
+<rect x="170" y="20" width="144" height="112" fill="#e9dcc0"/><rect x="170" y="112" width="144" height="20" fill="#d9c49c"/><path d="M170 112H314" stroke="#bfa47a" stroke-width="1.5"/>
+<rect x="14" y="142" width="164" height="146" fill="url(#chDot)"/><rect x="14" y="252" width="164" height="36" fill="#e2c69a"/><path d="M14 252H178" stroke="#bfa47a" stroke-width="2"/>
+<path d="M30 256V284" stroke="#cfb084" stroke-width="1"/><path d="M52 256V284" stroke="#cfb084" stroke-width="1"/><path d="M74 256V284" stroke="#cfb084" stroke-width="1"/><path d="M96 256V284" stroke="#cfb084" stroke-width="1"/><path d="M118 256V284" stroke="#cfb084" stroke-width="1"/><path d="M140 256V284" stroke="#cfb084" stroke-width="1"/><path d="M162 256V284" stroke="#cfb084" stroke-width="1"/>
+</g>
 <rect x="14" y="132" width="300" height="8" fill="url(#chWood)"/><rect x="14" y="139" width="300" height="3" fill="#8a5a35"/>
 <rect x="163" y="40" width="7" height="92" fill="#cdb592"/>
 <circle cx="44" cy="62" r="13" fill="url(#chSky)" stroke="#8c7b69" stroke-width="3"/><path d="M31 62H57M44 49V75" stroke="#8c7b69" stroke-width="2"/>
@@ -42,12 +51,36 @@ ${[[268, "#e8583e"], [273, "#5b8def"], [278, "#f2c94c"], [284, "#2fa36b"], [289,
 <rect x="200" y="142" width="100" height="148" fill="url(#chTile)"/>
 <g><rect x="272" y="232" width="28" height="58" fill="#e8e3da" stroke="#b9b1a3"/><rect x="274" y="226" width="24" height="7" fill="#3a3f4b"/><circle cx="280" cy="229" r="2.5" fill="#e8583e"/><circle cx="291" cy="229" r="2.5" fill="#e8583e"/><rect x="276" y="250" width="20" height="16" rx="2" fill="#3a3f4b"/></g>
 <path d="M226 178 L226 196 M236 178 L236 190 M246 178 L246 198" stroke="#7a7f88" stroke-width="1.5"/><ellipse cx="226" cy="200" rx="6" ry="3" fill="#3a3f4b"/><ellipse cx="246" cy="202" rx="5" ry="2.5" fill="#3a3f4b"/><path d="M220 178H252" stroke="#7a5233" stroke-width="3"/>
-<g><rect x="208" y="262" width="56" height="5" rx="2" fill="#a8784f"/><path d="M214 267V290M258 267V290" stroke="#7a5233" stroke-width="3"/></g>
+<g clip-path="url(#chIn)">
+<!-- bedroom: a picture, the bed, a bedside table with a lamp -->
+<rect x="84" y="64" width="34" height="24" rx="1.5" fill="#8a5a35"/><rect x="87" y="67" width="28" height="18" fill="${night ? "#2d3a6a" : "#bfe3ff"}"/><path d="M87 85 L96 74 L102 80 L108 72 L115 85Z" fill="${night ? "#3f5a4a" : "#5fae58"}"/>
+<rect x="52" y="96" width="9" height="36" rx="3" fill="#8a5a35"/><rect x="58" y="112" width="84" height="12" rx="3" fill="#fbf6ee"/><rect x="78" y="109" width="64" height="16" rx="4" fill="${night ? "#5a74b8" : "#6f9ae6"}"/><path d="M78 115H142" stroke="#fff" stroke-width="1.2" opacity=".45"/>
+<rect x="62" y="105" width="16" height="8" rx="4" fill="#fff"/><path d="M60 124V132M140 124V132" stroke="#7a5233" stroke-width="3"/>
+<rect x="144" y="114" width="16" height="18" rx="1.5" fill="#a8784f"/><path d="M146 122H158" stroke="#7a5233" stroke-width="1"/>${night ? `<circle cx="152" cy="104" r="16" fill="url(#chGlow)"/>` : ""}<path d="M147 108 L157 108 L154 100 L150 100Z" fill="${night ? "#ffe08a" : "#f4ead2"}"/><path d="M152 108V114" stroke="#3a3f4b" stroke-width="1.5"/>
+<!-- study: a pin board, a desk with a screen and a lamp -->
+<rect x="182" y="54" width="36" height="26" rx="1.5" fill="#c69a64" stroke="#8a5a35" stroke-width="2"/><rect x="186" y="58" width="9" height="9" fill="#fff6a8"/><rect x="198" y="60" width="10" height="7" fill="#ffc2d4"/><rect x="190" y="69" width="12" height="7" fill="#bde3ff"/><circle cx="210" cy="72" r="3" fill="#e8583e"/>
+<rect x="180" y="112" width="70" height="5" rx="1.5" fill="#8a5a35"/><path d="M184 117V132M246 117V132" stroke="#7a5233" stroke-width="3"/><rect x="226" y="117" width="18" height="11" fill="#a8784f"/><circle cx="235" cy="122" r="1.2" fill="#5e3b1f"/>
+<rect x="196" y="92" width="28" height="18" rx="2" fill="#3a3f4b"/><rect x="198" y="94" width="24" height="14" fill="${night ? "#7fd1ff" : "#bfe8ff"}"/><path d="M208 110V112M202 112H214" stroke="#3a3f4b" stroke-width="2"/>${night ? `<circle cx="210" cy="100" r="18" fill="url(#chGlow)"/>` : ""}
+<path d="M240 112 L240 100 L248 94" stroke="#3a3f4b" stroke-width="1.6" fill="none"/><path d="M244 92 L254 96 L250 100Z" fill="#e8583e"/>
+<!-- living room: a big window with curtains and a hanging light -->
+<rect x="58" y="164" width="76" height="54" rx="2" fill="#8a5a35"/><rect x="62" y="168" width="68" height="46" fill="url(#chSky)"/>
+${night ? `<circle cx="114" cy="182" r="6" fill="#fff6c8"/><circle cx="111" cy="180" r="6" fill="#33407a"/>` : `<ellipse cx="82" cy="184" rx="10" ry="4" fill="#fff"/><ellipse cx="90" cy="181" rx="7" ry="4" fill="#fff"/>`}
+<path d="M96 168V214M62 191H130" stroke="#8a5a35" stroke-width="2.5"/><rect x="56" y="216" width="80" height="4" rx="1" fill="#a8784f"/>
+<path d="M54 160 Q62 190 56 222 L66 222 Q72 190 66 160Z" fill="#d9534f"/><path d="M138 160 Q130 190 136 222 L126 222 Q120 190 126 160Z" fill="#d9534f"/><path d="M52 160H140" stroke="#7a5233" stroke-width="3" stroke-linecap="round"/>
+<path d="M96 142V150" stroke="#3a3f4b" stroke-width="1.2"/>${night ? `<circle cx="96" cy="156" r="22" fill="url(#chGlow)"/>` : ""}<path d="M88 156 L104 156 L100 149 L92 149Z" fill="${night ? "#ffd98a" : "#f2c94c"}"/>
+<!-- kitchen: a counter with a sink and cupboards, a shelf of jars -->
+<rect x="200" y="252" width="70" height="38" fill="#7aa6c8"/><rect x="198" y="248" width="74" height="5" rx="1" fill="#8a5a35"/>
+<path d="M223 256V286M247 256V286" stroke="#5c88aa" stroke-width="1.5"/><circle cx="219" cy="270" r="1.4" fill="#fff"/><circle cx="227" cy="270" r="1.4" fill="#fff"/><circle cx="243" cy="270" r="1.4" fill="#fff"/><circle cx="251" cy="270" r="1.4" fill="#fff"/>
+<rect x="214" y="246" width="22" height="3" rx="1" fill="#b9c2cc"/><path d="M225 246 V238 Q225 234 230 234" stroke="#9aa3ad" stroke-width="2" fill="none"/>
+<rect x="204" y="226" width="58" height="3" rx="1" fill="#8a5a35"/>
+<rect x="208" y="215" width="8" height="11" rx="2" fill="#f2c94c" opacity=".9"/><rect x="220" y="217" width="8" height="9" rx="2" fill="#e8583e" opacity=".9"/><rect x="232" y="214" width="8" height="12" rx="2" fill="#7cc46a" opacity=".9"/><rect x="246" y="218" width="10" height="8" rx="3" fill="#fbf6ee"/>
+</g>
+<!-- yard: a picket fence, stepping stones and a mailbox -->
+<g fill="#fbf6ee" stroke="#d8cfc0" stroke-width=".8"><path d="M326 244 V230 L329 226 L332 230 V244Z"/><path d="M336 244 V230 L339 226 L342 230 V244Z"/><path d="M346 244 V230 L349 226 L352 230 V244Z"/><path d="M356 244 V230 L359 226 L362 230 V244Z"/><path d="M366 244 V230 L369 226 L372 230 V244Z"/><path d="M376 244 V230 L379 226 L382 230 V244Z"/></g><rect x="324" y="232" width="60" height="3" fill="#fbf6ee"/><rect x="324" y="239" width="60" height="3" fill="#fbf6ee"/>
+<path d="M394 262V246" stroke="#7a5233" stroke-width="2.5"/><rect x="386" y="236" width="14" height="11" rx="4" fill="#e8583e"/><path d="M398 238V231 L403 233 L398 235" fill="#f2c94c" stroke="#7a5233" stroke-width=".8"/>
 <rect x="14" y="288" width="286" height="12" fill="url(#chWood)"/>
 <g stroke="#8a5a35" stroke-width="3"><path d="M178 140V288M192 140V288"/></g><g stroke="#a8784f" stroke-width="2.5">${[155, 175, 195, 215, 235, 255, 275].map((y) => `<path d="M178 ${y}H192"/>`).join("")}</g>
 <path d="M300 236 Q310 226 320 236 L320 300 L300 300Z" fill="#5e4e40" opacity=".35"/>
-<g font-family="Barlow Semi Condensed, sans-serif" font-size="7.5" font-weight="700" fill="#8c7b69" letter-spacing=".5">
-<text x="24" y="36">BEDROOM</text><text x="178" y="36">STUDY</text><text x="22" y="156">LIVING ROOM</text><text x="204" y="156">KITCHEN</text><text x="342" y="232" fill="#3f6b33">YARD</text></g>
 </svg>`;
   }
 
