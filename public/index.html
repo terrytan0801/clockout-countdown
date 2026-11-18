@@ -1156,7 +1156,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .fs-msg{position:absolute;inset:0;display:grid;place-items:center;padding:28px;border-radius:50%;background:var(--track);color:var(--muted);text-align:center;font-size:14px;line-height:1.4}
 .fs-result{display:grid;gap:4px;padding:12px;border:2px solid var(--ink);border-radius:6px}
 .fs-result small{font:700 11px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.fs-result b{font:800 24px/1.05 var(--f-display);text-transform:uppercase;overflow-wrap:anywhere}
+.fs-result b,.fs-result .fs-name{font:800 24px/1.05 var(--f-display);text-transform:uppercase;overflow-wrap:anywhere;color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 .fs-result span{color:var(--muted);font-size:14px}
 .fs-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 @media (prefers-reduced-motion:reduce){.fs-disc{transition:none}}
@@ -1417,7 +1417,7 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v71.0</span>
+    <span>v72.0</span>
   </div>
 </div>
 
@@ -3208,9 +3208,13 @@ function fsSpin(){
 function fsShow(p){
   const box=$("spinResult"), km=p.m>=1000?(p.m/1000).toFixed(1)+" km":p.m+" m", walk=Math.max(1,Math.round(p.m/80));
   box.classList.remove("pop");void box.offsetWidth;box.classList.add("pop");
-  box.replaceChildren(mkEl("small","","Tonight it's"),mkEl("b","",p.name),mkEl("span","",fsKind(p)),mkEl("span","",`${km} away · about ${walk} min on foot`));
-  const acts=mkEl("div","fs-acts"), go=mkEl("a","btn","Directions");
-  go.href=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`;go.target="_blank";go.rel="noopener";
+  // the place itself in Google Maps: its name searched with the map on that spot, so Google shows the nearest match;
+  // Directions is one tap from there if they want it
+  const maps=`https://www.google.com/maps/search/${encodeURIComponent(p.name).replace(/%20/g,"+")}/@${p.lat},${p.lon},18z`;
+  const nm=mkEl("a","fs-name",p.name);nm.href=maps;nm.target="_blank";nm.rel="noopener";
+  box.replaceChildren(mkEl("small","","Tonight it's"),nm,mkEl("span","",fsKind(p)),mkEl("span","",`${km} away · about ${walk} min on foot`));
+  const acts=mkEl("div","fs-acts"), go=mkEl("a","btn","Open in Google Maps");
+  go.href=maps;go.target="_blank";go.rel="noopener";
   const share=mkEl("button","btn ghost","Share in chat");share.type="button";
   share.addEventListener("click",()=>{$("spinSheet").hidden=true;setView("chat");$("chatInput").value=`Dinner tonight: ${p.name} (${km} away). Who's in?`;$("chatInput").focus();});
   acts.append(go,share);box.appendChild(acts);box.hidden=false;
@@ -5062,11 +5066,11 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v69-foodspin",v:"v69.0–71.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
+  {id:"v69-foodspin",v:"v69.0–72.0",at:"2026-11-18T18:00",title:"FoodSpin: let the wheel pick dinner",changes:[
     "Can't decide what to eat? Tap FoodSpin (next to Village, Bag and Shop, or on your own card from an hour before clock-out).",
     "It finds restaurants, hawker centres and fast food within 2 km of you and puts eight of them on a lit-up wheel with your monster in the middle. Spin, and that's dinner.",
     "In Singapore, Johor Bahru and the Klang Valley the list is built into the app, so it's there at once and your location stays on your phone.",
-    "Directions opens Google Maps with the walking route. Share in chat puts the pick in the cave chat so friends can join.",
+    "Tap the pick to open it in Google Maps, where Directions is one tap away. Share in chat puts the pick in the cave chat so friends can join.",
     "Don't like the ten? Other places deals a fresh set."],panels:[
     {art:"dinner",title:"What's for dinner?",text:"Eight places near you on a wheel. Spin it and go."},
     {art:"chat",title:"Bring friends",text:"Share the pick in chat: dinner tonight, who's in?"}]},
