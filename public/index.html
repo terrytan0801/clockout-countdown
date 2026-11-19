@@ -528,6 +528,7 @@ body.fishing>.wrap *{animation-play-state:paused!important}
 .chat-list{height:min(62vh,620px);min-height:280px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
 .chat-empty{margin:auto;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:6px}
 .chat-empty .mon{width:84px;height:84px}
+.chat-sys{align-self:center;max-width:88%;text-align:center;font:600 13px/1.4 var(--f-body);color:var(--ink);background:var(--track);border:1.5px dashed var(--muted);padding:8px 12px;border-radius:10px}
 .day{align-self:center;font:700 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--track);padding:5px 9px;border-radius:999px}
 .mg{--mc:var(--mc0);display:flex;gap:8px;align-items:flex-start;max-width:min(560px,92%)}
 .mg.mine{flex-direction:row-reverse;align-self:flex-end}
@@ -1463,7 +1464,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v79.0</span>
+    <span>v80.0</span>
   </div>
 </div>
 
@@ -2382,6 +2383,7 @@ function renderChat(forceBottom){
   chatMsgs.forEach(m=>{
     const d=dayLabel(m.at);
     if(d!==lastDay){const s=document.createElement("div");s.className="day";s.textContent=d;list.appendChild(s);lastDay=d;group=null;}
+    if(m.sys){const s=document.createElement("div");s.className="chat-sys";s.textContent=m.text;list.appendChild(s);group=null;lastPid=null;return;} // v80: a note from the app
     if(!group||m.pid!==lastPid||m.at-lastAt>5*60e3){
       const live=byId[m.pid], color=live?live.color:m.color, mon=live?live.monster:m.monster;
       group=document.createElement("div");group.className="mg"+(m.pid===S.me.id?" mine":"");
@@ -2714,7 +2716,7 @@ function whyText(e){
   const thing=()=>(CAVE_HOME.DECOR[arg]||{name:arg}).name;
   return {welcome:"Welcome gift",pay:"Wage",holiday:"Public holiday pay (x2)",streak:`${arg}-day streak bonus`,clip:"Filmed on time",cliplate:"Filmed late",
     zap:`Zapped ${nameOf(arg)}`,zapby:`${nameOf(arg)} zapped you`,fishsale:`Sold ${arg} fish`,water:"Watered the plant",pet:"Petted the cat",vend:"Vending machine",
-    buy:`Bought: ${thing()}`,sell:`Sold: ${thing()}`}[w]||"Coins";
+    buy:`Bought: ${thing()}`,sell:`Sold: ${thing()}`,sorry:"Sorry gift"}[w]||"Coins";
 }
 function renderCoins(){
   if(!S||!S.me) return;
@@ -3405,7 +3407,7 @@ const VNET={w:340,h:440,y0:0,ring:[170,230,92],
 const VNET_XCHG={home:1,lake:1,farm:1,cinema:1,harbor:1,weather:1,planner:1};
 const STATIONS=["home","lake","weather","farm","harbor","cinema","planner"];
 const ST_NAME={home:"Home",lake:"The Lake",weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"};
-let village=null, villSel=null, farm=null, farmSel=null;
+let village=null, villSel=null, farm=null, farmSel=null, vGive={}; // vGive: the amount being given (v80)
 const SEED_PRICE={radish:10,tomato:25,pumpkin:60,monflower:150}; // same as CROPS on the server
 const mkEl=(tag,cls,text)=>{const e=document.createElement(tag);if(cls) e.className=cls;if(text!=null) e.textContent=text;return e;};
 const builtAt=k=>(S&&S.cave&&S.cave.built&&S.cave.built[k])||(village&&village[k]&&village[k].openAt)||null;
@@ -3419,7 +3421,7 @@ function showVillage(on){
   if(on){showBag(false);$("walletPanel").hidden=true;renderVillage();loadVillage();}
   else{villSel=null;farmSel=null;$("villCard").hidden=true;$("villBack").hidden=true;}
 }
-const closeVillCard=()=>{villSel=null;farmSel=null;renderVillage();};
+const closeVillCard=()=>{villSel=null;farmSel=null;vGive={};renderVillage();};
 $("villBack").addEventListener("click",closeVillCard);
 $("villBtn").addEventListener("click",()=>showVillage($("villView").hidden));
 async function loadVillage(quiet){
@@ -3490,9 +3492,24 @@ function renderVillCard(){
     const nums=mkEl("div","vnums");nums.append(mkEl("span","",`${b.raised.toLocaleString()} / ${b.price.toLocaleString()} coins`),mkEl("span","",`${(b.price-b.raised).toLocaleString()} to go`));card.appendChild(nums);
     card.appendChild(mkEl("p","",`Chip in any amount. Once it's all paid for, there's a last day of finishing touches, then it opens. You have ${Math.max(0,S.me.coins||0).toLocaleString()} coins.`));
     const give=mkEl("div","vgive");
-    [10,50,100,500].forEach(n=>{const bt=mkEl("button","",`+${n}`);bt.type="button";bt.disabled=(S.me.coins||0)<1;bt.addEventListener("click",()=>donate(k,Math.min(n,S.me.coins||0),bt));give.appendChild(bt);});
+    // v80: the amount buttons only fill in the amount; Give asks "tap again" first, so nothing goes by accident.
     const inp=mkEl("input");inp.type="number";inp.min="1";inp.inputMode="numeric";inp.placeholder="Amount";inp.setAttribute("aria-label","How many coins to give");
-    const go=mkEl("button","go","Give");go.type="button";go.addEventListener("click",()=>donate(k,Number(inp.value),go));
+    const go=mkEl("button","go","Give");go.type="button";
+    // The card is redrawn while it's open (village updates), so the amount and the "tap again" live outside it.
+    const gs=vGive.k===k?vGive:(vGive={k,val:"",armed:0,until:0});
+    const live=()=>gs.armed&&Date.now()<gs.until;
+    const label=g=>{g.textContent=live()?`Tap again to give ${gs.armed.toLocaleString()}`:"Give";};
+    const disarm=()=>{gs.armed=0;label(go);};
+    inp.value=gs.val;label(go);
+    [10,50,100,500].forEach(n=>{const bt=mkEl("button","",`+${n}`);bt.type="button";bt.disabled=(S.me.coins||0)<1;bt.addEventListener("click",()=>{inp.value=gs.val=String(Math.min(n,S.me.coins||0));disarm();});give.appendChild(bt);});
+    inp.addEventListener("input",()=>{gs.val=inp.value;disarm();});
+    go.addEventListener("click",()=>{
+      const amt=Math.floor(Number(inp.value));
+      if(!(amt>0)){toast("How many coins?");return;}
+      if(!(live()&&gs.armed===amt)){gs.armed=amt;gs.until=Date.now()+5000;label(go);
+        setTimeout(()=>{const g=document.querySelector("#villCard .vgive .go");if(g) label(g);},5050);return;}
+      gs.armed=0;gs.val="";label(go);donate(k,amt,go);
+    });
     give.append(inp,go);card.appendChild(give);
   }else if(st==="building"){
     card.appendChild(mkEl("p","",`Paid for! Finishing touches now; it opens in ${durText(builtAt(k)-clockNow())} (${sgClock(builtAt(k))}${sgParts(builtAt(k)).day!==sgParts(clockNow()).day?" tomorrow":""}).`));
@@ -5226,6 +5243,9 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v80-give",v:"v80.0",at:"2026-11-19T21:00",title:"Giving to the village asks first",changes:[
+    "The +10, +50, +100 and +500 buttons on a village building now only fill in the amount. Tap Give, then tap again to confirm, so no coins go by accident."],panels:[
+    {art:"village",title:"Tap twice to give",text:"Pick an amount, tap Give, then tap again. Nothing leaves your wallet until you confirm."}]},
   {id:"v78-pay",v:"v78.0–79.0",at:"2026-11-18T20:00",title:"A pay rise, an active bonus, and Ranks",changes:[
     "Wages go up from 50 to 250 monster coins a workday, and they arrive by themselves at your clock-out time: no need to open the app. Prices stay the same.",
     "Public holidays pay double: the wage still comes at your clock-out time, twice over.",

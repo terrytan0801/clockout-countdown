@@ -399,7 +399,26 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   // v79: wages arrive on their own. Every 15 minutes the clock pays anyone whose clock-out has passed today: a workday's
   // wage, or twice that on a public holiday in their region. Weekends and personal days off pay nothing, and nobody
   // has to open the app (the 5-day streak bonus still comes from opening it).
+  // A note from the app in a cave's chat (v80): no sender, shown centred.
+  async function sysChat(cid, text) {
+    const at = now(), id = `${String(at).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
+    const msg = { id, sys: true, pid: "sys", name: "Clock-out", color: "green", monster: 0, text, at }; // name/monster for phones before v80
+    await Promise.all([store.setJSON(`chat/${cid}/${id}`, msg), store.setJSON(`chatlast/${cid}`, { at, pid: "sys", id })]);
+    await bump(cid);
+  }
+  // v80, once: a +500 village button gave Shunyi's coins away without asking (it asks first now). Terry sends her 300
+  // back with an apology in her cave. Her name is matched without spaces or case; if nobody matches, nothing happens.
+  async function fixups() {
+    if (await exists("fix/v80-shunyi")) return;
+    const k = (await keys("uname/")).find((x) => decodeURIComponent(x.slice(6)).replace(/\s+/g, "") === "shunyi");
+    const p = k && (await getPerson(await getJSON(k)));
+    if (!p) return;
+    if (!(await claimKey("fix/v80-shunyi", { at: now(), pid: p.id }))) return;
+    await credit(p.id, 300, "sorry.v80");
+    if (p.cave) await sysChat(p.cave, `Sorry ${p.name}! The +500 button in the village gave your coins away without asking. It asks first now, and you've got 300 coins back from us. 🙏`);
+  }
   async function payday() {
+    await fixups();
     const t = now(), today = sgDay(t), sec = sgSeconds(t), wd = weekdayOf(today);
     if (wd < 1 || wd > 5) return { paid: 0 };
     let paid = 0;

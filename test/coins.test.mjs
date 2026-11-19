@@ -215,6 +215,16 @@ assert.ok(await coins(C) >= c0);
   await app.payday(); assert.equal((await wages()).filter((e) => e.why === "pay.2026-12-29").length, 1, "the app and the clock never both pay");
 }
 
+/* ---------- v80: Shunyi's 300-coin apology, once ---------- */
+{
+  const S = await mk("Shun Yi"); await call("POST", "cave", { action: "join", code: cave.code }, S.t);
+  await app.payday(); await app.payday();
+  assert.deepEqual((await me(S)).coinLog.filter((e) => e.why.startsWith("sorry")).map((e) => [e.amt, e.why]), [[300, "sorry.v80"]], "300 coins back, once");
+  const notes = (await call("GET", "chat", null, S.t)).data.messages.filter((m) => m.sys);
+  assert.equal(notes.length, 1, "one note in her cave");
+  assert.match(notes[0].text, /^Sorry Shun Yi! .*300 coins back/);
+}
+
 /* ---------- deleting the account removes the coins ---------- */
 await call("POST", "me", { action: "delete" }, C.t);
 assert.equal([...store._m.keys()].some((k) => ["led", "coinbase", "wv", "paid", "work"].some((p) => k === `${p}/${C.id}` || k.startsWith(`${p}/${C.id}/`))), false);
