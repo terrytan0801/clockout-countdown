@@ -6,7 +6,8 @@ through the custody bridge (decided 19 Nov 2026, see `CAVE_EXCHANGE_AUDIT.md` se
 
 It hasn't been run against a hosted database yet. `db/test/schema.test.mjs` runs it on an in-memory PostgreSQL
 (PGlite 0.5.15) and checks that the database itself refuses unbalanced entries, negative balances, over-reservation,
-changes to the ledgers, shares from nowhere, self-trades and malformed orders, and that the reconciliation views
+changes to the ledgers, shares from nowhere, extra shares, a second IPO, skipped company steps, self-trades,
+malformed orders and fees over the cap, and that the reconciliation views
 are empty when things add up and catch drift when they don't:
 
 ```bash
@@ -27,6 +28,11 @@ database; which provider is still to be decided.
   trigger), so a transaction that would create or lose coins is rolled back as a whole.
 - Share moves balance too. At `COMMIT`, a transaction's share entries per company must sum to zero unless it
   issues, cancels or splits shares.
+- Shares can't be made up. At `COMMIT`, each company's `issued_shares` must equal the sum of its share ledger, so
+  the number only changes together with `ipo_issue`, `issue`, `cancel` or `split` entries. Only the IPO and
+  admin-approved corporate actions write those, and `ipo_issue` can appear once per company and holder type.
+- A company's status only moves forward: PENDING → APPROVED or REJECTED, APPROVED → IPO or REJECTED, IPO → LISTED,
+  LISTED ⇄ SUSPENDED, LISTED or SUSPENDED → DELISTED or BANKRUPT. An IPO can't be rewound and run again.
 - Nothing goes negative: `CHECK` constraints keep wallet balances, company cash, holdings and reservations at zero
   or above, and reserved amounts within what's held.
 
@@ -37,10 +43,10 @@ database; which provider is still to be decided.
 | 1 | `players` | A reference to the game's `person/<pid>` | `id` is the game's `p-…` id; created on first use; no passcodes or sessions; `frozen` lets an admin stop trading |
 | 2 | `wallets` | Exchange cash per player | `balance` (incl. reserved), `reserved` for open buy orders; `reserved <= balance`, both `>= 0` |
 | 3 | `coin_ledger` | Every coin movement | Append-only, double-entry by `txn_id`. Accounts: `PLAYER`, `COMPANY`, `BRIDGE` (the game wallet's side of the bridge), `FEES` |
-| 4 | `companies` | Player companies | Unique `symbol` (2–5 capitals/digits) and case-insensitive unique `name`; share counts; `ipo_price`; `status` (PENDING, APPROVED, IPO, LISTED, SUSPENDED, DELISTED, BANKRUPT, REJECTED) |
+| 4 | `companies` | Player companies | Unique `symbol` (2–5 capitals/digits) and case-insensitive unique `name`; share counts; `ipo_price`; `status` (PENDING, APPROVED, IPO, LISTED, SUSPENDED, DELISTED, BANKRUPT, REJECTED); `submitted_at` is empty while the founder is still editing |
 | 5 | `share_holdings` | Shares held | Per company and holder; holder is a `PLAYER` or the company's `TREASURY`; `reserved` for open sell orders |
 | 6 | `share_ledger` | Every share movement | Append-only; balanced per transaction and company except issuance, cancellation and splits |
-| 7 | `orders` | Buy and sell orders | `LIMIT` (has a price) or `MARKET` (no price); `seq` gives time priority; one `idempotency_key` per player; partial indexes hold each side's book in price-time order |
+| 7 | `orders` | Buy and sell orders | `LIMIT` (has a price) or `MARKET` (no price); `seq` gives time priority; one `idempotency_key` per player; `expires_at` (limit orders), status `EXPIRED`; partial indexes hold each side's book in price-time order |
 | 8 | `trades` | Fills | Append-only; `value` computed; `buy_order_id`/`sell_order_id` NULL for an IPO allotment from the treasury; a player can't trade with themselves |
 | 9 | `reservations` | What an open order holds | One per order; coins for a buy, shares for a sell; `remaining` shrinks as it fills; must be 0 once not `ACTIVE` |
 | 10 | `company_accounts` | Company cash | IPO proceeds land here, dividends are paid from here |
@@ -50,6 +56,11 @@ database; which provider is still to be decided.
 | 14 | `idempotency_keys` | Answers to requests already handled | Keyed by player and client key; a retry gets the first answer |
 | 15 | `audit_logs` | Who did what | Append-only; players, admin and system jobs |
 | 16 | `bridge_transfers` | Deposits and withdrawals | Not in the brief's list; needed for the custody bridge (below) |
+| 17 | `settings` | One row: fees (0.25% each side), minimum fee (1), minimum order value (10), order lifetime (168 h), orders per minute (20) | Changed by the admin without a deploy; fees capped at 5% |
+| 18 | `watchlist` | Companies a player follows | Player and company |
+
+Market data (last price and time, previous close, day open, high, low and volume, market value) isn't stored
+separately: it comes from `trades` and `candles`, so it's always based on real trades. See `CAVE_EXCHANGE_SPEC.md`.
 
 ## The custody bridge in the schema
 

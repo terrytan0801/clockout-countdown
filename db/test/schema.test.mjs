@@ -59,13 +59,28 @@ assert.match(await refused(async (tx) => { await tx.query("TRUNCATE coin_ledger"
 const co = (await one(`INSERT INTO companies (symbol, name, industry, founder_id, authorized_shares, founder_shares, public_shares, ipo_price)
   VALUES ('ANNCO', 'Ann Co', 'Snacks', 'p-aaaaaa', 10000, 6000, 4000, 5) RETURNING id`)).id;
 await q("INSERT INTO company_accounts (company_id) VALUES ($1)", [co]);
+assert.match(await refused(async (tx) => { await tx.query("UPDATE companies SET status = 'LISTED' WHERE id = $1", [co]); }), /can't go from PENDING to LISTED/, "no listing without approval and an IPO");
+await q("UPDATE companies SET status = 'APPROVED', approved_at = now(), approved_by = 'admin' WHERE id = $1", [co]);
 await db.transaction(async (tx) => {
   const t = uuid();
-  await tx.query("UPDATE companies SET issued_shares = 10000 WHERE id = $1", [co]);
+  await tx.query("UPDATE companies SET status = 'IPO', issued_shares = 10000 WHERE id = $1", [co]);
   await tx.query("INSERT INTO share_holdings (company_id, holder_type, holder_id, qty) VALUES ($1, 'PLAYER', 'p-aaaaaa', 6000), ($1, 'TREASURY', $2, 4000)", [co, String(co)]);
-  await tx.query("INSERT INTO share_ledger (txn_id, company_id, holder_type, holder_id, qty, qty_after, kind) VALUES ($1, $2, 'PLAYER', 'p-aaaaaa', 6000, 6000, 'issue'), ($1, $2, 'TREASURY', $3, 4000, 4000, 'issue')", [t, co, String(co)]);
+  await tx.query("INSERT INTO share_ledger (txn_id, company_id, holder_type, holder_id, qty, qty_after, kind) VALUES ($1, $2, 'PLAYER', 'p-aaaaaa', 6000, 6000, 'ipo_issue'), ($1, $2, 'TREASURY', $3, 4000, 4000, 'ipo_issue')", [t, co, String(co)]);
 });
 assert.deepEqual(await recon(), {}, "issued = founder + treasury");
+
+/* ---------- nobody can just make more shares ---------- */
+assert.match(await refused(async (tx) => { await tx.query("UPDATE companies SET status = 'APPROVED' WHERE id = $1", [co]); }), /can't go from IPO to APPROVED/, "an IPO can't be rewound and run again");
+assert.match(await refused(async (tx) => {
+  await tx.query("UPDATE companies SET issued_shares = issued_shares - 1000 WHERE id = $1", [co]);
+  await tx.query("UPDATE companies SET issued_shares = issued_shares + 1000 WHERE id = $1", [co]);
+  await tx.query("UPDATE companies SET founder_shares = 0, issued_shares = 9000 WHERE id = $1", [co]);
+}), /in its share ledger/, "issued shares can't change without ledger entries");
+assert.match(await refused(async (tx) => {
+  await tx.query("UPDATE companies SET authorized_shares = 20000, issued_shares = 11000 WHERE id = $1", [co]);
+  await tx.query("UPDATE share_holdings SET qty = qty + 1000 WHERE company_id = $1 AND holder_type = 'TREASURY'", [co]);
+  await tx.query("INSERT INTO share_ledger (txn_id, company_id, holder_type, holder_id, qty, qty_after, kind) VALUES ($1, $2, 'TREASURY', $3, 1000, 5000, 'ipo_issue')", [uuid(), co, String(co)]);
+}), /duplicate key/, "the IPO issues shares only once");
 
 // an IPO allotment: Ben buys 100 at 5 from the treasury; coins go to the company, shares to Ben
 await db.transaction(async (tx) => {
@@ -110,13 +125,19 @@ assert.match(await refused(async (tx) => { await tx.query("INSERT INTO companies
 assert.match(await refused(async (tx) => { await tx.query("INSERT INTO companies (symbol, name, industry, founder_id, authorized_shares, founder_shares, public_shares, ipo_price) VALUES ('ANN2', 'ann co', 'Snacks', 'p-aaaaaa', 100, 50, 50, 1)"); }), /duplicate key/, "company names are unique, any case");
 assert.match(await refused(async (tx) => { await tx.query("INSERT INTO companies (symbol, name, industry, founder_id, authorized_shares, founder_shares, public_shares, ipo_price) VALUES ('BIG', 'Big Co', 'Snacks', 'p-aaaaaa', 100, 80, 50, 1)"); }), /check/i, "can't plan more shares than authorized");
 
+/* ---------- settings ---------- */
+const st = await one("SELECT * FROM settings");
+assert.deepEqual([st.fee_buyer_bps, st.fee_seller_bps, Number(st.min_fee), Number(st.min_order_value)], [25, 25, 1, 10], "default fees 0.25% each side, min fee 1, min order 10");
+assert.match(await refused(async (tx) => { await tx.query("INSERT INTO settings DEFAULT VALUES"); }), /duplicate key/, "there is one settings row");
+assert.match(await refused(async (tx) => { await tx.query("UPDATE settings SET fee_buyer_bps = 1000"); }), /check/i, "fees are capped at 5%");
+
 /* ---------- the reconciliation views catch drift ---------- */
 await q("UPDATE wallets SET balance = balance + 1 WHERE player_id = 'p-aaaaaa'"); // a wallet changed without a ledger entry
 assert.deepEqual(Object.keys(await recon()), ["recon_wallets"], "a wallet out of step with its ledger shows up");
 await q("UPDATE wallets SET balance = balance - 1 WHERE player_id = 'p-aaaaaa'");
-await q("UPDATE companies SET issued_shares = issued_shares - 5 WHERE id = $1", [co]); // (up to the authorized 10000 is refused by a CHECK)
-assert.deepEqual(Object.keys(await recon()), ["recon_shares"], "issued shares out of step with holdings show up");
-await q("UPDATE companies SET issued_shares = issued_shares + 5 WHERE id = $1", [co]);
+await q("UPDATE share_holdings SET qty = qty - 5 WHERE company_id = $1 AND holder_type = 'TREASURY'", [co]); // a holding changed without a ledger entry
+assert.deepEqual(Object.keys(await recon()), ["recon_shares", "recon_holdings"], "holdings out of step with issued shares and the ledger show up");
+await q("UPDATE share_holdings SET qty = qty + 5 WHERE company_id = $1 AND holder_type = 'TREASURY'", [co]);
 assert.deepEqual(await recon(), {}, "back in step");
 
 console.log("All Cave Exchange schema checks passed.");

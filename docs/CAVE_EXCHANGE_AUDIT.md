@@ -3,8 +3,8 @@
 Audit of the Clock-out Countdown codebase before designing Cave Exchange. Read from the source on `dev` at
 `d3da427` (v79.0, the same code as production), 19 Nov 2026. No production code was changed for this audit.
 
-The brief that asked for it was cut off in section 7 ("IPO Rules"), so the IPO rules and anything after them
-(API, UI, testing, rollout) are not covered here yet.
+The brief that asked for it was cut off in section 7 ("IPO Rules"); the rest arrived later the same day and is
+covered by `CAVE_EXCHANGE_SPEC.md`, `CAVE_EXCHANGE_API.md` and `WALLET_MIGRATION_PLAN.md`.
 
 ---
 
@@ -297,11 +297,13 @@ asked for in the brief should be written around that path.
 
 ## 11. Decisions needed from Terry before Stage B
 
-1. The rest of the brief from "IPO Rules" on (it was cut off).
+1. ~~The rest of the brief from "IPO Rules" on (it was cut off).~~ Received 19 Nov 2026.
 2. Postgres: Netlify DB (Neon) or another provider, and permission to create it (production and dev databases).
 3. ~~Wallet integration: option 2 (custody bridge, two balances) for phase 1, or option 3 (move all coins first).~~
    **Decided 19 Nov 2026 by Terry: option 2, the custody bridge.** Game coins stay in the Blobs ledger; players
    deposit into and withdraw from an exchange cash account in Postgres, and each coin is in one place at a time.
+The open ones, with the new ones the rest of the brief raised, are listed in `CAVE_EXCHANGE_SPEC.md` section 13.
+
 4. Where the Exchange opens from (a Home-row button or a village metro station).
 5. Whether the existing ledger folding and account-deletion behaviour (8.1) should change. This audit doesn't
    change them.

@@ -23,7 +23,7 @@ SET LOCAL search_path = cex;
 CREATE TYPE company_status AS ENUM ('PENDING', 'APPROVED', 'IPO', 'LISTED', 'SUSPENDED', 'DELISTED', 'BANKRUPT', 'REJECTED');
 CREATE TYPE order_side     AS ENUM ('BUY', 'SELL');
 CREATE TYPE order_type     AS ENUM ('LIMIT', 'MARKET');
-CREATE TYPE order_status   AS ENUM ('OPEN', 'PARTIAL', 'FILLED', 'CANCELLED', 'REJECTED');
+CREATE TYPE order_status   AS ENUM ('OPEN', 'PARTIAL', 'FILLED', 'CANCELLED', 'EXPIRED', 'REJECTED');
 CREATE TYPE account_type   AS ENUM ('PLAYER', 'COMPANY', 'BRIDGE', 'FEES');
 CREATE TYPE holder_type    AS ENUM ('PLAYER', 'TREASURY');
 CREATE TYPE reserve_kind   AS ENUM ('COINS', 'SHARES');
@@ -67,6 +67,7 @@ CREATE TABLE companies (
   ipo_price          BIGINT NOT NULL CHECK (ipo_price > 0),
   status             company_status NOT NULL DEFAULT 'PENDING',
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  submitted_at       TIMESTAMPTZ,          -- NULL while the founder is still editing; set by "submit for approval"
   approved_at        TIMESTAMPTZ,
   approved_by        TEXT,                 -- "admin" (the game's admin key holder)
   listed_at          TIMESTAMPTZ,
@@ -113,6 +114,7 @@ CREATE TABLE orders (
   status           order_status NOT NULL DEFAULT 'OPEN',
   reject_reason    TEXT,
   idempotency_key  TEXT,
+  expires_at       TIMESTAMPTZ,                  -- limit orders: created_at + settings.order_ttl_hours; market orders never rest
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (filled_qty <= qty),
@@ -124,6 +126,7 @@ CREATE TABLE orders (
 CREATE INDEX orders_book_buy  ON orders (company_id, limit_price DESC, seq) WHERE side = 'BUY'  AND status IN ('OPEN', 'PARTIAL');
 CREATE INDEX orders_book_sell ON orders (company_id, limit_price ASC,  seq) WHERE side = 'SELL' AND status IN ('OPEN', 'PARTIAL');
 CREATE INDEX orders_player ON orders (player_id, created_at DESC);
+CREATE INDEX orders_expiring ON orders (expires_at) WHERE status IN ('OPEN', 'PARTIAL');
 
 -- ---------------------------------------------------------------- 8. trades
 CREATE TABLE trades (
@@ -196,13 +199,15 @@ CREATE TABLE share_ledger (
   holder_id    TEXT NOT NULL,
   qty          BIGINT NOT NULL CHECK (qty <> 0),
   qty_after    BIGINT NOT NULL CHECK (qty_after >= 0),
-  kind         TEXT NOT NULL CHECK (kind ~ '^[a-z_]{3,30}$'),   -- issue, ipo_buy, trade_buy, trade_sell, split, cancel
+  kind         TEXT NOT NULL CHECK (kind ~ '^[a-z_]{3,30}$'),   -- ipo_issue, issue, ipo_buy, trade_buy, trade_sell, split, cancel
   ref_type     TEXT,
   ref_id       TEXT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX share_ledger_txn ON share_ledger (txn_id);
 CREATE INDEX share_ledger_holder ON share_ledger (company_id, holder_type, holder_id, id);
+-- The IPO issues shares once: at most one 'ipo_issue' entry per company for the founder and one for the treasury.
+CREATE UNIQUE INDEX share_ledger_ipo_once ON share_ledger (company_id, holder_type) WHERE kind = 'ipo_issue';
 
 -- ---------------------------------------------------------------- 11. dividends
 CREATE TABLE dividends (
@@ -296,6 +301,30 @@ CREATE TABLE bridge_transfers (
 CREATE INDEX bridge_transfers_open ON bridge_transfers (state, created_at) WHERE state IN ('PENDING', 'GAME_DONE');
 CREATE INDEX bridge_transfers_player ON bridge_transfers (player_id, created_at DESC);
 
+-- ---------------------------------------------------------------- 17. settings (one row)
+-- Fees and limits the admin can change without a deploy; every change is written to audit_logs by the code.
+-- Fee on a trade side = 0 if its bps is 0, else max(min_fee, ceil(value * bps / 10000)).
+CREATE TABLE settings (
+  id                     BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+  fee_buyer_bps          INTEGER NOT NULL DEFAULT 25 CHECK (fee_buyer_bps BETWEEN 0 AND 500),    -- 25 = 0.25%
+  fee_seller_bps         INTEGER NOT NULL DEFAULT 25 CHECK (fee_seller_bps BETWEEN 0 AND 500),
+  min_fee                BIGINT NOT NULL DEFAULT 1 CHECK (min_fee >= 0),
+  min_order_value        BIGINT NOT NULL DEFAULT 10 CHECK (min_order_value >= 1),                -- coins
+  order_ttl_hours        INTEGER NOT NULL DEFAULT 168 CHECK (order_ttl_hours BETWEEN 1 AND 2160),
+  max_orders_per_minute  INTEGER NOT NULL DEFAULT 20 CHECK (max_orders_per_minute >= 1),
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by             TEXT
+);
+INSERT INTO settings DEFAULT VALUES;
+
+-- ---------------------------------------------------------------- 18. watchlist
+CREATE TABLE watchlist (
+  player_id   TEXT NOT NULL REFERENCES players(id),
+  company_id  BIGINT NOT NULL REFERENCES companies(id),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (player_id, company_id)
+);
+
 -- ---------------------------------------------------------------- guards
 -- Append-only tables: no UPDATE, no DELETE, no TRUNCATE.
 CREATE FUNCTION refuse_change() RETURNS trigger LANGUAGE plpgsql SET search_path = cex AS $$
@@ -328,7 +357,7 @@ CREATE CONSTRAINT TRIGGER coin_ledger_balanced AFTER INSERT ON coin_ledger
 CREATE FUNCTION share_txn_balances() RETURNS trigger LANGUAGE plpgsql SET search_path = cex AS $$
 DECLARE s BIGINT; changes_supply BOOLEAN;
 BEGIN
-  SELECT sum(qty), bool_or(kind IN ('issue', 'cancel', 'split')) INTO s, changes_supply
+  SELECT sum(qty), bool_or(kind IN ('ipo_issue', 'issue', 'cancel', 'split')) INTO s, changes_supply
     FROM share_ledger WHERE txn_id = NEW.txn_id AND company_id = NEW.company_id;
   IF NOT changes_supply AND s <> 0 THEN
     RAISE EXCEPTION 'cex.share_ledger: txn % moves shares of company % out of nowhere (sum %)', NEW.txn_id, NEW.company_id, s
@@ -338,6 +367,51 @@ BEGIN
 END $$;
 CREATE CONSTRAINT TRIGGER share_ledger_balanced AFTER INSERT ON share_ledger
   DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION share_txn_balances();
+
+-- Supply: at COMMIT, a company's issued_shares must equal the sum of its share ledger. So issued_shares can only
+-- change together with ledger entries that issue, cancel or split shares (which only the IPO and admin-approved
+-- corporate actions write); nobody can just raise the number.
+CREATE FUNCTION company_supply_matches() RETURNS trigger LANGUAGE plpgsql SET search_path = cex AS $$
+DECLARE issued BIGINT; total BIGINT;
+BEGIN
+  SELECT c.issued_shares, coalesce((SELECT sum(qty) FROM share_ledger l WHERE l.company_id = c.id), 0)
+    INTO issued, total FROM companies c WHERE c.id = NEW.company_id;
+  IF issued <> total THEN
+    RAISE EXCEPTION 'cex.companies: company % has % issued shares but % in its share ledger', NEW.company_id, issued, total
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NULL;
+END $$;
+CREATE FUNCTION company_supply_matches_co() RETURNS trigger LANGUAGE plpgsql SET search_path = cex AS $$
+DECLARE total BIGINT;
+BEGIN
+  SELECT coalesce(sum(qty), 0) INTO total FROM share_ledger WHERE company_id = NEW.id;
+  IF NEW.issued_shares <> total THEN
+    RAISE EXCEPTION 'cex.companies: company % has % issued shares but % in its share ledger', NEW.id, NEW.issued_shares, total
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NULL;
+END $$;
+CREATE CONSTRAINT TRIGGER share_supply_matches AFTER INSERT ON share_ledger
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION company_supply_matches();
+CREATE CONSTRAINT TRIGGER company_supply_matches AFTER UPDATE OF issued_shares ON companies
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION company_supply_matches_co();
+
+-- Company status only moves forward along these steps, so an IPO can't run twice and a delisted company can't
+-- come back by accident.
+CREATE FUNCTION company_status_moves() RETURNS trigger LANGUAGE plpgsql SET search_path = cex AS $$
+BEGIN
+  IF NEW.status <> OLD.status AND (OLD.status::text || '>' || NEW.status::text) <> ALL (ARRAY[
+      'PENDING>APPROVED', 'PENDING>REJECTED', 'APPROVED>IPO', 'APPROVED>REJECTED', 'IPO>LISTED',
+      'LISTED>SUSPENDED', 'SUSPENDED>LISTED', 'LISTED>DELISTED', 'SUSPENDED>DELISTED',
+      'LISTED>BANKRUPT', 'SUSPENDED>BANKRUPT']) THEN
+    RAISE EXCEPTION 'cex.companies: company % can''t go from % to %', NEW.id, OLD.status, NEW.status
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER company_status_moves BEFORE UPDATE OF status ON companies
+  FOR EACH ROW EXECUTE FUNCTION company_status_moves();
 
 -- ---------------------------------------------------------------- reconciliation views
 -- Each view lists only the rows that DON'T reconcile: an empty result means everything adds up.
