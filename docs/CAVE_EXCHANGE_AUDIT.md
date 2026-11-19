@@ -299,7 +299,9 @@ asked for in the brief should be written around that path.
 
 1. The rest of the brief from "IPO Rules" on (it was cut off).
 2. Postgres: Netlify DB (Neon) or another provider, and permission to create it (production and dev databases).
-3. Wallet integration: option 2 (custody bridge, two balances) for phase 1, or option 3 (move all coins first).
+3. ~~Wallet integration: option 2 (custody bridge, two balances) for phase 1, or option 3 (move all coins first).~~
+   **Decided 19 Nov 2026 by Terry: option 2, the custody bridge.** Game coins stay in the Blobs ledger; players
+   deposit into and withdraw from an exchange cash account in Postgres, and each coin is in one place at a time.
 4. Where the Exchange opens from (a Home-row button or a village metro station).
 5. Whether the existing ledger folding and account-deletion behaviour (8.1) should change. This audit doesn't
    change them.
