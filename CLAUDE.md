@@ -49,9 +49,11 @@ Netlify (site `splendid-gnome-120c81`). README.md has the full history, one para
   (`claimKey`, `payOnce`).
 - Malaysia's 2027 public holidays aren't in `netlify/lib/holidays.mjs` yet.
 
-## Status (18 Nov 2026)
+## Status (19 Nov 2026)
 
-Production runs v79 (dev and main are the same). Since v65: a train-map look (v55-61), the village as a metro map
+Production runs v80 (village giving asks for a second tap; a one-off 300-coin apology to Shunyi, done). Cave Exchange
+is being built on dev and isn't wired into the API yet: docs in `docs/CAVE_EXCHANGE_*.md` and `docs/WALLET_MIGRATION_PLAN.md`,
+code in `netlify/lib/exchange/`, schema and PGlite tests in `db/`. Up to v79: Since v65: a train-map look (v55-61), the village as a metro map
 with developing blueprints (v59-67), a home shown room by room with furnished rooms (v68), FoodSpin (v69-77), and
 wages of 250 a day with an active bonus, Ranks, and wages paid by the clock at clock-out, double on public
 holidays (v78-79). FoodSpin data: `public/food-{sg,jb,kl}.json`, rebuilt from a Geofabrik extract with
