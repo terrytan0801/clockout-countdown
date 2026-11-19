@@ -75,13 +75,11 @@ The founder starts the IPO of an APPROVED company. In one transaction:
    `issued_shares` becomes founder + public.
 3. An audit line records it.
 
-During the IPO, players buy public shares from the treasury at the IPO price (**DECISION**, default below):
+During the IPO, players buy public shares from the treasury at the IPO price (decided by Terry, 19 Nov 2026):
 
-- **DEFAULT: first come, first served**, at the IPO price, for 24 hours or until the treasury's public shares are
+- **First come, first served**, at the IPO price, for 24 hours or until the treasury's public shares are
   sold. Each purchase is one transaction: the buyer's coins go to the company's cash account, the shares go from
   the treasury to the buyer, and a trade is recorded with no order ids (an IPO allotment). No fee on IPO buys.
-  The alternative is a subscription period followed by a pro-rata share-out, which is fairer when demand is
-  high but takes longer to build.
 - When the IPO ends, the company moves IPO → LISTED and trading opens. Unsold shares stay in the treasury. They
   can only reach the market later through an admin-approved corporate action.
 - The founder may buy in their own IPO (the coins go to their company's cash, which they can't take out except
@@ -249,8 +247,8 @@ Following the brief's phases (Terry's B1–B8 in brackets):
 |---|---|---|
 | 0 Audit and architecture | Audit, spec, database, API, wallet plan | Docs done (this set) |
 | 1 Infrastructure [B1–B3] | Schema, wallet service design, wallet security and migration plan | Schema done and tested on PGlite; bridge designed |
-| 2 Company and IPO [B4] | Create, validate, approve, IPO, allotment | Next |
-| 3 Trading engine [B5] | Orders, matching, partial fills, reservations, cancel, fees | |
+| 2 Company and IPO [B4] | Create, validate, approve, IPO, allotment | Built (`netlify/lib/exchange/`), tested on PGlite (`db/test/exchange-ipo.test.mjs`); not wired into `/api` until there is a database |
+| 3 Trading engine [B5] | Orders, matching, partial fills, reservations, cancel, fees | Next |
 | 4 Portfolio and UI [B6] | The Exchange screen | |
 | 5 Company management | Reports, dividends, corporate actions | |
 | 6 Security and deployment [B7–B8] | Concurrency, security, load and regression tests; dev database, then production with Terry's go-ahead | |
@@ -260,7 +258,7 @@ Following the brief's phases (Terry's B1–B8 in brackets):
 1. **Database provider**, and permission to create it (one for production, one for the dev deploy). Netlify DB
    (Neon) is the closest fit. Needed before code runs on a deploy (phase 2 can be built and tested locally first).
 2. **Entry point:** a Home row button or a village metro station.
-3. **IPO allotment:** first come, first served for 24 h (default) or subscription then pro-rata.
+3. ~~IPO allotment~~ **Decided 19 Nov 2026: first come, first served for 24 hours.**
 4. **Company revenue:** where a company's coins come from after its IPO (phase 5).
 5. **Deleting an account that still has exchange cash or shares.** Today deleting an account removes its game
    records; exchange cash would be stranded. Options: refuse deletion until the exchange is emptied (a small

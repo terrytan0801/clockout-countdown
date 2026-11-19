@@ -13,7 +13,11 @@ are empty when things add up and catch drift when they don't:
 ```bash
 npm i --no-save @electric-sql/pglite@0.5.15
 node db/test/schema.test.mjs
+node db/test/exchange-ipo.test.mjs
 ```
+
+`exchange-ipo.test.mjs` runs the company and IPO code (`netlify/lib/exchange/`) through its routes on the same
+in-memory database (`db/test/pglite.mjs` sets it up).
 
 It isn't part of `npm test` yet because PGlite isn't a project dependency. Production and dev each get their own
 database; which provider is still to be decided.
@@ -43,7 +47,7 @@ database; which provider is still to be decided.
 | 1 | `players` | A reference to the game's `person/<pid>` | `id` is the game's `p-…` id; created on first use; no passcodes or sessions; `frozen` lets an admin stop trading |
 | 2 | `wallets` | Exchange cash per player | `balance` (incl. reserved), `reserved` for open buy orders; `reserved <= balance`, both `>= 0` |
 | 3 | `coin_ledger` | Every coin movement | Append-only, double-entry by `txn_id`. Accounts: `PLAYER`, `COMPANY`, `BRIDGE` (the game wallet's side of the bridge), `FEES` |
-| 4 | `companies` | Player companies | Unique `symbol` (2–5 capitals/digits) and case-insensitive unique `name`; share counts; `ipo_price`; `status` (PENDING, APPROVED, IPO, LISTED, SUSPENDED, DELISTED, BANKRUPT, REJECTED); `submitted_at` is empty while the founder is still editing |
+| 4 | `companies` | Player companies | Unique `symbol` (2–5 capitals/digits) and case-insensitive unique `name`; share counts; `ipo_price`; `status` (PENDING, APPROVED, IPO, LISTED, SUSPENDED, DELISTED, BANKRUPT, REJECTED); `submitted_at` is empty while the founder is still editing; `ipo_ends_at` 24 h after the IPO starts |
 | 5 | `share_holdings` | Shares held | Per company and holder; holder is a `PLAYER` or the company's `TREASURY`; `reserved` for open sell orders |
 | 6 | `share_ledger` | Every share movement | Append-only; balanced per transaction and company except issuance, cancellation and splits |
 | 7 | `orders` | Buy and sell orders | `LIMIT` (has a price) or `MARKET` (no price); `seq` gives time priority; one `idempotency_key` per player; `expires_at` (limit orders), status `EXPIRED`; partial indexes hold each side's book in price-time order |

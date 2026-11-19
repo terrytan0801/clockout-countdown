@@ -70,6 +70,7 @@ CREATE TABLE companies (
   submitted_at       TIMESTAMPTZ,          -- NULL while the founder is still editing; set by "submit for approval"
   approved_at        TIMESTAMPTZ,
   approved_by        TEXT,                 -- "admin" (the game's admin key holder)
+  ipo_ends_at        TIMESTAMPTZ,          -- set when the IPO starts (24 h later); IPO buys are refused after it
   listed_at          TIMESTAMPTZ,
   CHECK (issued_shares <= authorized_shares),
   CHECK (founder_shares + public_shares <= authorized_shares)
