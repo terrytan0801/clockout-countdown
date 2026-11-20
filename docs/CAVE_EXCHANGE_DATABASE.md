@@ -15,6 +15,7 @@ npm i --no-save @electric-sql/pglite@0.5.15
 node db/test/schema.test.mjs
 node db/test/exchange-ipo.test.mjs
 node db/test/exchange-trading.test.mjs
+node db/test/exchange-wallet.test.mjs
 ```
 
 `exchange-ipo.test.mjs` runs the company and IPO code (`netlify/lib/exchange/`) through its routes on the same

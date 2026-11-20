@@ -59,6 +59,7 @@ import {
 } from "./powers.mjs";
 import { REGIONS, regionOf, holidayOf } from "./holidays.mjs";
 import { longBreaks } from "./planner.mjs";
+import { makeExchange } from "./exchange/index.mjs";
 import { ringTimes, currentRing, slotKey, parseSlot, RING_COUNT, RING_FROM, RING_TO, CLIP_MIN_S, CLIP_MAX_S, CLIP_MAX_BYTES, THUMB_MAX_BYTES, CLIP_TYPES } from "./clips.mjs";
 
 export const ZAP_COOLDOWN_MS = 10 * 60 * 1000;
@@ -210,7 +211,7 @@ const fmt12 = (h, m) => `${(h % 12) || 12}:${String(m).padStart(2, "0")} ${h < 1
 // cache: things a warm server may remember between requests (pass the same object each time).
 // purge(tags): empties Netlify's CDN of those cache tags (a removed clip must not stay in the CDN).
 // warm(url): fetches a link once so Netlify's CDN keeps it before anyone asks for it.
-export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {}, purge = async () => {}, warm = async () => {} }) {
+export function makeApp({ store, webpush, now = () => Date.now(), adminKey = null, fetchFn = (...a) => globalThis.fetch(...a), dev = false, region = null, cache = {}, purge = async () => {}, warm = async () => {}, cexDb = null }) {
   const stats = makeStats({ store, now, adminKey });
   cache.sessions ||= new Map(); cache.streak ||= new Map(); cache.settled ||= new Map();
   // Work the reply doesn't depend on (stats, tidying up). With waitUntil it runs after the reply has gone.
@@ -384,6 +385,20 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return { coins: ((base && base.bal) || 0) + log.reduce((n, e) => n + e.amt, 0), log, base };
   }
   const touchWallet = (pid) => store.setJSON(`wv/${pid}`, rv());
+  // Cave Exchange (v82): only when it has a database (cexDb); until then its routes answer 503 and the village shows
+  // no Exchange station. The game wallet side of the custody bridge is these few calls.
+  const exchange = cexDb && makeExchange({ db: cexDb, now, game: {
+    coins: async (pid) => (await wallet(pid)).coins,
+    writeLine: (key) => Promise.all([store.setJSON(key, 0), touchWallet(key.split("/")[1])]),
+    hasLine: (key) => exists(key),
+    upto: async (pid) => ((await getJSON(`coinbase/${pid}`)) || {}).upto || "",
+    credit,
+  } });
+  async function cexAnswer(fn) {
+    if (!exchange) return json({ error: "The exchange isn't open yet.", cexDown: true }, 503);
+    try { const r = await fn(); return json(r.body, r.status); }
+    catch (e) { console.error("exchange", e); return json({ error: "The exchange is closed for a moment. Try again soon.", cexDown: true }, 503); }
+  }
   // Annual leave left this calendar year (v81): 10, less days off already paid and weekday days off still to come.
   async function leaveLeft(p, today) {
     const yr = today.slice(0, 4);
@@ -554,7 +569,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
     const [yy, mm] = monthOf(t).split("-").map(Number);
     const base = {
-      now: t, day, cooldownMs: ZAP_COOLDOWN_MS, colors: COLORS, ...(dev ? { dev: true } : {}),
+      now: t, day, cooldownMs: ZAP_COOLDOWN_MS, colors: COLORS, ...(dev ? { dev: true } : {}), ...(exchange ? { cex: true } : {}),
       me: {
         ...publicPerson(me), buzz: me.buzz !== false, fx: me.fx !== false, city: me.city || null,
         region: regionOf(me), off: holidayOf(regionOf(me), day) ? { kind: "holiday", name: holidayOf(regionOf(me), day) } : null,
@@ -896,6 +911,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       /* ---------- admin (admin key, not a log-in) ---------- */
       if (route.startsWith("admin/")) {
         if (!stats.isAdmin(req)) return json({ error: "That admin key didn't work." }, 401);
+        if (route.startsWith("admin/exchange/")) return cexAnswer(() => exchange.admin(route.slice(15), method, body, Object.fromEntries(url.searchParams)));
         if (route === "admin/stats" && method === "GET") {
           const days = [7, 30, 90].includes(Number(url.searchParams.get("days"))) ? Number(url.searchParams.get("days")) : 30;
           const idx = await keys("myclip/");
@@ -980,6 +996,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       const a = await auth(req);
       if (!a) return json({ error: "Please log in again." }, 401);
       let { me } = a;
+      if (route.startsWith("exchange/")) return cexAnswer(() => exchange.handle(me, route.slice(9), method, body, Object.fromEntries(url.searchParams)));
       // After a change: mark the caves it touched as changed, then send the new state.
       const fresh = async (who, ...cids) => {
         await Promise.all([...new Set([who.cave, ...cids])].filter(Boolean).map(bump));
@@ -1763,5 +1780,5 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return { sent };
   }
 
-  return { handle, rainAlerts, ringTick, holidayTips, payday };
+  return { handle, rainAlerts, ringTick, holidayTips, payday, cexJobs: async () => (exchange ? exchange.jobs() : null) };
 }

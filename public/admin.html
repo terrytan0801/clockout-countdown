@@ -239,6 +239,11 @@ tbody tr:hover{background:var(--bg)}
         <ul class="log" id="caveList"></ul>
       </section>
     </div>
+    <!-- v82: Cave Exchange companies waiting for approval (only when the exchange is running) -->
+    <section class="panel" aria-labelledby="cexTitle" id="cexPanel" hidden>
+      <div class="panel-head"><h2 id="cexTitle">Exchange: companies to approve</h2></div>
+      <ul class="log" id="cexList"></ul>
+    </section>
   </main>
 </div>
 
@@ -312,9 +317,34 @@ async function load(){
     const d=await r.json().catch(()=>({}));
     if(r.status===401){lsSet(LS_KEY,null);key=null;showGate("That admin key didn't work.");return;}
     if(!r.ok) throw new Error(d.error||"The server didn't answer. Try Refresh.");
-    D=d;render();
+    D=d;render();loadCex();
   }catch(e){$("updated").textContent=e.message;}
   finally{$("refreshBtn").disabled=false;}
+}
+// v82: companies waiting for the admin's approval. Hidden while the exchange isn't running (503).
+async function loadCex(){
+  const r=await fetch("/api/admin/exchange/companies",{headers:{"x-admin-key":key},cache:"no-store"}).catch(()=>null);
+  if(!r||!r.ok){$("cexPanel").hidden=true;return;}
+  const d=await r.json(), ul=$("cexList");
+  $("cexPanel").hidden=false;ul.replaceChildren();
+  if(!d.items.length){const li=document.createElement("li");li.textContent="Nothing waiting.";ul.appendChild(li);return;}
+  d.items.forEach(c=>{
+    const li=document.createElement("li"), t=document.createElement("span");
+    t.textContent=`${c.symbol} · ${c.name} (${c.industry}) by ${c.founderName}: ${num(c.founderShares)} founder + ${num(c.publicShares)} public of ${num(c.authorizedShares)}, IPO ${num(c.ipoPrice)}. ${c.description}`;
+    li.appendChild(t);
+    [["Approve",true],["Reject",false]].forEach(([label,yes])=>{
+      const b=document.createElement("button");b.type="button";b.className=yes?"btn":"btn ghost";b.textContent=label;b.style.marginLeft="8px";
+      b.addEventListener("click",async()=>{
+        b.disabled=true;
+        const x=await fetch("/api/admin/exchange/company/approve",{method:"POST",headers:{"x-admin-key":key,"content-type":"application/json"},body:JSON.stringify({id:c.id,approve:yes})});
+        const e=await x.json().catch(()=>({}));
+        if(!x.ok){b.disabled=false;alert(e.error||"That didn't work.");return;}
+        loadCex();
+      });
+      li.appendChild(b);
+    });
+    ul.appendChild(li);
+  });
 }
 function showGate(msg){
   $("gate").hidden=false;$("dash").hidden=true;$("controls").hidden=true;

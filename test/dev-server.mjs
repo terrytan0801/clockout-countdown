@@ -14,10 +14,13 @@ const webpush = {
 const store = memStore();
 const now = () => Date.now() + Number(process.env.SHIFT_MS || 0);
 const seedMod = process.env.SEED ? await import("./seed.mjs") : null;
-const handle = makeHandler({ store, webpush, now, dev: process.env.DEV === "1", cache: {}, adminKey: process.env.ADMIN_KEY || (process.env.SEED === "1" ? "demo-admin" : null), ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}) });
+// CEX=1 runs the Cave Exchange on an in-memory PostgreSQL (PGlite; see db/test/pglite.mjs), with demo data if SEED=1.
+const cexDb = process.env.CEX === "1" ? (await (await import("../db/test/pglite.mjs")).freshDb()).db : null;
+const handle = makeHandler({ store, webpush, now, dev: process.env.DEV === "1", cache: {}, adminKey: process.env.ADMIN_KEY || (process.env.SEED === "1" ? "demo-admin" : null), ...(seedMod ? { fetchFn: seedMod.fakeFetch } : {}), cexDb });
 if (seedMod) await seedMod.seed(store, now());
 // SEED_COINS=<n> gives the seeded Terry that many coins, so the shop can be tried without waiting for payday.
 if (seedMod && process.env.SEED_COINS) await store.set(`led/p-terry/0000000000001-aaaaaa/${Number(process.env.SEED_COINS) | 0}/test`, "0");
+if (seedMod && cexDb) await (await import("./cex-seed.mjs")).seedExchange(handle, store);
 const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 const root = fileURLToPath(new URL("../public/", import.meta.url));
 

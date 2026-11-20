@@ -1366,7 +1366,7 @@ body.calm .fsprop span{animation:none}
     </div>
     <div class="village" id="villView" hidden>
       <div class="vnet" id="villScene"><p class="vnet-name">Village network</p><div id="villLots"></div>
-        <ul class="vlegend"><li style="--lc:#005ec4"><i></i>Water Line</li><li style="--lc:#009645"><i></i>Garden Line</li><li style="--lc:#9e28b5"><i></i>Fun Line</li><li style="--lc:#f39200"><i></i>Circle Line</li><li style="--lc:#d42e12"><i></i>Red Line</li><li class="white" style="--lc:#fff"><i></i>White Line</li></ul></div>
+        <ul class="vlegend"><li style="--lc:#005ec4"><i></i>Water Line</li><li style="--lc:#009645"><i></i>Garden Line</li><li style="--lc:#9e28b5"><i></i>Fun Line</li><li style="--lc:#f39200"><i></i>Circle Line</li><li style="--lc:#d42e12"><i></i>Red Line</li><li class="white" style="--lc:#fff"><i></i>White Line</li><li style="--lc:#9d5b25" id="cxLegend" hidden><i></i>Market Line</li></ul></div>
       <div class="vback" id="villBack" hidden></div>
       <div class="vcard" id="villCard" role="dialog" aria-modal="true" hidden></div>
     </div>
@@ -1464,7 +1464,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v81.0</span>
+    <span>v82.0</span>
   </div>
 </div>
 
@@ -3402,12 +3402,23 @@ const BUILD_INFO={
 // v59: the village is a small metro network. Three lines run out from Home (the big interchange); the Circle Line
 // loops round it through the Lake, the Farm and the Cinema, which makes those interchanges too.
 const VNET={w:340,h:440,y0:0,ring:[170,230,92],
-  at:{home:[170,230,"r"],lake:[105,165,"r"],harbor:[46,106,"t"],farm:[235,165,"r"],weather:[294,106,"t"],cinema:[170,322,"r"],planner:[170,400,"l"]},
+  at:{home:[170,230,"r"],lake:[105,165,"r"],harbor:[46,106,"t"],farm:[235,165,"r"],weather:[294,106,"t"],cinema:[170,322,"r"],planner:[170,400,"l"],exchange:[56,312,"t"]},
   lines:[["#005ec4",["home","lake","harbor"]],["#009645",["home","farm","weather"]],["#9e28b5",["home","cinema","planner"]]],
   curves:[["#d42e12","harbor","weather","M46 106 Q170 4 294 106"],["#fff","weather","planner","M294 106 C356 210 330 372 170 400"]]};
 const VNET_XCHG={home:1,lake:1,farm:1,cinema:1,harbor:1,weather:1,planner:1};
 const STATIONS=["home","lake","weather","farm","harbor","cinema","planner"];
-const ST_NAME={home:"Home",lake:"The Lake",weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays"};
+// v82: the Cave Exchange station, on its own Market Line, only once the server has the exchange running (S.cex).
+const cexOn=()=>!!(S&&S.cex), stList=()=>cexOn()?[...STATIONS,"exchange"]:STATIONS;
+const CX_ART=`<svg viewBox="0 0 120 100" aria-hidden="true"><rect x="22" y="34" width="76" height="56" rx="3" fill="#2b2f34"/><path d="M16 36 60 12 104 36Z" fill="#9d5b25"/><rect x="30" y="44" width="60" height="30" fill="#163229"/><polyline points="34,68 46,60 56,64 68,52 84,48" fill="none" stroke="#2cc79e" stroke-width="4" stroke-linejoin="round"/><rect x="52" y="78" width="16" height="12" fill="#9d5b25"/></svg>`;
+let cxLoad=null;
+async function openExchange(){ // the Exchange screen and its styles load the first time it's opened
+  if(!cxLoad) cxLoad=new Promise((ok,no)=>{
+    const l=document.createElement("link");l.rel="stylesheet";l.href="/exchange/exchange.css";document.head.appendChild(l);
+    const sc=document.createElement("script");sc.src="/exchange/exchange.js";sc.onload=ok;sc.onerror=()=>{cxLoad=null;no(new Error("Couldn't open the Exchange. Check your connection."));};document.head.appendChild(sc);
+  });
+  try{await cxLoad;window.CEX.open();}catch(e){toast(e.message);}
+}
+const ST_NAME={home:"Home",lake:"The Lake",weather:"Weather",farm:"Farm",harbor:"Harbor",cinema:"Cinema",planner:"Holidays",exchange:"Exchange"};
 let village=null, villSel=null, farm=null, farmSel=null, vGive={}; // vGive: the amount being given (v80)
 const SEED_PRICE={radish:10,tomato:25,pumpkin:60,monflower:150}; // same as CROPS on the server
 const mkEl=(tag,cls,text)=>{const e=document.createElement(tag);if(cls) e.className=cls;if(text!=null) e.textContent=text;return e;};
@@ -3439,6 +3450,7 @@ function devArt(k,big){
   const st=k==="home"||k==="lake"?"open":lotState(k), v=village&&village[k];
   if(k==="home") return CAVE_HOME.scene(sceneNight());
   if(k==="lake") return CAVE_HOME.pond(lakePhase());
+  if(k==="exchange") return CX_ART;
   const svg=`<svg viewBox="0 0 120 100" aria-hidden="true">${VILLAGE.BUILD[k].svg}</svg>`;
   if(st==="open") return svg;
   const p=st==="building"?100:v?Math.min(100,Math.floor(v.raised/v.price*100)):0;
@@ -3446,11 +3458,11 @@ function devArt(k,big){
 }
 function renderVillage(){
   if($("villView").hidden) return;
-  const box=$("villLots"), P=k=>VNET.at[k], stOf=k=>k==="home"||k==="lake"?"open":lotState(k), open=k=>stOf(k)==="open";
+  const box=$("villLots"), P=k=>VNET.at[k], stOf=k=>k==="home"||k==="lake"||k==="exchange"?"open":lotState(k), open=k=>stOf(k)==="open";
   const pctOf=k=>{const v=village&&village[k];return v?Math.floor(v.raised/v.price*100):0;};
   const tag=k=>k==="home"?"":open(k)?"Open":stOf(k)==="building"?"Soon":pctOf(k)+"%";
   const note=k=>k==="home"?"back to the cave":k==="lake"?(ffHere()||isBuilt("harbor")?"open, Mr. Fishfish is buying":"open"):open(k)?"open":stOf(k)==="building"?"opens soon":pctOf(k)+"% paid";
-  const sig=STATIONS.map(k=>stOf(k)+pctOf(k)).join("|")+"|"+villSel+"|"+lakePhase();
+  const sig=stList().map(k=>stOf(k)+pctOf(k)).join("|")+"|"+villSel+"|"+lakePhase();
   if(box.dataset.sig!==sig){
     box.dataset.sig=sig;
     const seg=(p,q,c)=>`<line x1="${P(p)[0]}" y1="${P(p)[1]}" x2="${P(q)[0]}" y2="${P(q)[1]}" stroke="${c}"${open(q)?"":' stroke-dasharray="1 13" opacity=".6"'}/>`;
@@ -3459,16 +3471,18 @@ function renderVillage(){
       svg+=c==="#fff"?`<path d="${d}" stroke="var(--ink)" stroke-width="12"${dash}/><path d="${d}" stroke="#fff" stroke-width="6"${dash}/>`:`<path d="${d}" stroke="${c}"${dash}${dash?' opacity=".6"':""}/>`;});
     svg+=`<circle cx="${VNET.ring[0]}" cy="${VNET.ring[1]}" r="${VNET.ring[2]}" stroke="#f39200"/>`;
     VNET.lines.forEach(([c,ks])=>{for(let i=1;i<ks.length;i++) svg+=seg(ks[i-1],ks[i],c);});
+    if(cexOn()) svg+=seg("home","exchange","#9d5b25"); // v82: Market Line
+    $("cxLegend").hidden=!cexOn();
     svg+="</g>";
-    STATIONS.forEach(k=>{const [x,y]=P(k);svg+=`<circle cx="${x}" cy="${y}" r="${k==="home"?14:10}" class="vn-dot xchg${open(k)?" on":" off"}"/>`;});
+    stList().forEach(k=>{const [x,y]=P(k);svg+=`<circle cx="${x}" cy="${y}" r="${k==="home"?14:10}" class="vn-dot xchg${open(k)?" on":" off"}"/>`;});
     box.innerHTML=svg+"</svg>";
-    STATIONS.forEach(k=>{
+    stList().forEach(k=>{
       const [x,y,side]=P(k), st=stOf(k), bt=mkEl("button",`vn-st ${side} ${st}${k==="home"?" home":""}${villSel===k?" sel":""}`), lb=mkEl("span","lbl"), th=mkEl("span","th"), t=tag(k);
       bt.type="button";bt.style.left=x/VNET.w*100+"%";bt.style.top=(y-VNET.y0)/VNET.h*100+"%";
       bt.setAttribute("aria-label",`${ST_NAME[k]}: ${note(k)}`);
       th.innerHTML=devArt(k);if(t) th.appendChild(mkEl("em","",t));
       lb.append(th,mkEl("b","",ST_NAME[k]));bt.appendChild(lb);
-      bt.addEventListener("click",()=>k==="home"?showVillage(false):selectLot(k));box.appendChild(bt);
+      bt.addEventListener("click",()=>k==="home"?showVillage(false):k==="exchange"?openExchange():selectLot(k));box.appendChild(bt);
     });
   }
   renderVillCard();

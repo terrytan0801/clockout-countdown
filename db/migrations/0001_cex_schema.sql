@@ -35,7 +35,7 @@ CREATE TYPE bridge_state   AS ENUM ('PENDING', 'GAME_DONE', 'COMPLETED', 'FAILED
 -- A reference to the game's person/<pid>. Created the first time someone uses the exchange; the game keeps
 -- the real record (name, passcode, cave). The exchange never stores passcodes or sessions.
 CREATE TABLE players (
-  id          TEXT PRIMARY KEY CHECK (id ~ '^p-[0-9a-f]{6,32}$'),
+  id          TEXT PRIMARY KEY CHECK (id ~ '^p-[0-9a-z]{3,32}$'),
   name        TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 40),
   cave_id     TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),

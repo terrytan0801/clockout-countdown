@@ -9,8 +9,11 @@ import { CexError, fail } from "./base.mjs";
 import * as companies from "./companies.mjs";
 import * as ipo from "./ipo.mjs";
 import * as orders from "./orders.mjs";
+import * as market from "./market.mjs";
+import * as portfolio from "./portfolio.mjs";
+import * as wallet from "./wallet.mjs";
 
-export function makeExchange({ db: raw, now = () => Date.now() }) {
+export function makeExchange({ db: raw, now = () => Date.now(), game = null }) {
   // Two transactions that lock the same wallets in a different order can deadlock; Postgres stops one of them,
   // and it simply runs again (it changed nothing).
   const db = {
@@ -60,6 +63,7 @@ export function makeExchange({ db: raw, now = () => Date.now() }) {
     return answer(async () => {
       const [a, id, b, c] = route.split("/");
       if (a === "company") {
+        if (id === "mine" && method === "GET") return run((q) => companies.mine(q, me));
         if (id === "create" && method === "POST") return once(me.id, route, body, (q) => companies.create(q, me, body));
         if (id === "list" && method === "GET") {
           await db.tx((q) => ipo.closeDue(q, now()));
@@ -80,6 +84,27 @@ export function makeExchange({ db: raw, now = () => Date.now() }) {
         if (id === "my" && method === "GET") return run((q) => orders.mine(q, me, query));
       }
       if (a === "stock" && id && b === "orderbook" && method === "GET") return run((q) => orders.book(q, id, now()));
+      if (a === "stock" && id && b === "chart" && method === "GET") return run((q) => market.chart(q, id, query));
+      if (a === "stock" && id && !b && method === "GET") return run(async (q) => (await market.stock(q, me, id, now())) || fail(404, "No such company."));
+      if (a === "market" && !id && method === "GET") {
+        await db.tx((q) => ipo.closeDue(q, now()));
+        return run((q) => market.overview(q, now()));
+      }
+      if (a === "portfolio" && method === "GET") {
+        if (!id) return run((q) => portfolio.portfolio(q, me));
+        if (id === "holdings") return run((q) => portfolio.holdings(q, me));
+        if (id === "history") return run((q) => portfolio.history(q, me, query));
+        if (id === "dividends") return run((q) => portfolio.dividends(q, me, query));
+      }
+      if (a === "watchlist") {
+        if (method === "GET") return run((q) => portfolio.watching(q, me));
+        if (method === "POST") return run((q) => portfolio.watch(q, me, body));
+      }
+      if (a === "wallet" && game) {
+        if (!id && method === "GET") return run((q) => wallet.overview(q, game, me));
+        if (id === "deposit" && method === "POST") return { status: 200, body: await wallet.deposit(db.tx, game, me, body, now()) };
+        if (id === "to-wallet" && method === "POST") return { status: 200, body: await wallet.toWallet(db.tx, game, me, body, now()) };
+      }
       if (a === "trades" && id && method === "GET") return run((q) => orders.trades(q, id, query));
       fail(404, "No such exchange route.");
     });
@@ -95,6 +120,7 @@ export function makeExchange({ db: raw, now = () => Date.now() }) {
   }
 
   // For the exchange's scheduled job: close IPOs and expire limit orders whose time is up.
-  const jobs = async () => ({ ipos: await db.tx((q) => ipo.closeDue(q, now())), expired: await db.tx((q) => orders.expireDue(q, now())) });
+  const jobs = async () => ({ ipos: await db.tx((q) => ipo.closeDue(q, now())), expired: await db.tx((q) => orders.expireDue(q, now())),
+    recovered: game ? await wallet.recover(db.tx, game, now()) : 0 });
   return { handle, admin, jobs };
 }

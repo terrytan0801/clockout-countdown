@@ -252,8 +252,8 @@ Following the brief's phases (Terry's B1–B8 in brackets):
 | 1 Infrastructure [B1–B3] | Schema, wallet service design, wallet security and migration plan | Schema done and tested on PGlite; bridge designed |
 | 2 Company and IPO [B4] | Create, validate, approve, IPO, allotment | Built (`netlify/lib/exchange/`), tested on PGlite (`db/test/exchange-ipo.test.mjs`); not wired into `/api` until there is a database |
 | 3 Trading engine [B5] | Orders, matching, partial fills, reservations, cancel, fees | Built (`orders.mjs`), tested on PGlite (`db/test/exchange-trading.test.mjs`); not wired into `/api` yet |
-| 4 Portfolio and UI [B6] | The Exchange screen | Next |
-| 5 Company management | Reports, dividends, corporate actions | |
+| 4 Portfolio and UI [B6] | The Exchange screen | Built: Exchange station on the village metro map (Market Line), full-screen view `public/exchange/` (Market, stock details with chart, order book, trading, Portfolio with deposit and move to wallet, My company, History), admin approval panel; wallet bridge in `wallet.mjs`. Shown only when the server has a database (`S.cex`); tried locally with `CEX=1 SEED=1` |
+| 5 Company management | Reports, dividends, corporate actions | Next |
 | 6 Security and deployment [B7–B8] | Concurrency, security, load and regression tests; dev database, then production with Terry's go-ahead | |
 
 ## 13. Decisions for Terry

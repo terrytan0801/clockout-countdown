@@ -122,3 +122,12 @@ export async function approve(q, { id, approve: yes, note = "" }) {
   await audit(q, "ADMIN", "admin", yes ? "company.approve" : "company.reject", "company", c.id, { note: String(note).slice(0, 300) });
   return { company: view(n) };
 }
+
+// The player's own company (the newest one they founded), whatever its status, or null.
+export async function mine(q, me) {
+  const [c] = await q("SELECT * FROM companies WHERE founder_id = $1 ORDER BY id DESC LIMIT 1", [me.id]);
+  if (!c) return { company: null };
+  const [a] = await q("SELECT balance FROM company_accounts WHERE company_id = $1", [c.id]);
+  const [t] = await q("SELECT qty FROM share_holdings WHERE company_id = $1 AND holder_type = 'TREASURY'", [c.id]);
+  return { company: { ...view(c), cash: a ? a.balance : 0, treasuryShares: t ? t.qty : 0 } };
+}
