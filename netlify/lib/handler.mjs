@@ -27,6 +27,7 @@
 //   ringsent/<cid>/<day>.<r>    that ring's push went out
 //   dayoff/<day>/<pid>          someone took the day off (v24)
 //   leave/<pid>/<day>           the same, listed per person (for streaks)
+//   al/<pid>/<year>/<day>       a day of annual leave used (paid x2), v81; 10 a calendar year (ANNUAL_LEAVE)
 //   ver/<cid>                   changes whenever anything the cave's board shows changes (v32): phones ask
 //                               "still the same?" and skip the full read when it is
 //   chatlast/<cid>              {at,pid,id} of the newest chat message, so nobody lists the chat to find it
@@ -77,6 +78,7 @@ export const SHOP = {
 };
 export const HOME_KINDS = Object.keys(SHOP);
 // How monster coins are earned and lost. Change the numbers here to rebalance.
+export const ANNUAL_LEAVE = 10; // v81: days off a calendar year that pay x2; any more pay nothing
 export const COINS = {
   welcome: 100,          // once, so everyone can buy something on day one; since v48 also given the first time someone is zapped
   day: 250, coffee: 10,  // per workday, paid at your clock-out time (+10 with your coffee machine at home); 50 until v78.
@@ -382,6 +384,15 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return { coins: ((base && base.bal) || 0) + log.reduce((n, e) => n + e.amt, 0), log, base };
   }
   const touchWallet = (pid) => store.setJSON(`wv/${pid}`, rv());
+  // Annual leave left this calendar year (v81): 10, less days off already paid and weekday days off still to come.
+  async function leaveLeft(p, today) {
+    const yr = today.slice(0, 4);
+    const [used, planned] = await Promise.all([keys(`al/${p.id}/${yr}/`), keys(`leave/${p.id}/`)]);
+    const done = new Set(used.map((k) => k.split("/")[3]));
+    const ahead = planned.map((k) => k.split("/")[2]).filter((d) => d >= today && d.startsWith(yr) && !done.has(d)
+      && weekdayOf(d) >= 1 && weekdayOf(d) <= 5 && !holidayOf(regionOf(p), d));
+    return Math.max(0, ANNUAL_LEAVE - done.size - ahead.length);
+  }
   // v78: events since a time, from the stats log (ev/<kind>/<ts13>_<parts>). The log is listed in 1e8 ms (~28 h) slices
   // by the first 5 digits of the time, so a week is about 7 small listings instead of 90 days of events.
   async function evSince(kind, since) {
@@ -390,11 +401,16 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return lists.flat().map((k) => k.slice(pre.length).split("_")).filter((p) => Number(p[0]) >= since);
   }
   // One day's wage, once (v79: shared by the app and the clock). times = 2 on a public holiday.
-  // Twice the wage on a public holiday in their region, and (v81) on their own day off.
+  // Twice the wage on a public holiday in their region, and (v81) on their own day off while they have annual
+  // leave left that year; a day off after that pays nothing.
   async function payWage(p, day) {
     if (!(await payOnce(p.id, day, "pay"))) return false;
     const [coffee, act, leave] = await Promise.all([hasAtHome(p.cave, p.id, "coffee"), activeBonus(p.id), exists(`leave/${p.id}/${day}`)]);
     const kind = holidayOf(regionOf(p), day) ? "holiday" : leave ? "leave" : "pay";
+    if (kind === "leave") {
+      const used = (await keys(`al/${p.id}/${day.slice(0, 4)}/`)).length;
+      if (used >= ANNUAL_LEAVE || !(await claimKey(`al/${p.id}/${day.slice(0, 4)}/${day}`, 0))) return false;
+    }
     await credit(p.id, Math.round((COINS.day + (coffee ? COINS.coffee : 0)) * (kind === "pay" ? 1 : 2) * (1 + act.pct / 100)), `${kind}.${day}`);
     return true;
   }
@@ -532,7 +548,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   async function state(me) {
     const t = now();
     const day = sgDay(t);
-    const [lvRec, w, paid, wver, bag] = await Promise.all([getJSON(`lvl/${me.id}`), wallet(me.id), paidToday(me.id, day), getJSON(`wv/${me.id}`), bagOf(me.id)]);
+    const [lvRec, w, paid, wver, bag, leaveLeftNow] = await Promise.all([getJSON(`lvl/${me.id}`), wallet(me.id), paidToday(me.id, day), getJSON(`wv/${me.id}`), bagOf(me.id), leaveLeft(me, day)]);
     const lv = levelInfo(lvRec);
     const power = POWERS[me.monster] || "jelly";
     const sameMonth = me.monsterChangedAt && monthOf(me.monsterChangedAt) === monthOf(t);
@@ -546,6 +562,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         canReroll: !sameMonth,
         nextReroll: sameMonth ? `${mm === 12 ? yy + 1 : yy}-${String(mm === 12 ? 1 : mm + 1).padStart(2, "0")}-01` : null,
         cheersLeft: 0, notesLeft: 0, canPin: false, roared: false,
+        leave: { left: leaveLeftNow, of: ANNUAL_LEAVE },
         coins: w.coins, coinLog: w.log.slice(-10).map(({ id, amt, why }) => ({ id, amt, why })),
         did: { water: paid.has("water"), pet: paid.has("pet"), vend: paid.has("vend") },
         bag: bag.map((f) => (CROPS[f.kind] ? { ...f, crop: true, worth: cropPrice(f.kind, f.size, veggieman(t, dev).wants) }
@@ -1121,6 +1138,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
             await store.delete(`lvl/${me.id}`);
             await Promise.all([...(await keys(`led/${me.id}/`)), ...(await keys(`paid/${me.id}/`)), ...(await keys(`work/${me.id}/`)), ...(await keys(`bag/${me.id}/`)), `coinbase/${me.id}`, `wv/${me.id}`, `cast/${me.id}`].map((k) => store.delete(k)));
             await Promise.all((await keys(`leave/${me.id}/`)).flatMap((k) => [store.delete(k), store.delete(`dayoff/${k.split("/")[2]}/${me.id}`)]));
+            await Promise.all((await keys(`al/${me.id}/`)).map((k) => store.delete(k)));
             const ownsName = (await getJSON(`uname/${nameKey(me.name)}`)) === me.id;
             await Promise.all([`person/${me.id}`, ...(ownsName ? [`uname/${nameKey(me.name)}`] : []), `subs/${me.id}`, `sessions/${a.token}`].map((k) => store.delete(k)));
             return json({ ok: true });

@@ -1353,7 +1353,7 @@ body.calm .fsprop span{animation:none}
       <details><summary>How to earn monster coins</summary>
         <ul class="w-how">
           <li><b>+250</b> for every workday, paid by itself at your clock-out time (no need to open the app). Overtime pays nothing extra.</li>
-          <li><b>x2</b> on a public holiday: the wage still arrives at your clock-out time, twice over. Your own day off pays <b>x2</b> too. Weekends pay nothing.</li>
+          <li><b>x2</b> on a public holiday: the wage still arrives at your clock-out time, twice over. Your own day off pays <b>x2</b> too, for 10 days a year (from 1 January); after that a day off pays nothing. Weekends pay nothing.</li>
           <li><b>+5% to +20%</b> on that wage for being active in the cave over the last 7 days: 1 point a chat message, 2 a zap, 5 a vlog. 10 points +5%, 25 +10%, 45 +20%. Your points are on Ranks.</li>
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
@@ -1554,6 +1554,7 @@ body.calm .fsprop span{animation:none}
       <span>Taking today off<small>Your card shows Day off for the rest of today, and it won't break your streak.</small></span>
       <input id="dayoffToggle" name="dayoffToggle" type="checkbox" role="switch">
     </label>
+    <p class="sheet-hint" id="leaveLeft" hidden></p>
     <label class="switch" for="buzzToggle">
       <span>Let friends buzz my phone<small>When someone zaps you, your phone vibrates. Turn off to get quiet zaps.</small></span>
       <input id="buzzToggle" name="buzzToggle" type="checkbox" role="switch">
@@ -3934,6 +3935,8 @@ function renderAcct(){
   const holiday=off&&off.kind==="holiday";
   $("holidayNow").hidden=!holiday;if(holiday) $("holidayNow").textContent=`Today is ${off.name}, so you're off. Enjoy!`;
   $("dayoffRow").hidden=holiday;$("dayoffToggle").checked=!!(off&&off.kind==="leave");
+  const al=me.leave;$("leaveLeft").hidden=holiday||!al; // v81: annual leave left this year
+  if(al) $("leaveLeft").textContent=al.left?`Annual leave: ${al.left} of ${al.of} days left this year. Each day off pays double.`:`No annual leave left this year: more days off are unpaid.`;
 }
 $("meChip").addEventListener("click",()=>{
   if(!S){openAuth("login");return;}
@@ -5243,9 +5246,10 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v81-leave",v:"v81.0",at:"2026-11-20T12:00",title:"Days off pay double",changes:[
-    "Take a day off (on your card or in the holiday planner) and that day's wage comes at your clock-out time, twice over, like a public holiday. Weekends still pay nothing."],panels:[
-    {art:"gift",title:"Day off, double pay",text:"Your own day off now pays twice your daily wage, at your usual clock-out time."}]},
+  {id:"v81-leave",v:"v81.0",at:"2026-11-20T12:00",title:"10 days of annual leave, paid double",changes:[
+    "Everyone gets 10 days of annual leave a year, starting over on 1 January. Take a day off (in your account or in the holiday planner) and that day's wage comes at your clock-out time, twice over, like a public holiday.",
+    "Your account shows how many days you have left. Once they're used up, a day off pays nothing. Weekends still pay nothing."],panels:[
+    {art:"gift",title:"Day off, double pay",text:"10 days of annual leave a year, each paying twice your daily wage at your usual clock-out time."}]},
   {id:"v80-give",v:"v80.0",at:"2026-11-19T21:00",title:"Giving to the village asks first",changes:[
     "The +10, +50, +100 and +500 buttons on a village building now only fill in the amount. Tap Give, then tap again to confirm, so no coins go by accident."],panels:[
     {art:"village",title:"Tap twice to give",text:"Pick an amount, tap Give, then tap again. Nothing leaves your wallet until you confirm."}]},

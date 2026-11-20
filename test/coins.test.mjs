@@ -216,6 +216,29 @@ assert.ok(await coins(C) >= c0);
   await app.payday(); assert.equal((await wages()).filter((e) => e.why === "pay.2026-12-29").length, 1, "the app and the clock never both pay");
 }
 
+/* ---------- v81: 10 days of annual leave a year, each paying double ---------- */
+{
+  const L = await mk("Lee"); await call("POST", "me", { action: "region", region: "sg" }, L.t);
+  const pays = async () => (await me(L)).coinLog.filter((e) => /^(pay|leave)\./.test(e.why));
+  clock = Date.UTC(2026, 11, 30, 9 - 8);                          // Wed 30 Dec
+  assert.deepEqual((await me(L)).leave, { left: 10, of: 10 }, "10 days to start with");
+  await call("POST", "me", { action: "dayoff", on: true }, L.t);
+  assert.equal((await me(L)).leave.left, 9, "today's day off counts");
+  for (let d = 1; d <= 9; d++) store._m.set(`al/${L.id}/2026/2026-06-${String(d).padStart(2, "0")}`, "0"); // 9 used earlier this year
+  clock = Date.UTC(2026, 11, 30, 18 - 8, 5);
+  await app.payday(); assert.deepEqual((await pays()).map((e) => [e.amt, e.why]), [[2 * COINS.day, "leave.2026-12-30"]], "the 10th day off pays double");
+  assert.equal((await me(L)).leave.left, 0, "none left");
+  clock = Date.UTC(2026, 11, 31, 9 - 8);                          // Thu 31 Dec: another day off
+  await call("POST", "me", { action: "dayoff", on: true }, L.t);
+  clock = Date.UTC(2026, 11, 31, 18 - 8, 5);
+  await app.payday(); assert.equal((await pays()).length, 1, "an 11th day off pays nothing");
+  clock = Date.UTC(2027, 0, 4, 9 - 8);                            // Mon 4 Jan 2027: a new year
+  assert.equal((await me(L)).leave.left, 10, "leave starts over on 1 January");
+  await call("POST", "me", { action: "dayoff", on: true }, L.t);
+  clock = Date.UTC(2027, 0, 4, 18 - 8, 5);
+  await app.payday(); assert.deepEqual((await pays()).pop().why, "leave.2027-01-04", "paid double again");
+}
+
 /* ---------- v80: Shunyi's 300-coin apology, once ---------- */
 {
   const S = await mk("Shun Yi"); await call("POST", "cave", { action: "join", code: cave.code }, S.t);
