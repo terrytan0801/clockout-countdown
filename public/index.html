@@ -1353,7 +1353,7 @@ body.calm .fsprop span{animation:none}
       <details><summary>How to earn monster coins</summary>
         <ul class="w-how">
           <li><b>+250</b> for every workday, paid by itself at your clock-out time (no need to open the app). Overtime pays nothing extra.</li>
-          <li><b>x2</b> on a public holiday: the wage still arrives at your clock-out time, twice over. Weekends and your own days off pay nothing.</li>
+          <li><b>x2</b> on a public holiday: the wage still arrives at your clock-out time, twice over. Your own day off pays <b>x2</b> too. Weekends pay nothing.</li>
           <li><b>+5% to +20%</b> on that wage for being active in the cave over the last 7 days: 1 point a chat message, 2 a zap, 5 a vlog. 10 points +5%, 25 +10%, 45 +20%. Your points are on Ranks.</li>
           <li><b>+50</b> bonus every 5 workdays in a row.</li>
           <li><b>+15</b> for filming a ring on time, <b>+5</b> if you're late.</li>
@@ -1464,7 +1464,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v80.0</span>
+    <span>v81.0</span>
   </div>
 </div>
 
@@ -2714,7 +2714,7 @@ const nameOf=pid=>pid===S.me.id?"you":((members().find(p=>p.id===pid)||{}).name|
 function whyText(e){
   const [w,arg]=e.why.split(".");
   const thing=()=>(CAVE_HOME.DECOR[arg]||{name:arg}).name;
-  return {welcome:"Welcome gift",pay:"Wage",holiday:"Public holiday pay (x2)",streak:`${arg}-day streak bonus`,clip:"Filmed on time",cliplate:"Filmed late",
+  return {welcome:"Welcome gift",pay:"Wage",holiday:"Public holiday pay (x2)",leave:"Day off pay (x2)",streak:`${arg}-day streak bonus`,clip:"Filmed on time",cliplate:"Filmed late",
     zap:`Zapped ${nameOf(arg)}`,zapby:`${nameOf(arg)} zapped you`,fishsale:`Sold ${arg} fish`,water:"Watered the plant",pet:"Petted the cat",vend:"Vending machine",
     buy:`Bought: ${thing()}`,sell:`Sold: ${thing()}`,sorry:"Sorry gift"}[w]||"Coins";
 }
@@ -5243,6 +5243,9 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v81-leave",v:"v81.0",at:"2026-11-20T12:00",title:"Days off pay double",changes:[
+    "Take a day off (on your card or in the holiday planner) and that day's wage comes at your clock-out time, twice over, like a public holiday. Weekends still pay nothing."],panels:[
+    {art:"gift",title:"Day off, double pay",text:"Your own day off now pays twice your daily wage, at your usual clock-out time."}]},
   {id:"v80-give",v:"v80.0",at:"2026-11-19T21:00",title:"Giving to the village asks first",changes:[
     "The +10, +50, +100 and +500 buttons on a village building now only fill in the amount. Tap Give, then tap again to confirm, so no coins go by accident."],panels:[
     {art:"village",title:"Tap twice to give",text:"Pick an amount, tap Give, then tap again. Nothing leaves your wallet until you confirm."}]},

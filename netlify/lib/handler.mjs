@@ -390,14 +390,16 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     return lists.flat().map((k) => k.slice(pre.length).split("_")).filter((p) => Number(p[0]) >= since);
   }
   // One day's wage, once (v79: shared by the app and the clock). times = 2 on a public holiday.
-  async function payWage(p, day, times = 1) {
+  // Twice the wage on a public holiday in their region, and (v81) on their own day off.
+  async function payWage(p, day) {
     if (!(await payOnce(p.id, day, "pay"))) return false;
-    const [coffee, act] = await Promise.all([hasAtHome(p.cave, p.id, "coffee"), activeBonus(p.id)]);
-    await credit(p.id, Math.round((COINS.day + (coffee ? COINS.coffee : 0)) * times * (1 + act.pct / 100)), `${times > 1 ? "holiday" : "pay"}.${day}`);
+    const [coffee, act, leave] = await Promise.all([hasAtHome(p.cave, p.id, "coffee"), activeBonus(p.id), exists(`leave/${p.id}/${day}`)]);
+    const kind = holidayOf(regionOf(p), day) ? "holiday" : leave ? "leave" : "pay";
+    await credit(p.id, Math.round((COINS.day + (coffee ? COINS.coffee : 0)) * (kind === "pay" ? 1 : 2) * (1 + act.pct / 100)), `${kind}.${day}`);
     return true;
   }
   // v79: wages arrive on their own. Every 15 minutes the clock pays anyone whose clock-out has passed today: a workday's
-  // wage, or twice that on a public holiday in their region. Weekends and personal days off pay nothing, and nobody
+  // wage, or twice that on a public holiday in their region. Weekends pay nothing; a personal day off pays double (v81), and nobody
   // has to open the app (the 5-day streak bonus still comes from opening it).
   // A note from the app in a cave's chat (v80): no sender, shown centred.
   async function sysChat(cid, text) {
@@ -425,9 +427,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     const people = (await Promise.all((await keys("person/")).map((k) => getJSON(k)))).filter(Boolean);
     for (const p of people) {
       if (sec < p.h * 3600 + p.m * 60 || (await exists(`paid/${p.id}/${today}/pay`))) continue;
-      const holiday = !!holidayOf(regionOf(p), today);
-      if (!holiday && (await exists(`leave/${p.id}/${today}`))) continue; // their own day off
-      if (await payWage(p, today, holiday ? 2 : 1)) paid++;
+      if (await payWage(p, today)) paid++;
     }
     return { paid };
   }

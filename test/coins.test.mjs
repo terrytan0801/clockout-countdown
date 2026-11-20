@@ -197,7 +197,7 @@ assert.ok(await coins(C) >= c0);
 /* ---------- v79: wages arrive by themselves, twice over on a public holiday ---------- */
 {
   const D = await mk("Dan"); await call("POST", "me", { action: "region", region: "sg" }, D.t);
-  const wages = async () => (await me(D)).coinLog.filter((e) => /^(pay|holiday)\./.test(e.why));
+  const wages = async () => (await me(D)).coinLog.filter((e) => /^(pay|holiday|leave)\./.test(e.why));
   clock = Date.UTC(2026, 11, 24, 17 - 8);                        // Thu 24 Dec, 5 pm SG: before Dan's 6 pm clock-out
   await app.payday(); assert.equal((await wages()).length, 0, "nothing before clock-out");
   clock = Date.UTC(2026, 11, 24, 18 - 8, 5);                     // 6:05 pm, and Dan never opened the app
@@ -210,7 +210,8 @@ assert.ok(await coins(C) >= c0);
   clock = Date.UTC(2026, 11, 28, 9 - 8);                         // Monday: Dan takes the day off
   await call("POST", "me", { action: "dayoff", on: true }, D.t);
   clock = Date.UTC(2026, 11, 28, 18 - 8, 5);
-  await app.payday(); assert.equal((await wages()).length, 2, "a personal day off isn't paid");
+  await app.payday(); assert.deepEqual((await wages()).map((e) => [e.amt, e.why]).pop(), [2 * COINS.day, "leave.2026-12-28"], "v81: a personal day off pays double");
+  await app.payday(); assert.equal((await wages()).length, 3, "once");
   clock = Date.UTC(2026, 11, 29, 18 - 8, 5); await open(D);       // opening the app the same evening pays once, not twice
   await app.payday(); assert.equal((await wages()).filter((e) => e.why === "pay.2026-12-29").length, 1, "the app and the clock never both pay");
 }

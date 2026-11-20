@@ -1,4 +1,4 @@
-# Clock-out Countdown · v80.0
+# Clock-out Countdown · v81.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -255,6 +255,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v79.** Wages arrive by themselves. `payday()` runs with the rain alerts every 15 minutes: on a weekday it pays everyone whose clock-out time has passed and who hasn't been paid today, without them opening the app. On a public holiday in their region (`holidayOf`) the wage is doubled and logged as `holiday.<day>` ("Public holiday pay (x2)" in the wallet); weekends and personal days off pay nothing. The app's own payment on opening and the clock share `payWage`, which pays a day once (`paid/<pid>/<day>/pay`) with the coffee machine and the active bonus, so the two never both pay. The 5-day streak bonus still needs the app opened. Tested with a person who never opens the app, Christmas Day, a weekend, a day off, and the app and the clock on the same evening.
 
 **v80.** Giving to a village building asks first. The +10/+50/+100/+500 buttons only fill in the amount, and Give needs a second tap ("Tap again to give 500") within 5 seconds, the same tap-twice pattern as deleting an account or leaving a cave; changing the amount starts over. A friend's +500 tap had gone straight to a building, so the clock's `payday()` run sends Shunyi 300 coins back once (`fix/v80-shunyi`, why `sorry.v80`, "Sorry gift" in the wallet) and posts an apology in her cave as a note from the app: chat messages with `sys: true` are shown centred with no sender (`sysChat`). Older phones show such a note as a message from "Clock-out".
+
+**v81.** A personal day off pays double. `payWage` now works out the kind of day itself, so the app on opening and the clock's `payday()` agree: a public holiday in the person's region pays x2 (`holiday.<day>`), their own day off (`leave/<pid>/<day>`, set on the card or by the holiday planner) pays x2 (`leave.<day>`, "Day off pay (x2)" in the wallet), any other weekday pays once (`pay.<day>`); weekends still pay nothing. The coffee machine and the active bonus apply as before. Tested with a day off on a Monday.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 
