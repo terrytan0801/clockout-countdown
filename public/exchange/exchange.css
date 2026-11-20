@@ -13,8 +13,8 @@
 .cx-tabs button{flex:0 0 auto;min-height:44px;padding:0 12px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--sign-muted);font:700 13px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
 .cx-tabs button[aria-selected="true"]{color:var(--sign-ink);border-bottom-color:var(--c-teal)}
 .cx-body{flex:1;overflow:auto;padding:14px 14px max(24px,env(safe-area-inset-bottom));display:grid;align-content:start;gap:12px;max-width:760px;width:100%;margin:0 auto}
-.cx-msg{position:sticky;top:0;z-index:2;padding:10px 12px;border-radius:4px;font-weight:600;font-size:14px;background:var(--c-teal-soft);color:var(--ink);border-left:4px solid var(--c-teal)}
-.cx-msg.err{background:var(--c-red-soft);border-left-color:var(--c-red)}
+.cx-msg{position:sticky;top:0;z-index:2;padding:10px 12px;border-radius:4px;font-weight:600;font-size:14px;background:var(--c-teal-soft);color:var(--ink);border:1.5px solid var(--c-teal)}
+.cx-msg.err{background:var(--c-red-soft);border-color:var(--c-red)}
 .cx-box{background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:12px}
 .cx-box h3{margin:0 0 8px;font:800 15px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.04em}
 .cx-muted{color:var(--muted);font-size:13.5px;line-height:1.4;margin:0}
