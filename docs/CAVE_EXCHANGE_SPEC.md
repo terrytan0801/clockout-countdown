@@ -142,14 +142,17 @@ For each new order, in one transaction:
 7. Write an audit line and commit. If anything fails, the whole transaction rolls back and nothing moved. The
    CHECK constraints and the COMMIT-time checks (balanced coins, balanced shares, supply) are the last guard.
 
-Rows are always locked in the same order (wallets by player id, then holdings by company and holder) so two
-transactions can't deadlock each other.
+Matching walks the book, so it can't lock every wallet in one fixed order. Two orders for different companies
+that touch the same two players can deadlock; Postgres stops one of them, nothing it did is kept, and the exchange
+runs it again (up to twice more).
 
 ### 5.4 Fees
 
-- Each side pays `ceil(value × bps / 10000)`, at least `settings.min_fee`, where bps is
+- Each order pays `ceil(filled value × bps / 10000)`, at least `settings.min_fee`, where bps is
   `settings.fee_buyer_bps` / `fee_seller_bps` (**DEFAULT** 25 = 0.25% each, minimum 1 coin). A side with 0 bps
-  pays nothing.
+  pays nothing. The fee is worked out on the order's running total (`orders.filled_value`, `fees_paid`), and each
+  fill charges the difference, so an order filled in many pieces never pays more than one filled at once, and a
+  limit buy's reservation always covers it. A seller's fees never exceed what they sold.
 - Fees go to the `FEES` account and stay there: they take coins out of circulation (a coin sink), which helps
   against pumping volume between friends.
 - The admin can change fees and limits on the admin page; each change is audited. The database caps fees at 5%.
@@ -248,8 +251,8 @@ Following the brief's phases (Terry's B1–B8 in brackets):
 | 0 Audit and architecture | Audit, spec, database, API, wallet plan | Docs done (this set) |
 | 1 Infrastructure [B1–B3] | Schema, wallet service design, wallet security and migration plan | Schema done and tested on PGlite; bridge designed |
 | 2 Company and IPO [B4] | Create, validate, approve, IPO, allotment | Built (`netlify/lib/exchange/`), tested on PGlite (`db/test/exchange-ipo.test.mjs`); not wired into `/api` until there is a database |
-| 3 Trading engine [B5] | Orders, matching, partial fills, reservations, cancel, fees | Next |
-| 4 Portfolio and UI [B6] | The Exchange screen | |
+| 3 Trading engine [B5] | Orders, matching, partial fills, reservations, cancel, fees | Built (`orders.mjs`), tested on PGlite (`db/test/exchange-trading.test.mjs`); not wired into `/api` yet |
+| 4 Portfolio and UI [B6] | The Exchange screen | Next |
 | 5 Company management | Reports, dividends, corporate actions | |
 | 6 Security and deployment [B7–B8] | Concurrency, security, load and regression tests; dev database, then production with Terry's go-ahead | |
 

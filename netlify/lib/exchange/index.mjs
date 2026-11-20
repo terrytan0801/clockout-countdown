@@ -8,8 +8,18 @@ import { createHash } from "node:crypto";
 import { CexError, fail } from "./base.mjs";
 import * as companies from "./companies.mjs";
 import * as ipo from "./ipo.mjs";
+import * as orders from "./orders.mjs";
 
-export function makeExchange({ db, now = () => Date.now() }) {
+export function makeExchange({ db: raw, now = () => Date.now() }) {
+  // Two transactions that lock the same wallets in a different order can deadlock; Postgres stops one of them,
+  // and it simply runs again (it changed nothing).
+  const db = {
+    async tx(fn) {
+      for (let i = 0; ; i++) {
+        try { return await raw.tx(fn); } catch (e) { if (i < 2 && (e.code === "40P01" || e.code === "40001")) continue; throw e; }
+      }
+    },
+  };
   // A POST that moves coins or creates something runs once per client key: a retry gets the first answer back.
   async function once(pid, route, body, fn) {
     const key = body.key;
@@ -64,6 +74,13 @@ export function makeExchange({ db, now = () => Date.now() }) {
           return once(me.id, route, body, (q) => ipo.buy(q, me, id, body, now()));
         }
       }
+      if (a === "order") {
+        if (id === "place" && method === "POST") return once(me.id, route, body, (q) => orders.place(q, me, body, now()));
+        if (id === "cancel" && method === "POST") return run((q) => orders.cancel(q, me, body));
+        if (id === "my" && method === "GET") return run((q) => orders.mine(q, me, query));
+      }
+      if (a === "stock" && id && b === "orderbook" && method === "GET") return run((q) => orders.book(q, id, now()));
+      if (a === "trades" && id && method === "GET") return run((q) => orders.trades(q, id, query));
       fail(404, "No such exchange route.");
     });
   }
@@ -77,5 +94,7 @@ export function makeExchange({ db, now = () => Date.now() }) {
     });
   }
 
-  return { handle, admin, closeDue: () => db.tx((q) => ipo.closeDue(q, now())) };
+  // For the exchange's scheduled job: close IPOs and expire limit orders whose time is up.
+  const jobs = async () => ({ ipos: await db.tx((q) => ipo.closeDue(q, now())), expired: await db.tx((q) => orders.expireDue(q, now())) });
+  return { handle, admin, jobs };
 }

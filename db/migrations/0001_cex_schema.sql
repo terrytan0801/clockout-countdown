@@ -112,8 +112,10 @@ CREATE TABLE orders (
   limit_price      BIGINT CHECK (limit_price IS NULL OR limit_price > 0),
   qty              BIGINT NOT NULL CHECK (qty > 0),
   filled_qty       BIGINT NOT NULL DEFAULT 0 CHECK (filled_qty >= 0),
+  filled_value     BIGINT NOT NULL DEFAULT 0 CHECK (filled_value >= 0),   -- sum of price * qty of its fills
+  fees_paid        BIGINT NOT NULL DEFAULT 0 CHECK (fees_paid >= 0),      -- fees charged so far (fee is on the order's running total)
   status           order_status NOT NULL DEFAULT 'OPEN',
-  reject_reason    TEXT,
+  reject_reason    TEXT,                         -- why it was rejected or cancelled early (self-trade, nothing to match)
   idempotency_key  TEXT,
   expires_at       TIMESTAMPTZ,                  -- limit orders: created_at + settings.order_ttl_hours; market orders never rest
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),

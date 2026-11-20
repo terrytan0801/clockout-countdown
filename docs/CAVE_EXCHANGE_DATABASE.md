@@ -14,6 +14,7 @@ are empty when things add up and catch drift when they don't:
 npm i --no-save @electric-sql/pglite@0.5.15
 node db/test/schema.test.mjs
 node db/test/exchange-ipo.test.mjs
+node db/test/exchange-trading.test.mjs
 ```
 
 `exchange-ipo.test.mjs` runs the company and IPO code (`netlify/lib/exchange/`) through its routes on the same
@@ -50,7 +51,7 @@ database; which provider is still to be decided.
 | 4 | `companies` | Player companies | Unique `symbol` (2–5 capitals/digits) and case-insensitive unique `name`; share counts; `ipo_price`; `status` (PENDING, APPROVED, IPO, LISTED, SUSPENDED, DELISTED, BANKRUPT, REJECTED); `submitted_at` is empty while the founder is still editing; `ipo_ends_at` 24 h after the IPO starts |
 | 5 | `share_holdings` | Shares held | Per company and holder; holder is a `PLAYER` or the company's `TREASURY`; `reserved` for open sell orders |
 | 6 | `share_ledger` | Every share movement | Append-only; balanced per transaction and company except issuance, cancellation and splits |
-| 7 | `orders` | Buy and sell orders | `LIMIT` (has a price) or `MARKET` (no price); `seq` gives time priority; one `idempotency_key` per player; `expires_at` (limit orders), status `EXPIRED`; partial indexes hold each side's book in price-time order |
+| 7 | `orders` | Buy and sell orders | `LIMIT` (has a price) or `MARKET` (no price); `seq` gives time priority; one `idempotency_key` per player; `expires_at` (limit orders), status `EXPIRED`; `filled_value` and `fees_paid` (fees are charged on the running total); partial indexes hold each side's book in price-time order |
 | 8 | `trades` | Fills | Append-only; `value` computed; `buy_order_id`/`sell_order_id` NULL for an IPO allotment from the treasury; a player can't trade with themselves |
 | 9 | `reservations` | What an open order holds | One per order; coins for a buy, shares for a sell; `remaining` shrinks as it fills; must be 0 once not `ACTIVE` |
 | 10 | `company_accounts` | Company cash | IPO proceeds land here, dividends are paid from here |
