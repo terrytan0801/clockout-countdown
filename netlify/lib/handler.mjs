@@ -806,6 +806,9 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
       const old = (await Promise.all(["cheer/", "roar/", "rainalert/", "ringsent/", "dayoff/", "hpush/"].map(keys))).flat().filter((k) => k.split("/")[1] < cut);
       old.push(...(await keys("leave/")).filter((k) => k.split("/")[2] < addDays(today, -60)));
       await Promise.all(old.map((k) => store.delete(k)));
+      // v82: the exchange's daily jobs (close IPOs, expire orders, finish stuck transfers), only once a day so its
+      // database can sleep; a failure there never stops the rest of the clock's work.
+      if (exchange) await exchange.jobs().then((r) => console.log("exchange jobs", JSON.stringify(r)), (e) => console.error("exchange jobs", e));
     }
     if (!isWorkday(today)) return { checked: 0, sent: 0 };
     let checked = 0, sent = 0;

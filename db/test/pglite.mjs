@@ -11,7 +11,7 @@ const { PGlite } = await import(pathToFileURL(require.resolve("@electric-sql/pgl
 
 export async function freshDb() {
   const pg = new PGlite({ parsers: { 20: Number } }); // BIGINT as JS numbers (all amounts stay far below 2^53)
-  const dir = new URL("../migrations/", import.meta.url);
+  const dir = new URL("../../netlify/database/migrations/", import.meta.url);
   for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) await pg.exec(fs.readFileSync(new URL(f, dir), "utf8"));
   const db = {
     tx: (fn) => pg.transaction(async (t) => {

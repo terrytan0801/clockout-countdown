@@ -11,7 +11,7 @@ import { pathToFileURL } from "node:url";
 const require = createRequire(process.env.PGLITE_TOOL ? path.join(process.env.PGLITE_TOOL, "x.js") : import.meta.url);
 const { PGlite } = await import(pathToFileURL(require.resolve("@electric-sql/pglite")).href);
 const db = new PGlite();
-const sql = fs.readFileSync(new URL("../migrations/0001_cex_schema.sql", import.meta.url), "utf8");
+const sql = fs.readFileSync(new URL("../../netlify/database/migrations/20261123000000_cex_schema.sql", import.meta.url), "utf8");
 await db.exec(sql);
 await db.exec("SET search_path = cex");
 
@@ -30,7 +30,6 @@ const recon = async () => {
   return out;
 };
 
-assert.equal((await one("SELECT version FROM schema_migrations")).version, "0001_cex_schema", "migration recorded");
 
 /* ---------- players and a deposit over the bridge ---------- */
 await q("INSERT INTO players (id, name) VALUES ('p-aaaaaa', 'Ann'), ('p-bbbbbb', 'Ben')");

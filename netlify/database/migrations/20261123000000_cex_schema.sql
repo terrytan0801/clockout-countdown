@@ -1,7 +1,8 @@
--- Cave Exchange (CEX), migration 0001: the schema.
--- Stage B1. Plain PostgreSQL (14+), so it runs on Netlify DB / Neon / Supabase alike. Run it once per database
--- (production and dev each have their own). It only creates objects inside the "cex" schema and touches nothing
--- else; it never reads or writes the game's Netlify Blobs.
+-- Cave Exchange (CEX), the first migration: the schema.
+-- Plain PostgreSQL (14+). Netlify Database applies every file in netlify/database/migrations/ on deploy (a branch
+-- or preview deploy before it goes live, production right before publish) and records which ones ran; never run
+-- it by hand, and never edit it once a deploy has applied it (add a new, later-numbered file instead). It only
+-- creates objects inside the "cex" schema and touches nothing else; it never reads or writes the game's Blobs.
 --
 -- Money rules:
 --   * Coins and share quantities are BIGINT whole numbers. No floats, no NUMERIC fractions.
@@ -14,10 +15,9 @@
 -- game wallet (Netlify Blobs ledger) and books them here against the system account 'bridge'; a withdrawal does the
 -- reverse. So every coin is in exactly one of the two systems at a time.
 
-BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS cex;
-SET LOCAL search_path = cex;
+SET search_path = cex, public; -- reset at the end; works whether or not the runner wraps this in a transaction
 
 -- ---------------------------------------------------------------- enums
 CREATE TYPE company_status AS ENUM ('PENDING', 'APPROVED', 'IPO', 'LISTED', 'SUSPENDED', 'DELISTED', 'BANKRUPT', 'REJECTED');
@@ -476,7 +476,4 @@ SELECT ledger_in, transfers_in FROM (
                               ELSE 0 END), 0) FROM bridge_transfers) AS transfers_in
 ) x WHERE ledger_in <> transfers_in;
 
-CREATE TABLE schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now());
-INSERT INTO schema_migrations (version) VALUES ('0001_cex_schema');
-
-COMMIT;
+RESET search_path;

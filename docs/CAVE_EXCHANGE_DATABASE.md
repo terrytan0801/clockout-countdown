@@ -1,6 +1,6 @@
 # Cave Exchange (CEX): database (Stage B1)
 
-The schema is `db/migrations/0001_cex_schema.sql`: plain PostgreSQL 14+, everything inside a `cex` schema, so it
+The schema is `netlify/database/migrations/20261123000000_cex_schema.sql`: plain PostgreSQL 14+, everything inside a `cex` schema, so it
 runs the same on Netlify DB, Neon or Supabase. It does not touch the game's Netlify Blobs; coins reach it only
 through the custody bridge (decided 19 Nov 2026, see `CAVE_EXCHANGE_AUDIT.md` section 9).
 
@@ -113,9 +113,14 @@ A scheduled check (Stage B7) will run them and also match `bridge_transfers` aga
 
 ## Running it
 
-- Apply once per database: `psql "$DATABASE_URL" -f db/migrations/0001_cex_schema.sql`. It runs in one
-  transaction and records itself in `cex.schema_migrations`.
+- The database is Netlify Database (Neon), chosen by Terry on 23 Nov 2026. Netlify applies every file in
+  `netlify/database/migrations/` on deploy (a branch or preview deploy before it goes live, production right before
+  publish) and records which ones ran. Never run the SQL by hand or through a direct connection.
+- A migration that a deploy has applied is fixed: never edit or delete it. Changes come as new files with a later
+  timestamp prefix.
 - It only creates objects; it never drops, truncates or rewrites anything. Later changes come as new numbered
   migrations.
-- The dev deploy uses its own database (chosen the way the Blobs store is, by `isDevDeploy`); production data is
-  never used for testing.
+- The app connects through `netlify/lib/cexdb.mjs` (a small `pg` pool from `getConnectionString()`). The exchange
+  is switched on for the dev deploy, and on production only when the `CEX_LIVE` environment variable is `1` (going
+  live is Stage B8 and needs Terry's go-ahead). Its daily jobs (close IPOs, expire orders, finish stuck transfers)
+  run once a day from `rain-alert.mjs`, so the database can sleep when nobody trades.

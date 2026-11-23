@@ -3,6 +3,7 @@ import { purgeCache } from "@netlify/functions";
 import webpush from "web-push";
 import { makeApp, isDevDeploy } from "../lib/handler.mjs";
 import { openStores, moveStep } from "../lib/stores.mjs";
+import { cexDb } from "../lib/cexdb.mjs";
 
 // What a warm server remembers between requests (sessions, keys), kept apart for the real site and the test site.
 const caches = { live: {}, dev: {} };
@@ -24,7 +25,9 @@ export default async (req, context) => {
       return Response.json({ error: "Moving your cave to a faster server. One moment…", moving: true, retryMs: m.busy ? 2500 : 600 }, { status: 503, headers: { "cache-control": "no-store", "retry-after": "2" } });
     }
   }
-  return makeApp({ store, webpush, adminKey: process.env.ADMIN_KEY || null, dev, cache, region: process.env.AWS_REGION || null, purge: (tags) => purgeCache({ tags }), warm }).handle(req, context);
+  // Cave Exchange (v82): on the test site, and on the real one only once CEX_LIVE=1 is set (going live needs Terry's go-ahead).
+  const cex = dev || process.env.CEX_LIVE === "1" ? cexDb() : null;
+  return makeApp({ store, webpush, adminKey: process.env.ADMIN_KEY || null, dev, cache, region: process.env.AWS_REGION || null, purge: (tags) => purgeCache({ tags }), warm, cexDb: cex }).handle(req, context);
 };
 
 // No region here: choosing the functions' region needs Netlify Pro, and on other plans the deploy fails.

@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",
+    "@netlify/database": "^2.0.3",
     "@netlify/functions": "^6.1.1",
+    "pg": "^8.23.1",
     "web-push": "^3.6.7"
   }
 }
