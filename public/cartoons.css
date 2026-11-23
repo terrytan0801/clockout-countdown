@@ -1,0 +1,97 @@
+/* Cave Cartoons (v83): the weekly cartoon in the cinema. Loaded with cartoons.js when the cinema opens.
+   Everything is ct- prefixed and sized in container units, so it scales with the screen. */
+.ct-stage{position:relative;height:100%;max-width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 3px #3a2a4a,0 10px 40px rgba(0,0,0,.6);container-type:inline-size;font-family:var(--f-display);color:#1d2b25;user-select:none}
+.ct-world{position:absolute;inset:0;transition:transform .6s cubic-bezier(.3,.7,.3,1)}
+.ct-world.zoom{transform:scale(1.35)}
+.ct-world.shake{animation:ctShake .45s}
+.ct-bg,.ct-props,.ct-cast,.ct-talk{position:absolute;inset:0}
+.ct-bg>*{position:absolute}
+
+/* backgrounds */
+.ct-bg.office{background:linear-gradient(#dfe9e2 0 62%,#b9a68d 62%)}
+.ct-bg.office .ct-win{left:8%;top:8%;width:40%;height:24%;background:linear-gradient(#8fd0ff,#d9f1ff);border:1.4cqw solid #fff;box-shadow:0 0 0 .6cqw #9aa;overflow:hidden}
+.ct-bg.office .ct-win::after{content:"";position:absolute;left:10%;bottom:0;width:22%;height:55%;background:#7b8fa3;box-shadow:9cqw -3cqw 0 #8ea2b5,18cqw 2cqw 0 #6f8397}
+.ct-bg.office .ct-desk{left:4%;right:4%;bottom:26%;height:4%;background:#8a5a3c;border-radius:1cqw;box-shadow:0 1.4cqw 0 #6b4429}
+.ct-bg.pantry{background:repeating-linear-gradient(90deg,#fff7e6 0 9cqw,#f3e6cc 9cqw 9.5cqw) 0 0/100% 62% no-repeat,#c9b48f}
+.ct-bg.pantry .ct-counter{left:0;right:0;bottom:28%;height:9%;background:#e8e2d6;border-top:1.6cqw solid #b7aa95}
+.ct-bg.pantry .ct-fridge{right:5%;bottom:37%;width:20%;height:34%;background:#e7eef2;border-radius:2cqw;border:.8cqw solid #b7c3c9}
+.ct-bg.mrt{background:linear-gradient(#e9eef1 0 64%,#7c8b93 64%)}
+.ct-bg.mrt .ct-win{left:6%;right:6%;top:12%;height:22%;border-radius:3cqw;border:1.4cqw solid #c7d0d4;overflow:hidden;
+  background:repeating-linear-gradient(90deg,#3d6f9e 0 14cqw,#5e8fbd 14cqw 22cqw,#2c5578 22cqw 30cqw);background-size:60cqw 100%;animation:ctTunnel .9s linear infinite}
+.ct-bg.mrt .ct-pole{top:0;bottom:36%;width:2cqw;background:linear-gradient(90deg,#d5dade,#9aa5ab);border-radius:1cqw}
+.ct-bg.mrt .ct-bench{left:22%;right:22%;bottom:30%;height:8%;background:#2d8f5b;border-radius:2cqw 2cqw 0 0}
+.ct-bg.bedroom{background:linear-gradient(#2a2550 0 62%,#4a3b6e 62%)}
+.ct-bg.bedroom .ct-win{right:9%;top:9%;width:28%;height:18%;background:#ffe9a8;border:1.2cqw solid #6c5a99;box-shadow:inset 0 0 0 99cqw rgba(255,190,90,.25)}
+.ct-bg.bedroom .ct-bed{left:6%;right:30%;bottom:26%;height:11%;background:#e86b8a;border-radius:3cqw 3cqw 1cqw 1cqw;box-shadow:inset 0 2.4cqw 0 #ffd1dc}
+.ct-bg.hawker{background:linear-gradient(#ffd27a 0 30%,#f4a259 30% 62%,#9b8b78 62%)}
+.ct-bg.hawker .ct-stall{left:12%;right:12%;top:18%;height:12%;background:#c0392b;color:#fff;display:grid;place-items:center;font:900 9cqw/1 var(--f-display);letter-spacing:.06em;border-radius:2cqw;box-shadow:0 1.6cqw 0 #8e2a20}
+.ct-bg.hawker .ct-counter{left:6%;right:6%;bottom:30%;height:7%;background:#d9cbb3;border-top:1.6cqw solid #a8987e}
+.ct-bg.title{background:radial-gradient(circle at 50% 42%,#ffe066 0 18%,#ff9f43 18% 34%,#ee5253 34% 52%,#5f27cd 52% 72%,#222f3e 72%)}
+.ct-bg.dark{background:#120d18}
+
+/* actors */
+.ct-actor{position:absolute;width:36%;transform:translateX(-50%);transition:left var(--mv,.8s) cubic-bezier(.4,0,.3,1),bottom var(--mv,.8s) cubic-bezier(.4,0,.3,1)}
+.ct-fx{position:relative;transform-origin:50% 100%}
+.ct-fx .mon{width:100%;aspect-ratio:1}
+.ct-tag{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:.4cqw;padding:.3cqw 1.6cqw;border-radius:9cqw;background:rgba(18,13,24,.78);color:#fff;font:700 3.2cqw/1.3 var(--f-mono);white-space:nowrap}
+.ct-actor.boss{width:54%}
+.ct-eugene{display:block;width:100%;overflow:visible;transform-origin:50% 100%;animation:euBreathe 2.6s ease-in-out infinite}
+.ct-eugene .eu-sleep,.ct-eugene .eu-z{display:none}
+.ct-eugene.nap .eu-eyes{display:none}.ct-eugene.nap .eu-sleep,.ct-eugene.nap .eu-z{display:block}
+.ct-eugene.dance{animation:ctJump .6s infinite}
+@keyframes euBreathe{50%{transform:scale(1.03,.97)}}
+.ct-fx.flip{transform:scaleX(-1)}
+.ct-fx.shake{animation:ctWobble .25s 4}
+.ct-fx.shiver{animation:ctShiver .08s infinite;filter:hue-rotate(160deg) saturate(.6) brightness(1.15)}
+.ct-fx.freeze{filter:grayscale(1) brightness(1.25) contrast(.8)}
+.ct-fx.freeze::after{content:"";position:absolute;inset:-4%;border-radius:20%;background:rgba(170,220,255,.45);border:.8cqw solid rgba(255,255,255,.8)}
+.ct-fx.faint{transform:rotate(-88deg) translateY(10%);transition:transform .45s cubic-bezier(.5,-.4,.7,1.4)}
+.ct-fx.jump{animation:ctJump .5s}
+.ct-fx.spin{animation:ctSpin .6s linear 2}
+.ct-fx.blush::after{content:"";position:absolute;left:18%;right:18%;top:48%;height:12%;background:radial-gradient(circle at 20% 50%,rgba(255,80,120,.7) 0 30%,transparent 32%),radial-gradient(circle at 80% 50%,rgba(255,80,120,.7) 0 30%,transparent 32%)}
+.ct-fx.melt{transform:scale(1.35,.45);transition:transform 1.2s ease-in}
+.ct-fx.tiny{transform:scale(.6)}
+.ct-fx.pj::before{content:"";position:absolute;left:12%;right:12%;top:46%;bottom:2%;border-radius:30% 30% 12% 12%;background:repeating-linear-gradient(45deg,rgba(120,170,255,.55) 0 2cqw,rgba(255,255,255,.55) 2cqw 4cqw);z-index:2}
+
+/* props */
+.ct-prop{position:absolute;transform:translate(-50%,50%);font-size:var(--sz,10cqw);line-height:1;transition:left var(--mv,.8s) cubic-bezier(.4,0,.3,1),bottom var(--mv,.8s) cubic-bezier(.4,0,.3,1),transform .3s}
+.ct-prop.glow{filter:drop-shadow(0 0 2cqw #fff6a0) drop-shadow(0 0 4cqw #ffd84d)}
+.ct-prop.pop{animation:ctPop .35s}
+.ct-prop.spin{animation:ctSpin .25s linear infinite}
+.ct-prop.fly{transition-timing-function:cubic-bezier(.2,.8,.4,1)}
+.ct-sign{font:900 6cqw/1.1 var(--f-display);background:#fff;border:.8cqw solid #1d2b25;border-radius:2cqw;padding:1cqw 2.4cqw;white-space:nowrap}
+.ct-clock{font:900 8cqw/1 var(--f-mono);background:#1d2b25;color:#7dffb0;padding:1.4cqw 2.6cqw;border-radius:2cqw;border:1cqw solid #ccc;letter-spacing:.04em}
+.ct-clock.red{color:#ff5a5a}
+
+/* speech */
+.ct-bubble{position:absolute;transform:translateX(-50%);max-width:70%;width:max-content;background:#fff;border:.9cqw solid #1d2b25;border-radius:4cqw;padding:2cqw 3cqw;
+  font:800 5.2cqw/1.15 var(--f-display);text-align:center;box-shadow:.8cqw .8cqw 0 rgba(0,0,0,.25);animation:ctPop .25s}
+.ct-bubble::after{content:"";position:absolute;left:var(--tail,50%);bottom:-3.2cqw;width:4cqw;height:4cqw;background:#fff;border:.9cqw solid #1d2b25;border-top:0;border-left:0;transform:translateX(-50%) rotate(45deg)}
+.ct-bubble.shout{font-size:6.6cqw;background:#fff36b;border-radius:2cqw}
+.ct-bubble.shout::after{background:#fff36b}
+.ct-bubble.think{font-style:italic;background:#eef4ff;border-style:dashed}
+.ct-bubble.think::after{background:#eef4ff;border-style:dashed}
+.ct-cap{position:absolute;left:5%;right:5%;top:3%;text-align:center;padding:1.6cqw 2.6cqw;background:#ffe066;border:.8cqw solid #1d2b25;border-radius:1.4cqw;font:900 4.6cqw/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.03em;box-shadow:.8cqw .8cqw 0 rgba(0,0,0,.3);animation:ctDrop .3s}
+.ct-cap[hidden]{display:none}
+
+/* title and end cards */
+.ct-card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4cqw;text-align:center;color:#fff;padding:8%;animation:ctPop .4s}
+.ct-card small{font:800 4.4cqw/1 var(--f-mono);letter-spacing:.14em;color:#fff;text-transform:uppercase;background:#1d2b25;padding:1.2cqw 2.4cqw;border-radius:1cqw}
+.ct-card h3{margin:0;font:900 11cqw/1 var(--f-display);text-transform:uppercase;letter-spacing:.01em;text-shadow:1.2cqw 1.2cqw 0 #1d2b25;-webkit-text-stroke:.4cqw #1d2b25}
+.ct-card p{margin:0;font:700 4.4cqw/1.35 var(--f-mono);color:#fff;text-shadow:.5cqw .5cqw 0 #1d2b25}
+.ct-card .ct-crew{display:flex;gap:2cqw;justify-content:center;width:100%}
+.ct-card .ct-crew .mon{width:22cqw;aspect-ratio:1}
+
+@keyframes ctShake{20%{transform:translate(-2cqw,1cqw)}40%{transform:translate(2cqw,-1cqw)}60%{transform:translate(-1.4cqw,-.6cqw)}80%{transform:translate(1cqw,.8cqw)}}
+@keyframes ctWobble{25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+@keyframes ctShiver{50%{transform:translateX(.8cqw)}}
+@keyframes ctJump{40%{transform:translateY(-35%) scale(.95,1.08)}80%{transform:translateY(0) scale(1.1,.9)}}
+@keyframes ctSpin{to{transform:rotate(360deg)}}
+@keyframes ctPop{0%{transform:translate(-50%,50%) scale(.3);opacity:0}70%{transform:translate(-50%,50%) scale(1.12)}}
+.ct-bubble{animation-name:ctPopB}.ct-card{animation-name:ctPopC}
+@keyframes ctPopB{0%{transform:translateX(-50%) scale(.3);opacity:0}70%{transform:translateX(-50%) scale(1.1)}}
+@keyframes ctPopC{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05)}}
+@keyframes ctDrop{0%{transform:translateY(-140%)}}
+@keyframes ctTunnel{to{background-position:-60cqw 0}}
+@media (prefers-reduced-motion:reduce){.ct-world.shake,.ct-fx.shake,.ct-fx.shiver,.ct-fx.spin,.ct-prop.spin,.ct-bg.mrt .ct-win{animation:none}}

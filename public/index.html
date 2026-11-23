@@ -240,12 +240,8 @@ body.calm .newsbtn .nmon{animation:none!important}
 .cine-top b{font:800 20px/1.1 var(--f-display)}
 .cine-top button{border:0;background:rgba(255,255,255,.14);color:#fff;width:40px;height:40px;border-radius:50%;font-size:16px;cursor:pointer}
 .cine-screen{position:relative;flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
-.cine-screen canvas{max-width:100%;max-height:100%;aspect-ratio:9/16;border-radius:12px;background:#000;box-shadow:0 0 0 3px #3a2a4a,0 10px 40px rgba(0,0,0,.6)}
 .cine-play{position:absolute;left:50%;top:76%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:50%;border:3px solid #fff;background:rgba(198,40,40,.9);color:#fff;font-size:32px;cursor:pointer}
 .cine-sub{margin:0;text-align:center;font:12.5px/1.4 var(--f-mono);color:#d8cfe6;min-height:1.4em}
-.cine-tabs{display:flex;justify-content:center;gap:8px}
-.cine-tabs button{font:700 13px/1 var(--f-mono);border:1.5px solid #fff;border-radius:999px;background:transparent;color:#fff;padding:9px 14px;cursor:pointer}
-.cine-tabs button[aria-pressed="true"]{background:#fff;color:#120d18}
 @keyframes ffbob{50%{transform:translateY(-3%) rotate(2deg)}}
 .home-btns{display:flex;gap:8px}
 #bagBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
@@ -1464,7 +1460,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v82.0</span>
+    <span>v83.0</span>
   </div>
 </div>
 
@@ -1792,10 +1788,9 @@ body.calm .fsprop span{animation:none}
 <div class="rxpick" id="rxPick" role="menu" aria-label="React to this message" hidden></div>
 <div class="devpill" data-html2canvas-ignore><span>DEV · test site</span><button type="button" id="devRing">Ring now</button><button type="button" id="devCoins">+5000</button></div>
 <div class="cine" id="cineView" hidden>
-  <div class="cine-top"><b id="cineTitle">This week's movie</b><button type="button" id="cineClose" aria-label="Leave the cinema">✕</button></div>
-  <div class="cine-screen"><canvas id="cineCv" width="720" height="1280"></canvas><button type="button" class="cine-play" id="cinePlay" aria-label="Play">▶</button></div>
-  <p class="cine-sub" id="cineSub"></p>
-  <div class="cine-tabs" id="cineTabs"><button type="button" data-w="0" aria-pressed="true">This week</button><button type="button" data-w="1" aria-pressed="false">Last week</button></div>
+  <div class="cine-top"><b id="cineTitle">This week's cartoon</b><button type="button" id="cineClose" aria-label="Leave the cinema">✕</button></div>
+  <div class="cine-screen"><div class="ct-stage" id="cineStage" aria-label="Cartoon. Tap to stop."></div><button type="button" class="cine-play" id="cinePlay" aria-label="Play">▶</button></div>
+  <p class="cine-sub" id="cineSub" aria-live="polite"></p>
 </div>
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
@@ -3395,7 +3390,7 @@ const BUILD_INFO={
   weather:"Weather for everyone in the cave: the forecast at your clock-out time on your card, a rain alert before you leave, and 3 days ahead. Set your city in your account.",
   farm:"Six plots for the whole cave. Buy seeds, plant them and keep them watered: a day without water and they die. Watering someone else's crop pays 2 coins. Sell what you pick to Mr. Veggie.",
   harbor:"Fish at sea: squid, tuna, swordfish, anglerfish and the huge whale shark, and better odds on legendary fish. Mr. Fishfish moves in and buys fish all day.",
-  cinema:"Every week's clips played back to back as one movie, with a title card and credits.",
+  cinema:"A new one-minute monster cartoon every Monday, starring you and your cave-mates.",
   lake:"The cave's fishing lake. Cast as often as you like: a shadow swims up, the float nibbles, then hook it and reel it in.",
   planner:"Finds where a day or two of leave turns public holidays into a long break, tells you 3 weeks ahead, and shows who else in the cave is taking the same days.",
 };
@@ -3553,7 +3548,7 @@ function renderVillCard(){
     }
     if(k==="planner") renderPlanner(card);
     if(k==="cinema"){
-      [["This week's movie",0],["Last week's",1]].forEach(([t,w],i)=>{const bt=mkEl("button",i?"btn ghost":"btn primary",t);bt.type="button";bt.addEventListener("click",()=>{closeVillCard();openCinema(w);});acts.appendChild(bt);});
+      const bt=mkEl("button","btn primary","Watch this week's cartoon");bt.type="button";bt.addEventListener("click",()=>{closeVillCard();openCinema();});acts.appendChild(bt);
     }
     if(acts.childElementCount) card.appendChild(acts);
   }
@@ -3713,79 +3708,36 @@ async function cropSell(ids,btn){
 $("veggieBtn").addEventListener("click",()=>{showBag(true);$("bagPanel").scrollIntoView({block:"nearest",behavior:"smooth"});});
 $("bagSellCrops").addEventListener("click",e=>cropSell((S.me.bag||[]).filter(f=>f.crop).map(f=>f.id),e.currentTarget));
 
-/* ---- the cinema: a week of clips as one movie ---- */
-let cineWeek=0, cineJob=null;
-function weekDaysOf(off){ // Monday..Sunday of this week (off 0) or last week (off 1), Singapore days
-  const today=S.day, wd=(new Date(today+"T00:00:00Z").getUTCDay()+6)%7, out=[];
-  for(let i=0;i<7;i++){const d=new Date(today+"T00:00:00Z");d.setUTCDate(d.getUTCDate()-wd-7*off+i);out.push(d.toISOString().slice(0,10));}
-  return out;
-}
-async function weekClips(off){
-  const days=weekDaysOf(off), months=[...new Set(days.map(d=>d.slice(0,7)))], got={};
-  await Promise.all(months.map(async m=>{let d=calData&&calData.month===m&&Date.now()-(calData._at||0)<30000?calData:null;if(!d){d=await api("days?month="+m);d._at=Date.now();}got[m]=d;}));
-  return days.filter(d=>d<=S.day).map(d=>({day:d,info:got[d.slice(0,7)]&&got[d.slice(0,7)].days[d]})).filter(x=>x.info&&x.info.clips&&x.info.clips.length);
-}
-async function openCinema(off){
-  cineWeek=off;$("cineView").hidden=false;document.body.classList.add("fishing");
-  [...$("cineTabs").children].forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.w)===off)));
-  const days=weekDaysOf(off);$("cineTitle").textContent=off?"Last week's movie":"This week's movie";
-  $("cineSub").textContent="Loading the week…";$("cinePlay").hidden=true;
-  const g=$("cineCv").getContext("2d");g.fillStyle="#000";g.fillRect(0,0,VW,VH);
+/* ---- the cinema (v83): a new one-minute monster cartoon every week (public/cartoons.js, loaded on first visit) ---- */
+let cineJob=null, ctLoad=null;
+const loadCartoons=()=>ctLoad||(ctLoad=new Promise((ok,no)=>{
+  const l=document.createElement("link");l.rel="stylesheet";l.href="/cartoons.css";document.head.appendChild(l);
+  const sc=document.createElement("script");sc.src="/cartoons.js";sc.onload=ok;sc.onerror=()=>{ctLoad=null;no(new Error("Couldn't load the cartoon. Check your connection."));};document.head.appendChild(sc);
+}));
+const cineCast=()=>CARTOONS.castFor(S.me,members(),S.day);
+async function openCinema(){
+  $("cineView").hidden=false;document.body.classList.add("fishing");
+  $("cineSub").textContent="Loading this week's cartoon…";$("cinePlay").hidden=true;
   try{
-    const list=await weekClips(off);
-    if(cineWeek!==off||$("cineView").hidden) return;
-    cineList=list;
-    const n=list.reduce((a,x)=>a+x.info.clips.length,0);
-    drawMovieTitle(g,days,list,1);
-    $("cineSub").textContent=n?`${fmtLong(days[0])} – ${fmtLong(days[6])} · ${n} ${n===1?"clip":"clips"} from ${list.length} ${list.length===1?"day":"days"}`:"No clips this week yet. Film when the ring goes off and you'll be in it.";
-    $("cinePlay").hidden=!n;
-  }catch(e){$("cineSub").textContent=e.message||"Couldn't load the week.";}
-}
-let cineList=[];
-function cineStars(list){const by={};list.forEach(x=>x.info.clips.forEach(c=>{(by[c.pid]||(by[c.pid]={name:c.name,color:c.color,monster:c.monster,n:0})).n++;}));return Object.values(by).sort((a,b)=>b.n-a.n);}
-function drawMovieTitle(g,days,list,f){
-  g.fillStyle="#120d18";g.fillRect(0,0,VW,VH);g.globalAlpha=Math.min(1,f*2);g.textAlign="center";
-  g.fillStyle="#ffd34d";g.font="700 26px 'Barlow Semi Condensed', monospace";g.fillText("NOW SHOWING AT THE CAVE CINEMA",VW/2,380);
-  g.fillStyle="#fff";g.font="800 70px 'Barlow Semi Condensed', sans-serif";wrapText(g,S.cave.name,VW-100).slice(0,2).forEach((l,i)=>g.fillText(l,VW/2,500+i*80));
-  g.font="800 44px 'Barlow Semi Condensed', sans-serif";g.fillStyle="#ff8fab";g.fillText("THE WEEK",VW/2,680);
-  g.fillStyle="#d8cfe6";g.font="600 30px 'Barlow Semi Condensed', monospace";g.fillText(`${fmtLong(days[0])} – ${fmtLong(days[6])}`,VW/2,740);
-  g.fillText(`${list.length} ${list.length===1?"day":"days"} · ${cineStars(list).length} stars`,VW/2,790);
-  g.globalAlpha=1;g.textAlign="left";
-}
-function drawCredits(g,list,mons,f){
-  g.fillStyle="#120d18";g.fillRect(0,0,VW,VH);g.textAlign="center";
-  const stars=cineStars(list), y0=VH-f*(VH+260+stars.length*150);
-  g.fillStyle="#ffd34d";g.font="800 44px 'Barlow Semi Condensed', sans-serif";g.fillText("STARRING",VW/2,y0+VH*0.55);
-  stars.forEach((s,i)=>{const y=y0+VH*0.55+90+i*150, m=mons[s.monster+"|"+s.color];
-    if(m) g.drawImage(m,VW/2-50,y,100,100);
-    g.fillStyle=cssColor(s.color);g.font="800 40px 'Barlow Semi Condensed', sans-serif";g.fillText(s.name,VW/2,y+130);
-    g.fillStyle="#d8cfe6";g.font="600 24px 'Barlow Semi Condensed', monospace";g.fillText(`${s.n} ${s.n===1?"clip":"clips"}`,VW/2,y+160);});
-  g.fillStyle="#fff";g.font="800 34px 'Barlow Semi Condensed', sans-serif";g.fillText("THE END",VW/2,y0+VH*0.55+180+stars.length*150+60);
-  g.textAlign="left";
+    await loadCartoons();if($("cineView").hidden) return;
+    const i=CARTOONS.pick(S.day);
+    CARTOONS.poster($("cineStage"),cineCast(),i);
+    $("cineSub").textContent=`Episode ${i+1}: ${CARTOONS.EPISODES[i].title} · a new one every Monday`;
+    $("cinePlay").hidden=false;$("cinePlay").textContent="▶";
+  }catch(e){$("cineSub").textContent=e.message;}
 }
 async function playCinema(){
-  if(cineJob||!cineList.length) return;
+  if(cineJob||!window.CARTOONS) return;
   let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
-  const job={cancel:false,ac};cineJob=job;$("cinePlay").hidden=true;
-  const g=$("cineCv").getContext("2d"), list=cineList, days=weekDaysOf(cineWeek);
-  try{
-    await frames(2600,el=>drawMovieTitle(g,days,list,el/2600),job);
-    for(const x of list){
-      if(job.cancel) break;
-      const ctx={day:x.day,clips:x.info.clips,rings:x.info.rings,...groupDay(x.day,x.info)};
-      $("cineSub").textContent=fmtLonger(x.day);
-      await runDay(ctx,g,{ac,out:ac&&ac.destination,job});
-    }
-    if(!job.cancel){const stars=cineStars(list), mons=await dayAssets({people:stars,clips:[]});$("cineSub").textContent="The end";
-      await frames(4500+stars.length*900,el=>drawCredits(g,list,mons,el/(4500+stars.length*900)),job);}
-  }catch(e){$("cineSub").textContent="Playback stopped. Try again.";}
+  const job={cancel:false,timers:[]};cineJob=job;$("cinePlay").hidden=true;
+  try{await CARTOONS.play($("cineStage"),cineCast(),CARTOONS.pick(S.day),{ac,job});}
+  catch(e){if(e!==CARTOONS.STOP) $("cineSub").textContent="The cartoon stopped. Tap play to try again.";}
   finally{if(ac) ac.close().catch(()=>{});if(cineJob===job) cineJob=null;if(!$("cineView").hidden){$("cinePlay").hidden=false;$("cinePlay").textContent=job.cancel?"▶":"↻";}}
 }
 function closeCinema(){if(cineJob) cineJob.cancel=true;$("cineView").hidden=true;document.body.classList.remove("fishing");}
 $("cinePlay").addEventListener("click",playCinema);
-$("cineCv").addEventListener("click",()=>{if(cineJob) cineJob.cancel=true;});
+$("cineStage").addEventListener("click",()=>{if(cineJob) cineJob.cancel=true;});
 $("cineClose").addEventListener("click",closeCinema);
-[...$("cineTabs").children].forEach(b=>b.addEventListener("click",()=>{if(cineJob) cineJob.cancel=true;openCinema(Number(b.dataset.w));}));
 (function(){
   const L=$("sceneLayer"), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   L.addEventListener("pointerdown",e=>{
@@ -5260,6 +5212,11 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v83-cartoons",v:"v83.0",at:"2026-11-23T16:00",title:"The cinema shows cartoons now",changes:[
+    "The village cinema has a new one-minute monster cartoon every Monday, starring you, two cave-mates and Eugene, the scariest boss who ever lived. Curry puffs, aircon wars, Reply All, the MRT chope and more.",
+    "Turn your sound on: boings, honks and a little tune. Tap the screen to stop.",
+    "The weekly movie of everyone's clips is gone from the cinema; your clips are still in Days."],panels:[
+    {art:"cinema",title:"Now showing",text:"A new monster cartoon every Monday. You're the star, lah. Watch out for Eugene."}]},
   {id:"v81-leave",v:"v81.0",at:"2026-11-20T12:00",title:"10 days of annual leave, paid double",changes:[
     "Everyone gets 10 days of annual leave a year, starting over on 1 January. Take a day off (in your account or in the holiday planner) and that day's wage comes at your clock-out time, twice over, like a public holiday.",
     "Your account shows how many days you have left. Once they're used up, a day off pays nothing. Weekends still pay nothing."],panels:[
