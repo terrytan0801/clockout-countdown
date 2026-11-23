@@ -242,6 +242,18 @@ body.calm .newsbtn .nmon{animation:none!important}
 .cine-screen{position:relative;flex:1;min-height:0;display:flex;justify-content:center;align-items:center}
 .cine-play{position:absolute;left:50%;top:76%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:50%;border:3px solid #fff;background:rgba(198,40,40,.9);color:#fff;font-size:32px;cursor:pointer}
 .cine-sub{margin:0;text-align:center;font:12.5px/1.4 var(--f-mono);color:#d8cfe6;min-height:1.4em}
+/* v84: the comment wall under the cartoon */
+.cine-cmt{display:grid;gap:8px;width:min(560px,100%);margin:0 auto}
+.cine-cmt[hidden]{display:none}
+.cine-cmt-list{list-style:none;margin:0;padding:0;max-height:22vh;overflow:auto;display:grid;gap:6px}
+.cine-cmt-list li{background:rgba(255,255,255,.08);border-radius:10px;padding:7px 10px;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.cine-cmt-list li b{font:800 13px/1 var(--f-display);margin-right:6px;color:var(--cc,#ffd34d)}
+.cine-cmt-list li time{float:right;font:11px/1.6 var(--f-mono);color:#a99bbd;margin-left:8px}
+.cine-cmt-list .none{background:none;color:#a99bbd;text-align:center;font-size:13px}
+.cine .cine-cmt-form{display:flex;flex-direction:row;gap:8px}
+.cine-cmt-form input{flex:1;min-width:0;min-height:44px;border-radius:10px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;padding:0 12px;font:15px var(--f-body)}
+.cine-cmt-form input::placeholder{color:#a99bbd}
+.cine .cine-cmt-form button{width:auto;flex:none;min-height:44px;padding:0 16px;border:0;border-radius:10px;background:#ffd34d;color:#120d18;font:800 14px/1 var(--f-mono);cursor:pointer}
 @keyframes ffbob{50%{transform:translateY(-3%) rotate(2deg)}}
 .home-btns{display:flex;gap:8px}
 #bagBtn[aria-pressed="true"]{background:var(--ink);color:var(--card)}
@@ -1460,7 +1472,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v83.0</span>
+    <span>v84.0</span>
   </div>
 </div>
 
@@ -1791,6 +1803,10 @@ body.calm .fsprop span{animation:none}
   <div class="cine-top"><b id="cineTitle">This week's cartoon</b><button type="button" id="cineClose" aria-label="Leave the cinema">✕</button></div>
   <div class="cine-screen"><div class="ct-stage" id="cineStage" aria-label="Cartoon. Tap to stop."></div><button type="button" class="cine-play" id="cinePlay" aria-label="Play">▶</button></div>
   <p class="cine-sub" id="cineSub" aria-live="polite"></p>
+  <div class="cine-cmt" id="cineCmt" hidden>
+    <ul class="cine-cmt-list" id="cineCmtList" aria-label="Comments on this week's cartoon"></ul>
+    <form class="cine-cmt-form" id="cineCmtForm"><input id="cineCmtIn" name="cineCmtIn" maxlength="200" autocomplete="off" placeholder="Say something about this cartoon…" aria-label="Comment on this week's cartoon"><button type="submit">Send</button></form>
+  </div>
 </div>
 <div class="sleep" id="sleep" role="button" tabindex="-1" aria-label="Sleeping to save battery. Tap to wake." hidden>Sleeping…<small>tap to wake</small></div>
 
@@ -3725,7 +3741,37 @@ async function openCinema(){
     $("cineSub").textContent=`Episode ${i+1}: ${CARTOONS.EPISODES[i].title} · a new one every Monday`;
     $("cinePlay").hidden=false;$("cinePlay").textContent="▶";
   }catch(e){$("cineSub").textContent=e.message;}
+  loadCineComments();
 }
+// v84: this week's comments from the cave, under the cartoon
+function renderCineComment(c){
+  const li=document.createElement("li"), b=document.createElement("b"), t=document.createElement("time");
+  b.textContent=c.pid===S.me.id?"You":c.name;li.style.setProperty("--cc",colorVar(c.color));
+  const p=sgParts(c.at);t.textContent=`${p.weekday} ${fmt12(+p.hour%24,+p.minute)}`;
+  li.append(t,b,document.createTextNode(c.text));return li;
+}
+async function loadCineComments(){
+  const box=$("cineCmt"), ul=$("cineCmtList");
+  if(!S.cave){box.hidden=true;return;}
+  box.hidden=false;
+  try{
+    const d=await api("cartoon/comments");
+    ul.replaceChildren(...(d.comments.length?d.comments.map(renderCineComment):[Object.assign(document.createElement("li"),{className:"none",textContent:"No comments yet. Be the first!"})]));
+    ul.scrollTop=ul.scrollHeight;
+  }catch(e){ul.replaceChildren(Object.assign(document.createElement("li"),{className:"none",textContent:e.message}));}
+}
+$("cineCmtForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const inp=$("cineCmtIn"), text=inp.value.trim(), btn=e.target.querySelector("button");
+  if(!text) return;
+  btn.disabled=true;
+  try{
+    const ep=window.CARTOONS?CARTOONS.EPISODES[CARTOONS.pick(S.day)].title:"";
+    const d=await api("cartoon/comments",{text,ep});inp.value="";
+    const ul=$("cineCmtList");ul.querySelector(".none")?.remove();ul.appendChild(renderCineComment(d.comment));ul.scrollTop=ul.scrollHeight;
+  }catch(err){$("cineSub").textContent=err.message;}
+  finally{btn.disabled=false;}
+});
 async function playCinema(){
   if(cineJob||!window.CARTOONS) return;
   let ac=null;try{ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();}catch(e){ac=null;}
@@ -5212,9 +5258,10 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v83-cartoons",v:"v83.0",at:"2026-11-23T16:00",title:"The cinema shows cartoons now",changes:[
+  {id:"v83-cartoons",v:"v83.0–84.0",at:"2026-11-23T16:00",title:"The cinema shows cartoons now",changes:[
     "The village cinema has a new one-minute monster cartoon every Monday, starring you, two cave-mates and Eugene, the scariest boss who ever lived. Curry puffs, aircon wars, Reply All, the MRT chope and more.",
     "Turn your sound on: boings, honks and a little tune. Tap the screen to stop.",
+    "Leave a comment under the cartoon. Everyone in your cave sees it, and every week starts a fresh comment wall.",
     "The weekly movie of everyone's clips is gone from the cinema; your clips are still in Days."],panels:[
     {art:"cinema",title:"Now showing",text:"A new monster cartoon every Monday. You're the star, lah. Watch out for Eugene."}]},
   {id:"v81-leave",v:"v81.0",at:"2026-11-20T12:00",title:"10 days of annual leave, paid double",changes:[

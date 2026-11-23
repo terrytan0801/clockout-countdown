@@ -18,6 +18,7 @@
 //   pw/<cid>/<cropId>/<at>/<pid>              0   v50: someone watered that crop
 //   hpush/<day>/<pid>                         0   v51: the holiday planner sent a tip that day
 //   chat/<cid>/<ts>-<rand>     {pid,name,color,monster,text,at}
+//   ctc/<cid>/<monday>/<ts>-<rand>  {pid,name,color,monster,text,at,ep}  a comment on the week's cartoon (v84)
 //   vapid                      {publicKey, privateKey}
 //   meta/v9                    marks the v8 -> v9 migration as done
 //   clip/<cid>/<day>/<slot>     video bytes (metadata: {type})          Cave Calendar; slot = <pid>.<ring 0-3>
@@ -880,7 +881,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
     if (!rest.length) {
       await store.delete(`code/${cave.code}`);
       await store.delete(`cave/${cid}`);
-      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`react/${cid}/`)), ...(await keys(`hi/${cid}/`)), ...(await keys(`tank/${cid}/`)),
+      await Promise.all([...(await keys(`chat/${cid}/`)), ...(await keys(`ctc/${cid}/`)), ...(await keys(`react/${cid}/`)), ...(await keys(`hi/${cid}/`)), ...(await keys(`tank/${cid}/`)),
         ...(await keys(`don/${cid}/`)), ...(await keys(`built/${cid}/`)), ...(await keys(`builtlock/${cid}/`)), ...(await keys(`plot/${cid}/`)), ...(await keys(`pw/${cid}/`)),
         `chatlast/${cid}`, `chatre/${cid}`, `ver/${cid}`, `homerev/${cid}`].map((k) => store.delete(k)));
       await dropCaveClips(cid);
@@ -922,6 +923,17 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         }
         // v62: someone forgot their passcode. Only the hash is kept, so it can't be read back; set a new one
         // (or a random 6-digit one) for Terry to pass on in private, and lift any wrong-passcode lock.
+        // v84: every cave's cartoon comments, newest first (the latest 300).
+        if (route === "admin/cartoon-comments" && method === "GET") {
+          const ks = (await keys("ctc/")).sort((a, b) => (a.split("/")[3] < b.split("/")[3] ? 1 : -1)).slice(0, 300);
+          const caves = {};
+          const items = await Promise.all(ks.map(async (k) => {
+            const [, cid, week] = k.split("/"), c = await getJSON(k);
+            if (!(cid in caves)) caves[cid] = getJSON(`cave/${cid}`);
+            return c && { ...c, cave: ((await caves[cid]) || {}).name || cid, week };
+          }));
+          return json({ items: items.filter(Boolean) });
+        }
         if (route === "admin/reset-pin" && method === "POST") {
           const p = typeof body.pid === "string" && (await getPerson(body.pid));
           if (!p) return json({ error: "No one with that id." }, 404);
@@ -1703,6 +1715,23 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         return json({ id, reactions: all, rv }); // the whole cave's, so the phone can take this rv as its own
       }
 
+      // v84: comments on the week's cartoon. One wall per cave and week (the week's Monday, Singapore days).
+      if (route === "cartoon/comments") {
+        if (!me.cave) return json({ error: "Join a cave to comment." }, 409);
+        const day = sgDay(now()), week = addDays(day, -((weekdayOf(day) + 6) % 7)), prefix = `ctc/${me.cave}/${week}/`;
+        if (method === "GET") {
+          const ks = (await keys(prefix)).sort().slice(-100);
+          return json({ week, comments: (await Promise.all(ks.map((k) => getJSON(k)))).filter(Boolean) });
+        }
+        if (method === "POST") {
+          const text = cleanText(body.text, 200);
+          if (!text) return json({ error: "Type a comment first." }, 400);
+          const at = now(), id = `${String(at).padStart(13, "0")}-${randomBytes(3).toString("hex")}`;
+          const c = { id, pid: me.id, name: me.name, color: me.color, monster: me.monster, text, at, ep: cleanText(body.ep, 40) };
+          await store.setJSON(prefix + id, c);
+          return json({ comment: c });
+        }
+      }
       if (route === "chat") {
         if (!me.cave) return json({ error: "Join a cave to chat." }, 409);
         const prefix = `chat/${me.cave}/`;

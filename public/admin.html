@@ -239,6 +239,11 @@ tbody tr:hover{background:var(--bg)}
         <ul class="log" id="caveList"></ul>
       </section>
     </div>
+    <!-- v84: what people say about the weekly cartoon -->
+    <section class="panel" aria-labelledby="ctcTitle">
+      <div class="panel-head"><h2 id="ctcTitle">Cartoon comments</h2><p>Latest 300, every cave</p></div>
+      <ul class="log" id="ctcList"></ul>
+    </section>
     <!-- v82: Cave Exchange companies waiting for approval (only when the exchange is running) -->
     <section class="panel" aria-labelledby="cexTitle" id="cexPanel" hidden>
       <div class="panel-head"><h2 id="cexTitle">Exchange: companies to approve</h2></div>
@@ -317,9 +322,23 @@ async function load(){
     const d=await r.json().catch(()=>({}));
     if(r.status===401){lsSet(LS_KEY,null);key=null;showGate("That admin key didn't work.");return;}
     if(!r.ok) throw new Error(d.error||"The server didn't answer. Try Refresh.");
-    D=d;render();loadCex();
+    D=d;render();loadCex();loadCartoonComments();
   }catch(e){$("updated").textContent=e.message;}
   finally{$("refreshBtn").disabled=false;}
+}
+// v84: cartoon comments from every cave, newest first.
+async function loadCartoonComments(){
+  const ul=$("ctcList");
+  const r=await fetch("/api/admin/cartoon-comments",{headers:{"x-admin-key":key},cache:"no-store"}).catch(()=>null);
+  const d=r&&r.ok?await r.json():null;
+  ul.replaceChildren();
+  if(!d){const li=document.createElement("li");li.textContent="Couldn't load the comments.";ul.appendChild(li);return;}
+  if(!d.items.length){const li=document.createElement("li");li.textContent="No comments yet.";ul.appendChild(li);return;}
+  d.items.forEach(c=>{
+    const li=document.createElement("li"), b=document.createElement("b"), m=document.createElement("span");
+    b.textContent=`${c.name} · ${c.cave}`;m.className="dim";m.textContent=` ${c.ep?c.ep+" · ":""}${new Date(c.at).toLocaleString("en-GB",{timeZone:"Asia/Singapore",weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`;
+    li.append(b,m,document.createElement("br"),document.createTextNode(c.text));ul.appendChild(li);
+  });
 }
 // v82: companies waiting for the admin's approval. Hidden while the exchange isn't running (503).
 async function loadCex(){

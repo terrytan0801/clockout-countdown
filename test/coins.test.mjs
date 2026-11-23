@@ -239,6 +239,21 @@ assert.ok(await coins(C) >= c0);
   await app.payday(); assert.deepEqual((await pays()).pop().why, "leave.2027-01-04", "paid double again");
 }
 
+/* ---------- v84: comments on the week's cartoon ---------- */
+{
+  const said = (await call("POST", "cartoon/comments", { text: "  Eugene so scary sia  ", ep: "5:59 PM" }, A.t));
+  assert.equal(said.status, 200);
+  assert.equal(said.data.comment.text, "Eugene so scary sia", "trimmed");
+  assert.equal((await call("POST", "cartoon/comments", { text: "   " }, A.t)).status, 400, "no empty comments");
+  const seen = (await call("GET", "cartoon/comments", null, B.t)).data;
+  assert.deepEqual(seen.comments.map((c) => [c.name, c.text, c.ep]), [["Ann", "Eugene so scary sia", "5:59 PM"]], "the cave sees it");
+  assert.match(seen.week, /^\d{4}-\d{2}-\d{2}$/);
+  const admin = makeApp({ store, webpush, now: () => clock, cache: {}, adminKey: "test-admin-key" });
+  const r = await admin.handle(new Request("https://x.test/api/admin/cartoon-comments", { headers: { "x-admin-key": "test-admin-key" } }));
+  const items = (await r.json()).items;
+  assert.deepEqual(items.map((c) => [c.name, c.cave, c.text]), [["Ann", "Cave", "Eugene so scary sia"]], "the admin sees every cave's comments");
+}
+
 /* ---------- v80: Shunyi's 300-coin apology, once ---------- */
 {
   const S = await mk("Shun Yi"); await call("POST", "cave", { action: "join", code: cave.code }, S.t);
