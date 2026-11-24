@@ -1141,14 +1141,12 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .vcard .vhero.plan .bpv svg{width:100%;max-width:none;height:100%;padding:6% 0}
 .vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 @media (prefers-reduced-motion:reduce){.bpv-col{transition:none}}
-/* v86: buildings in progress are a faded outline on sky that fills with colour from the ground up; the card is a little stage */
-.bpv{background:linear-gradient(#bfe4ff,#eaf6ff 70%,#cfe8b8 70%);background-size:auto}
-.bpv.big{background:none}
-.bpv-plan svg{filter:grayscale(1) contrast(.6) brightness(1.25);mix-blend-mode:normal;opacity:.45}
-.bpv-col::after{height:3px;opacity:1;background:repeating-linear-gradient(90deg,#ffb703 0 6px,#1d2b25 6px 12px)}
+/* v86: the card is a little stage; buildings not open yet keep the blueprint, filling with colour from the ground up */
 .vcard .vstage{position:relative;margin:0;border-radius:10px;overflow:hidden;aspect-ratio:16/9;max-height:230px;display:grid;place-items:end center;
   background:radial-gradient(circle at 82% 22%,#fff6b0 0 7%,transparent 8%),linear-gradient(#9fd5ff,#e4f4ff 74%,#a8d67f 74% 80%,#8cc56a 80%);border:2px solid var(--ink)}
-.vcard .vstage.night{background:radial-gradient(circle at 82% 22%,#fff6c8 0 5%,transparent 6%),linear-gradient(#1c2550,#3a4a8a 74%,#2f5a3a 74%)}
+.vcard .vstage.plan{background-color:#1d5fa6;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:12px 12px}
+.vcard .vstage.plan .bpv{background:none}
+.vcard .vstage.night:not(.plan){background:radial-gradient(circle at 82% 22%,#fff6c8 0 5%,transparent 6%),linear-gradient(#1c2550,#3a4a8a 74%,#2f5a3a 74%)}
 .vcard .vstage>svg:not(.vcrane),.vcard .vstage>.bpv{position:absolute;left:50%;bottom:5%;height:88%;width:auto;aspect-ratio:6/5;transform:translateX(-50%)}
 .vcard .vstage>.bpv{display:block}
 .vcard .vstage .bpv svg{padding:0}
@@ -3539,7 +3537,7 @@ function renderVillCard(){
   card.appendChild(top);
   if(k==="lake"){const hero=mkEl("div","vhero lake");hero.innerHTML=CAVE_HOME.pond(lakePhase());card.appendChild(hero);}
   else if(!(st==="open"&&(k==="farm"||k==="planner"))){ // v86: the building on a little stage, with what state it's in
-    const hero=mkEl("div","vstage"+(sceneNight()?" night":""));hero.innerHTML=devArt(k,true);
+    const hero=mkEl("div","vstage"+(st==="open"?"":" plan")+(sceneNight()?" night":""));hero.innerHTML=devArt(k,true);
     const pct=b?Math.floor(b.raised/b.price*100):0;
     hero.appendChild(mkEl("span","vchip "+(st==="open"?"open":st==="site"?"site":""),st==="open"?"Open":st==="site"?`Building · ${pct}%`:st==="building"?"Opening":"Not started"));
     if(st==="site") hero.insertAdjacentHTML("beforeend",`<svg class="vcrane" viewBox="0 0 40 60" aria-hidden="true"><g stroke="#1d2b25" stroke-width="2" stroke-linejoin="round"><path d="M10 58 L10 6 L38 6 L38 10 L14 10" fill="none"/><path d="M10 6 L4 12" fill="none"/><path d="M6 58 L16 58" /></g><path d="M10 10 L14 6 M10 18 L14 10 M10 26 L14 18 M10 34 L14 26 M10 42 L14 34 M10 50 L14 42" stroke="#ffb703" stroke-width="2"/><path d="M30 10 L30 22" stroke="#1d2b25" stroke-width="1.4"/><rect x="26" y="22" width="8" height="6" fill="#ff8c5a" stroke="#1d2b25" stroke-width="1.4"/></svg>`);
@@ -5300,7 +5298,7 @@ $("shareVid").addEventListener("click",async()=>{
 const NEWS=[
   {id:"v85-build",v:"v85.0–86.0",at:"2026-11-24T12:00",title:"Buildings open right away, and look better",changes:[
     "No more waiting a day: a village building opens the moment the last coin goes in. Anything still being built is open now.",
-    "Every building is redrawn, and a building being paid for rises from a faded outline in colour, with a crane. Its card shows the building on a little stage, how much is paid in big numbers, and who chipped in with their monsters."],panels:[
+    "Every building is redrawn, and a building being paid for still fills its blueprint with colour, now with a crane. Its card shows the building on a little stage, how much is paid in big numbers, and who chipped in with their monsters."],panels:[
     {art:"village",title:"Open now",text:"Pay for it together and it opens on the spot."}]},
   {id:"v83-cartoons",v:"v83.0–84.0",at:"2026-11-23T16:00",title:"The cinema shows cartoons now",changes:[
     "The village cinema has a new one-minute monster cartoon every Monday, starring you, two cave-mates and Eugene, the scariest boss who ever lived. Curry puffs, aircon wars, Reply All, the MRT chope and more.",
