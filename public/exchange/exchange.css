@@ -42,7 +42,8 @@
 .cx-stats div{background:var(--track);border-radius:4px;padding:8px}
 .cx-stats span{display:block;font:600 11px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
 .cx-stats b{font:700 15px/1 var(--f-mono);font-variant-numeric:tabular-nums}
-.cx-chart svg{display:block;width:100%;height:150px}
+.cx-chart svg{display:block;width:100%;height:auto;cursor:pointer;overflow:visible}
+.cx-chart .cx-muted{margin-top:6px}
 .cx-book{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cx-book table{width:100%;border-collapse:collapse;font:600 13.5px/1.3 var(--f-mono);font-variant-numeric:tabular-nums}
 .cx-book th{font:700 11px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:4px 2px}

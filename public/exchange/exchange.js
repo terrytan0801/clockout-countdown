@@ -108,15 +108,41 @@
   }
 
   /* ---------- one stock ---------- */
-  function chartSvg(candles) {
-    if (candles.length < 2) return el("p", "cx-empty", candles.length ? "Trades so far fall in one period. Try Minutes." : "No trades in this view yet.");
-    const W = 600, H = 150, p = 6, cs = candles.map((k) => k.c), lo = Math.min(...candles.map((k) => k.l)), hi = Math.max(...candles.map((k) => k.h)) || 1;
-    const x = (i) => p + (i / (candles.length - 1)) * (W - 2 * p), y = (v) => H - p - ((v - lo) / (hi - lo || 1)) * (H - 2 * p);
-    const pts = cs.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-    const up = cs[cs.length - 1] >= cs[0];
-    const wrap = el("div", "cx-chart");
-    wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Price from ${cs[0]} to ${cs[cs.length - 1]} coins">
-      <polyline points="${pts}" fill="none" stroke="var(${up ? "--c-teal" : "--c-red"})" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+  // Candlesticks (v86): the last 40 periods; body from open to close (green up, red down), wick from low to high,
+  // volume bars underneath. Tap a candle for its numbers.
+  function chartSvg(all, span) {
+    if (!all.length) return el("p", "cx-empty", "No trades in this view yet.");
+    const ks = all.slice(-40), W = 600, PH = 230, VH = 44, R = 54, slot = (W - R) / Math.max(ks.length, 14), bw = Math.max(4, slot * 0.62);
+    let lo = Math.min(...ks.map((k) => k.l)), hi = Math.max(...ks.map((k) => k.h));
+    if (hi === lo) { hi += 1; lo = Math.max(0, lo - 1); }
+    const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+    const vmax = Math.max(...ks.map((k) => k.v)) || 1, x0 = W - R - ks.length * slot;
+    const y = (v) => 8 + ((hi - v) / (hi - lo)) * (PH - 16);
+    const when = (t) => new Date(t).toLocaleString([], span === "1d" ? { day: "numeric", month: "short" } : { hour: "numeric", minute: "2-digit" });
+    let svg = `<line x1="0" x2="${W - R}" y1="${PH}" y2="${PH}" stroke="var(--line)"/>`;
+    [hi - pad, (hi + lo) / 2, lo + pad].forEach((v) => {
+      svg += `<line x1="0" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 5"/>` +
+        `<text x="${W - R + 6}" y="${(y(v) + 5).toFixed(1)}" font-size="15" fill="var(--muted)" font-family="var(--f-mono)">${Math.round(v)}</text>`;
+    });
+    ks.forEach((k, i) => {
+      const cx = x0 + slot * (i + 0.5), up = k.c >= k.o, col = up ? "var(--c-teal)" : "var(--c-red)";
+      const top = y(Math.max(k.o, k.c)), h = Math.max(2.5, Math.abs(y(k.o) - y(k.c))), vh = (k.v / vmax) * VH;
+      svg += `<line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${y(k.h).toFixed(1)}" y2="${y(k.l).toFixed(1)}" stroke="${col}" stroke-width="2"/>` +
+        `<rect x="${(cx - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="${col}"/>` +
+        `<rect x="${(cx - bw / 2).toFixed(1)}" y="${(PH + 8 + VH - vh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, vh).toFixed(1)}" fill="${col}" opacity=".45"/>` +
+        `<rect class="cx-hit" data-i="${i}" x="${(cx - slot / 2).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${PH + VH + 8}" fill="transparent"/>`;
+    });
+    svg += `<text x="${(x0 + 2).toFixed(1)}" y="${PH + VH + 26}" font-size="14" fill="var(--muted)" font-family="var(--f-mono)">${when(ks[0].t)}</text>` +
+      `<text x="${W - R}" y="${PH + VH + 26}" font-size="14" fill="var(--muted)" font-family="var(--f-mono)" text-anchor="end">${when(ks[ks.length - 1].t)}</text>`;
+    const wrap = el("div", "cx-chart"), info = el("p", "cx-muted", "Tap a candle to see its open, high, low and close.");
+    const last = ks[ks.length - 1];
+    wrap.innerHTML = `<svg viewBox="0 0 ${W} ${PH + VH + 32}" role="img" aria-label="${ks.length} periods, from ${ks[0].o} to ${last.c} coins, high ${Math.max(...ks.map((k) => k.h))}, low ${Math.min(...ks.map((k) => k.l))}">${svg}</svg>`;
+    wrap.querySelector("svg").addEventListener("click", (e) => {
+      const r = e.target.closest(".cx-hit"); if (!r) return;
+      const k = ks[Number(r.dataset.i)];
+      info.textContent = `${when(k.t)} · Open ${fmt(k.o)} · High ${fmt(k.h)} · Low ${fmt(k.l)} · Close ${fmt(k.c)} · ${fmt(k.v)} shares`;
+    });
+    wrap.appendChild(info);
     return wrap;
   }
   async function stockView(s) {
@@ -145,7 +171,7 @@
     cbox.append(el("h3", "", "Price"), spans, area);
     const drawChart = async (span) => {
       spans.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.s === span)));
-      try { area.replaceChildren(chartSvg((await api(`exchange/stock/${s}/chart?span=${span}`)).candles)); } catch (e) { area.replaceChildren(el("p", "cx-empty", e.message)); }
+      try { area.replaceChildren(chartSvg((await api(`exchange/stock/${s}/chart?span=${span}`)).candles, span)); } catch (e) { area.replaceChildren(el("p", "cx-empty", e.message)); }
     };
     [["1m", "Minutes"], ["1h", "Hours"], ["1d", "Days"]].forEach(([k, l]) => { const b = btn("cx-chip", l, () => drawChart(k)); b.dataset.s = k; spans.appendChild(b); });
     drawChart("1h");
