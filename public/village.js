@@ -29,38 +29,64 @@ ${night ? `<g fill="#fff"><circle cx="40" cy="20" r="1.2"/><circle cx="120" cy="
 
   /* ---------- buildings (viewBox 0 0 120 100, standing on y=96) ---------- */
   const shadow = `<ellipse cx="60" cy="96" rx="50" ry="5" fill="#000" opacity=".14"/>`;
+  const O = "#1d2b25"; // v86: outline colour for the redrawn buildings
+  const pad = (c) => `<path d="M6 94 Q60 86 114 94 L110 99 L10 99Z" fill="${c}" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>`;
   const BUILD = {
-    weather: { name: "Weather station", zh: "天气情报所", svg: shadow +
-      `<rect x="22" y="48" width="70" height="48" rx="3" fill="#f4f6fb"/><path d="M16 50 L57 26 L98 50Z" fill="#4d7cc7"/><rect x="48" y="70" width="18" height="26" rx="2" fill="#4d7cc7"/>` +
-      `<rect x="28" y="58" width="14" height="12" rx="2" fill="#bfe3ff"/><rect x="74" y="58" width="14" height="12" rx="2" fill="#bfe3ff"/>` +
-      `<path d="M80 34 L80 16" stroke="#6b7685" stroke-width="2.4"/><path d="M68 20 Q80 2 92 20Z" fill="#e9eef5" stroke="#9aa8b8" stroke-width="1.4"/>` +
-      `<path d="M36 36 L36 18" stroke="#6b7685" stroke-width="2"/><path d="M28 18 L44 18" stroke="#6b7685" stroke-width="2"/><circle cx="28" cy="18" r="3" fill="#ff8c5a"/><circle cx="44" cy="18" r="3" fill="#ff8c5a"/>` +
-      `<g transform="translate(57 42)"><ellipse rx="9" ry="5" fill="#fff"/><ellipse cx="-4" cy="-2" rx="5" ry="4.4" fill="#fff"/><ellipse cx="4" cy="-3" rx="5.6" ry="5" fill="#fff"/><path d="M-4 5 l-2 5 M1 5 l-2 5 M6 5 l-2 5" stroke="#4d9be8" stroke-width="1.6" stroke-linecap="round"/></g>` },
-    farm: { name: "Farm", zh: "农田", svg: shadow +
-      `<rect x="8" y="80" width="104" height="16" rx="3" fill="#8d5a34"/><g stroke="#5f3b20" stroke-width="2"><path d="M14 84 L106 84 M14 90 L106 90"/></g>` +
-      `<g fill="#6cbf5c"><circle cx="22" cy="80" r="4"/><circle cx="40" cy="80" r="4"/><circle cx="58" cy="80" r="4"/><circle cx="76" cy="80" r="4"/><circle cx="94" cy="80" r="4"/></g>` +
-      `<rect x="30" y="38" width="50" height="42" fill="#d9483b"/><path d="M24 40 L55 16 L86 40Z" fill="#a8352c"/><path d="M45 80 L45 56 L65 56 L65 80Z" fill="#fff"/><path d="M45 56 L65 80 M65 56 L45 80" stroke="#d9483b" stroke-width="2.4"/>` +
-      `<rect x="49" y="36" width="12" height="10" fill="#fff"/><rect x="86" y="30" width="18" height="50" rx="9" fill="#c9ced8"/><path d="M86 38 Q95 24 104 38" fill="#a7b0bf"/>` +
-      `<g stroke="#fff" stroke-width="2"><path d="M8 74 L8 86 M20 74 L20 86 M8 77 L20 77"/></g>` },
-    harbor: { name: "Harbor", zh: "渔港", svg: `<rect x="0" y="62" width="120" height="38" fill="#4d9be8"/><g stroke="#fff" stroke-width="1.4" opacity=".5" fill="none"><path d="M6 76 q5 -3 10 0 q5 3 10 0"/><path d="M60 90 q5 -3 10 0"/></g>` +
-      `<rect x="4" y="58" width="74" height="8" fill="#a8743f"/><g fill="#7b5228"><rect x="10" y="64" width="5" height="30"/><rect x="38" y="64" width="5" height="30"/><rect x="66" y="64" width="5" height="30"/></g>` +
-      `<path d="M30 78 L66 78 L60 88 L36 88Z" fill="#ff8c5a"/><path d="M48 78 L48 60" stroke="#6b4a2a" stroke-width="2"/><path d="M48 60 L60 74 L48 74Z" fill="#fff"/>` +
-      `<path d="M86 94 L90 30 L104 30 L108 94Z" fill="#fff"/><path d="M87.5 74 L106.5 74 L107 82 L87 82Z M89 50 L105 50 L105.5 58 L88.6 58Z" fill="#e5383b"/>` +
-      `<rect x="88" y="20" width="18" height="12" rx="2" fill="#ffd34d"/><path d="M86 20 L97 10 L108 20Z" fill="#e5383b"/><path d="M106 26 L120 20 L120 32Z" fill="#fff59d" opacity=".7"/>` },
-    cinema: { name: "Cinema", zh: "电影院", svg: shadow +
-      `<rect x="14" y="34" width="92" height="62" rx="3" fill="#6a3fa0"/><rect x="10" y="26" width="100" height="16" rx="3" fill="#ffd34d"/>` +
-      `<text x="60" y="38.5" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="11" fill="#6a3fa0">CINEMA</text>` +
-      `<g fill="#fff59d">${Array.from({ length: 12 }, (_, i) => `<circle cx="${14 + i * 8.4}" cy="24" r="1.8"/>`).join("")}</g>` +
-      `<path d="M44 96 L44 64 Q60 54 76 64 L76 96Z" fill="#c62828"/><path d="M60 58 L60 96" stroke="#8e1b1b" stroke-width="2"/>` +
-      `<rect x="20" y="52" width="18" height="24" rx="2" fill="#fff"/><rect x="82" y="52" width="18" height="24" rx="2" fill="#fff"/><path d="M23 56 l12 0 M23 62 l12 0 M85 56 l12 0 M85 62 l12 0" stroke="#6a3fa0" stroke-width="1.6"/>` +
-      `<g transform="translate(60 10)"><circle r="9" fill="#2b2233"/><g fill="#9aa8b8"><circle cx="0" cy="-4.5" r="2"/><circle cx="4.3" cy="1.5" r="2"/><circle cx="-4.3" cy="1.5" r="2"/></g></g>` },
-    planner: { name: "Holiday planner", zh: "假期规划局", svg: shadow +
-      `<rect x="22" y="44" width="62" height="52" rx="3" fill="#fff3e0"/><path d="M16 46 L53 26 L90 46Z" fill="#26a69a"/><rect x="44" y="70" width="18" height="26" rx="2" fill="#26a69a"/>` +
-      `<g transform="translate(36 6)"><rect width="34" height="30" rx="4" fill="#fff" stroke="#e53935" stroke-width="2"/><rect width="34" height="9" rx="3" fill="#e53935"/>` +
-      `<text x="17" y="26" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="15" fill="#1d2b3a">31</text><path d="M9 -3 L9 4 M25 -3 L25 4" stroke="#555" stroke-width="2.4" stroke-linecap="round"/></g>` +
-      `<rect x="28" y="54" width="12" height="11" rx="2" fill="#bfe3ff"/><rect x="66" y="54" width="12" height="11" rx="2" fill="#bfe3ff"/>` +
-      `<path d="M100 96 Q98 70 104 52" stroke="#8d6e63" stroke-width="4" fill="none"/><g fill="#43a047"><path d="M104 52 Q88 44 82 54 Q94 48 104 54Z"/><path d="M104 52 Q120 42 124 54 Q112 48 104 54Z"/><path d="M104 52 Q100 36 90 36 Q100 42 104 54Z"/><path d="M104 52 Q112 36 120 38 Q110 42 104 54Z"/></g>` +
-      `<rect x="2" y="78" width="18" height="16" rx="3" fill="#ff8c5a"/><path d="M7 78 L7 74 L15 74 L15 78" stroke="#6b4a2a" stroke-width="2" fill="none"/><path d="M2 85 L20 85" stroke="#fff" stroke-width="1.6"/>` },
+    // v86: redrawn with outlines, a darker side wall and more detail. Each stands on a little ground pad at y=96.
+    weather: { name: "Weather station", zh: "天气情报所", svg: pad("#9ccf6a") +
+      `<g stroke="${O}" stroke-width="2.2" stroke-linejoin="round">` +
+      `<path d="M24 50 L80 50 L80 94 L24 94Z" fill="#f6f8fc"/><path d="M80 50 L96 44 L96 90 L80 94Z" fill="#cfd8e6"/>` +
+      `<path d="M20 52 Q52 18 84 52Z" fill="#3f78c9"/>` +
+      `<path d="M52 24 L52 12"/><path d="M42 12 L62 12" stroke-width="1.8"/><circle cx="42" cy="12" r="3" fill="#ff8c5a"/><circle cx="62" cy="12" r="3" fill="#ff8c5a"/>` +
+      `<rect x="30" y="58" width="44" height="18" rx="3" fill="#1d3557"/>` +
+      `<rect x="44" y="78" width="16" height="16" rx="2" fill="#3f78c9"/>` +
+      `<path d="M100 94 L100 64"/><path d="M92 64 Q100 54 108 64Z" fill="#e9eef5"/></g>` +
+      `<circle cx="40" cy="66" r="4" fill="#ffd34d"/><g fill="#fff"><ellipse cx="54" cy="68" rx="7" ry="4"/><ellipse cx="50" cy="66" rx="4" ry="3.4"/><ellipse cx="58" cy="65.5" rx="4.6" ry="4"/></g>` +
+      `<path d="M52 73 l-1.4 3 M56 73 l-1.4 3 M60 73 l-1.4 3" stroke="#7cc4ff" stroke-width="1.4" stroke-linecap="round"/>` +
+      `<text x="71" y="72" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="7" fill="#7dffb0" text-anchor="end">28°</text>` +
+      `<path d="M30 46 Q52 26 74 46" stroke="#fff" stroke-width="1.6" fill="none" opacity=".45"/>` },
+    farm: { name: "Farm", zh: "农田", svg: pad("#8fc95e") +
+      `<g stroke="${O}" stroke-width="2.2" stroke-linejoin="round">` +
+      `<path d="M8 96 L8 86 L112 86 L112 96Z" fill="#9b6b3f"/>` +
+      `<path d="M28 44 L72 44 L72 86 L28 86Z" fill="#d9483b"/><path d="M72 44 L84 40 L84 82 L72 86Z" fill="#a9362c"/>` +
+      `<path d="M22 46 L32 30 L50 22 L68 30 L78 46Z" fill="#7a2a22"/><path d="M78 46 L68 30 L76 28 L88 42Z" fill="#5e1f19"/>` +
+      `<path d="M40 86 L40 62 L60 62 L60 86Z" fill="#fff"/><path d="M40 62 L60 86 M60 62 L40 86" stroke="#d9483b" stroke-width="2.6"/>` +
+      `<rect x="44" y="32" width="12" height="10" rx="1" fill="#ffe8a3"/>` +
+      `<path d="M90 86 L90 44 Q98 30 106 44 L106 86Z" fill="#c9ced8"/><path d="M90 54 L106 54 M90 64 L106 64 M90 74 L106 74" stroke-width="1.4"/></g>` +
+      `<g stroke="${O}" stroke-width="1.6" fill="#6cbf5c">${[14, 26, 38, 50, 62, 74, 86, 98].map((x) => `<path d="M${x} 92 q-4 -6 0 -9 q4 3 0 9Z"/>`).join("")}</g>` +
+      `<path d="M30 48 L70 48" stroke="#fff" stroke-width="1.6" opacity=".5"/>` },
+    harbor: { name: "Harbor", zh: "渔港", svg:
+      `<path d="M0 70 Q30 64 60 70 T120 70 L120 100 L0 100Z" fill="#3f8fe0"/><path d="M0 84 Q30 78 60 84 T120 84" stroke="#fff" stroke-width="1.6" fill="none" opacity=".45"/>` +
+      `<g stroke="${O}" stroke-width="2.2" stroke-linejoin="round">` +
+      `<path d="M2 62 L70 62 L70 68 L2 68Z" fill="#b07a45"/><path d="M10 68 L10 94 M36 68 L36 94 M62 68 L62 94" stroke-width="3.4"/>` +
+      `<rect x="12" y="50" width="12" height="12" fill="#c98b4e"/><rect x="26" y="54" width="10" height="8" fill="#e0a86a"/>` +
+      `<path d="M30 80 L70 80 L64 90 L36 90Z" fill="#ff8c5a"/><path d="M50 80 L50 56"/><path d="M50 58 L64 76 L50 76Z" fill="#fff"/>` +
+      `<path d="M84 96 L88 28 L104 28 L108 96Z" fill="#fff"/><path d="M86.4 58 L105.6 58 L106.6 72 L85.4 72Z M87.8 36 L104.2 36 L104.8 46 L87.2 46Z" fill="#e5383b"/>` +
+      `<rect x="86" y="18" width="20" height="11" rx="2" fill="#ffd34d"/><path d="M84 18 L96 8 L108 18Z" fill="#e5383b"/></g>` +
+      `<path d="M106 22 L120 14 L120 30Z" fill="#fff59d" opacity=".8"/><path d="M86 22 L72 14 L72 30Z" fill="#fff59d" opacity=".5"/>` },
+    cinema: { name: "Cinema", zh: "电影院", svg: pad("#b9b0a3") +
+      `<g stroke="${O}" stroke-width="2.2" stroke-linejoin="round">` +
+      `<path d="M14 40 L96 40 L96 94 L14 94Z" fill="#6a3fa0"/><path d="M96 40 L108 36 L108 90 L96 94Z" fill="#4e2c7a"/>` +
+      `<path d="M30 40 L30 28 Q55 14 80 28 L80 40Z" fill="#8a5cc8"/>` +
+      `<rect x="8" y="42" width="94" height="16" rx="3" fill="#ffd34d"/>` +
+      `<path d="M42 94 L42 70 Q55 60 68 70 L68 94Z" fill="#c62828"/><path d="M55 64 L55 94" stroke-width="1.6"/>` +
+      `<rect x="20" y="64" width="16" height="22" rx="2" fill="#fff"/><rect x="74" y="64" width="16" height="22" rx="2" fill="#fff"/></g>` +
+      `<text x="55" y="54" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="10" fill="#6a3fa0">CINEMA</text>` +
+      `<g fill="#fff59d">${Array.from({ length: 11 }, (_, i) => `<circle cx="${13 + i * 8.4}" cy="61.5" r="1.5"/>`).join("")}</g>` +
+      `<path d="M24 70 h8 M24 74 h8 M78 70 h8 M78 74 h8" stroke="#6a3fa0" stroke-width="1.6"/><circle cx="28" cy="80" r="2.6" fill="#ffd34d"/><path d="M80 82 l4 -6 l4 6Z" fill="#e5383b"/>` +
+      `<g transform="translate(55 22)" stroke="${O}" stroke-width="1.8"><circle cx="-4" cy="-6" r="3" fill="#fff8dc"/><circle cx="1" cy="-8" r="3" fill="#fff8dc"/><circle cx="5" cy="-5" r="3" fill="#fff8dc"/><path d="M-7 -4 L7 -4 L5 8 L-5 8Z" fill="#fff"/><path d="M-3 -4 L-2 8 M2 -4 L2 8" stroke="#e5383b" stroke-width="1.6"/></g>` },
+    planner: { name: "Holiday planner", zh: "假期规划局", svg: pad("#f2d49b") +
+      `<g stroke="${O}" stroke-width="2.2" stroke-linejoin="round">` +
+      `<path d="M20 50 L72 50 L72 94 L20 94Z" fill="#fff3e0"/><path d="M72 50 L84 46 L84 90 L72 94Z" fill="#e8d5b5"/>` +
+      `<path d="M14 52 L46 30 L78 52Z" fill="#26a69a"/><path d="M78 52 L46 30 L58 28 L88 48Z" fill="#1b7f75"/>` +
+      `<rect x="38" y="74" width="16" height="20" rx="2" fill="#26a69a"/><rect x="26" y="58" width="12" height="11" rx="2" fill="#bfe3ff"/><rect x="56" y="58" width="12" height="11" rx="2" fill="#bfe3ff"/>` +
+      `<g transform="translate(32 4)"><rect width="28" height="24" rx="3" fill="#fff"/><rect width="28" height="8" rx="3" fill="#e53935"/></g>` +
+      `<path d="M102 94 Q100 70 104 54" stroke="#8d6e63" stroke-width="4" fill="none"/>` +
+      `<rect x="88" y="80" width="14" height="14" rx="2" fill="#ff8c5a"/></g>` +
+      `<text x="46" y="25.5" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="12" fill="#1d2b3a">31</text>` +
+      `<g fill="#43a047" stroke="${O}" stroke-width="1.6"><path d="M104 54 Q88 46 82 56 Q94 50 104 56Z"/><path d="M104 54 Q120 44 124 56 Q112 50 104 56Z"/><path d="M104 54 Q100 38 90 38 Q100 44 104 56Z"/><path d="M104 54 Q112 38 120 40 Q110 44 104 56Z"/></g>` +
+      `<path d="M92 80 L92 76 L98 76 L98 80" stroke="${O}" stroke-width="1.8" fill="none"/>` +
+      `<g transform="translate(10 16) rotate(-12)" fill="#fff" stroke="${O}" stroke-width="1.4"><path d="M0 0 L16 0 L20 -3 L22 0 L16 2 L0 2Z"/><path d="M8 0 L4 -6 L7 -6 L12 0Z M8 2 L4 7 L7 7 L12 2Z"/></g>` },
     lot: { name: "Empty lot", svg: `<ellipse cx="60" cy="82" rx="50" ry="14" fill="#b8915f" opacity=".75"/><g stroke="#8d6a3f" stroke-width="2.2"><path d="M14 82 L14 66 M60 70 L60 54 M106 82 L106 66"/></g>` +
       `<path d="M14 68 Q37 74 60 56 Q83 74 106 68" stroke="#fff" stroke-width="1.4" fill="none" stroke-dasharray="3 2"/>` },
     scaffold: { name: "Being built", svg: shadow + `<ellipse cx="60" cy="88" rx="50" ry="10" fill="#b8915f" opacity=".7"/>` +

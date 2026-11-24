@@ -1141,6 +1141,34 @@ body[data-view]:not([data-view="board"]) header .actions .chip,body[data-view]:n
 .vcard .vhero.plan .bpv svg{width:100%;max-width:none;height:100%;padding:6% 0}
 .vcard .vhero.plan::after{content:"Plan";position:absolute;left:8px;top:8px;padding:3px 6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px;color:#fff;font:700 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
 @media (prefers-reduced-motion:reduce){.bpv-col{transition:none}}
+/* v86: buildings in progress are a faded outline on sky that fills with colour from the ground up; the card is a little stage */
+.bpv{background:linear-gradient(#bfe4ff,#eaf6ff 70%,#cfe8b8 70%);background-size:auto}
+.bpv.big{background:none}
+.bpv-plan svg{filter:grayscale(1) contrast(.6) brightness(1.25);mix-blend-mode:normal;opacity:.45}
+.bpv-col::after{height:3px;opacity:1;background:repeating-linear-gradient(90deg,#ffb703 0 6px,#1d2b25 6px 12px)}
+.vcard .vstage{position:relative;margin:0;border-radius:10px;overflow:hidden;aspect-ratio:16/9;max-height:230px;display:grid;place-items:end center;
+  background:radial-gradient(circle at 82% 22%,#fff6b0 0 7%,transparent 8%),linear-gradient(#9fd5ff,#e4f4ff 74%,#a8d67f 74% 80%,#8cc56a 80%);border:2px solid var(--ink)}
+.vcard .vstage.night{background:radial-gradient(circle at 82% 22%,#fff6c8 0 5%,transparent 6%),linear-gradient(#1c2550,#3a4a8a 74%,#2f5a3a 74%)}
+.vcard .vstage>svg:not(.vcrane),.vcard .vstage>.bpv{position:absolute;left:50%;bottom:5%;height:88%;width:auto;aspect-ratio:6/5;transform:translateX(-50%)}
+.vcard .vstage>.bpv{display:block}
+.vcard .vstage .bpv svg{padding:0}
+.vchip{position:absolute;left:10px;top:10px;padding:5px 9px;border-radius:999px;border:2px solid var(--ink);font:800 12px/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;background:#fff;color:var(--ink)}
+.vchip.open{background:#00a650;color:#fff}
+.vchip.site{background:#ffd34d}
+.vcrane{position:absolute;left:4%;bottom:18%;width:15%;height:auto}
+.vprog{display:grid;gap:6px}
+.vprog .vpct{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.vprog .vpct b{font:900 34px/1 var(--f-display)}
+.vprog .vpct span{font:700 13.5px/1.3 var(--f-mono);color:var(--muted);text-align:right}
+.vprog .vtrack{height:14px;border-radius:999px;background:var(--track);border:2px solid var(--ink);overflow:hidden}
+.vprog .vtrack i{display:block;height:100%;border-radius:999px;background:repeating-linear-gradient(-45deg,#ffd34d 0 10px,#f2b400 10px 20px);transition:width .6s cubic-bezier(.25,1,.5,1)}
+.vfolk{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.vfolk li{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:var(--track);font:700 13px/1 var(--f-mono)}
+.vfolk li .mon{width:30px;height:30px}
+.vfolk li em{font-style:normal;color:var(--muted);font-weight:600}
+.vfolk li.top{background:#fff3c4;color:#1d2b25}
+.vfolk li.top em{color:#6b5300}
+@media (prefers-reduced-motion:reduce){.vprog .vtrack i{transition:none}}
 /* v68 the home: one room fills the picture; the switcher sits on it (name plate, side arrows, dots) */
 .home-head{align-items:center;flex-wrap:wrap;gap:8px 12px}
 .home-sub{margin:0}
@@ -1472,7 +1500,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v85.0</span>
+    <span>v86.0</span>
   </div>
 </div>
 
@@ -3509,13 +3537,23 @@ function renderVillCard(){
   const top=mkEl("div","vtop");top.appendChild(mkEl("h3","",B.name));
   const x=mkEl("button","","✕");x.type="button";x.setAttribute("aria-label","Close");x.addEventListener("click",closeVillCard);top.appendChild(x);
   card.appendChild(top);
-  if(!(st==="open"&&(k==="farm"||k==="planner"))){const hero=mkEl("div",k==="lake"?"vhero lake":st==="open"?"vhero":"vhero plan");hero.innerHTML=k==="lake"?CAVE_HOME.pond(lakePhase()):devArt(k,true);card.appendChild(hero);}
+  if(k==="lake"){const hero=mkEl("div","vhero lake");hero.innerHTML=CAVE_HOME.pond(lakePhase());card.appendChild(hero);}
+  else if(!(st==="open"&&(k==="farm"||k==="planner"))){ // v86: the building on a little stage, with what state it's in
+    const hero=mkEl("div","vstage"+(sceneNight()?" night":""));hero.innerHTML=devArt(k,true);
+    const pct=b?Math.floor(b.raised/b.price*100):0;
+    hero.appendChild(mkEl("span","vchip "+(st==="open"?"open":st==="site"?"site":""),st==="open"?"Open":st==="site"?`Building · ${pct}%`:st==="building"?"Opening":"Not started"));
+    if(st==="site") hero.insertAdjacentHTML("beforeend",`<svg class="vcrane" viewBox="0 0 40 60" aria-hidden="true"><g stroke="#1d2b25" stroke-width="2" stroke-linejoin="round"><path d="M10 58 L10 6 L38 6 L38 10 L14 10" fill="none"/><path d="M10 6 L4 12" fill="none"/><path d="M6 58 L16 58" /></g><path d="M10 10 L14 6 M10 18 L14 10 M10 26 L14 18 M10 34 L14 26 M10 42 L14 34 M10 50 L14 42" stroke="#ffb703" stroke-width="2"/><path d="M30 10 L30 22" stroke="#1d2b25" stroke-width="1.4"/><rect x="26" y="22" width="8" height="6" fill="#ff8c5a" stroke="#1d2b25" stroke-width="1.4"/></svg>`);
+    card.appendChild(hero);
+  }
   if(st!=="open"||(k!=="farm"&&k!=="planner")) card.appendChild(mkEl("p","vwhat",BUILD_INFO[k]));
   if(st==="fund"||st==="site"){
     if(!b){card.appendChild(mkEl("p","","Loading…"));return;}
     if(st==="site") card.appendChild(mkEl("p","",`🚧 Building has started! The walls go up as coins come in.`));
-    const bar=mkEl("div","vbar"),u=mkEl("u");u.style.width=Math.min(100,b.raised/b.price*100)+"%";bar.appendChild(u);card.appendChild(bar);
-    const nums=mkEl("div","vnums");nums.append(mkEl("span","",`${b.raised.toLocaleString()} / ${b.price.toLocaleString()} coins`),mkEl("span","",`${(b.price-b.raised).toLocaleString()} to go`));card.appendChild(nums);
+    const prog=mkEl("div","vprog"),row=mkEl("div","vpct"),track=mkEl("div","vtrack"),fill=mkEl("i"),pct=Math.floor(b.raised/b.price*100);
+    row.append(mkEl("b","",pct+"%"),mkEl("span","",`${b.raised.toLocaleString()} of ${b.price.toLocaleString()} coins · ${(b.price-b.raised).toLocaleString()} to go`));
+    fill.style.width=Math.min(100,b.raised/b.price*100)+"%";track.appendChild(fill);
+    track.setAttribute("role","progressbar");track.setAttribute("aria-valuemin","0");track.setAttribute("aria-valuemax","100");track.setAttribute("aria-valuenow",String(pct));track.setAttribute("aria-label","Paid so far");
+    prog.append(row,track);card.appendChild(prog);
     card.appendChild(mkEl("p","",`Chip in any amount. It opens the moment it's all paid for. You have ${Math.max(0,S.me.coins||0).toLocaleString()} coins.`));
     const give=mkEl("div","vgive");
     // v80: the amount buttons only fill in the amount; Give asks "tap again" first, so nothing goes by accident.
@@ -3570,8 +3608,10 @@ function renderVillCard(){
   }
   if(b&&b.donors.length){
     card.appendChild(mkEl("b","bp-sub",st==="fund"?"Chipped in so far":"Built by"));
-    const ul=mkEl("ul","vdonors");
-    b.donors.forEach(d=>{const li=mkEl("li");li.append(mkEl("b","",d.pid===S.me.id?"You":nameOf(d.pid).replace(/^./,c=>c.toUpperCase())),mkEl("span","",`${d.amt.toLocaleString()} coins`));ul.appendChild(li);});
+    const ul=mkEl("ul","vfolk"), byId={};members().forEach(p=>byId[p.id]=p);
+    b.donors.forEach((d,i)=>{const p=byId[d.pid], li=mkEl("li",i===0?"top":"");
+      if(p) li.appendChild(monEl(p.monster,p.color,"dance","still"));
+      li.append(mkEl("b","",(i===0?"👑 ":"")+(d.pid===S.me.id?"You":nameOf(d.pid).replace(/^./,c=>c.toUpperCase()))),mkEl("em","",d.amt.toLocaleString()));ul.appendChild(li);});
     card.appendChild(ul);
   }
 }
@@ -5258,8 +5298,9 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
-  {id:"v85-build",v:"v85.0",at:"2026-11-24T12:00",title:"Buildings open right away",changes:[
-    "No more waiting a day: a village building opens the moment the last coin goes in. Anything still being built is open now."],panels:[
+  {id:"v85-build",v:"v85.0–86.0",at:"2026-11-24T12:00",title:"Buildings open right away, and look better",changes:[
+    "No more waiting a day: a village building opens the moment the last coin goes in. Anything still being built is open now.",
+    "Every building is redrawn, and a building being paid for rises from a faded outline in colour, with a crane. Its card shows the building on a little stage, how much is paid in big numbers, and who chipped in with their monsters."],panels:[
     {art:"village",title:"Open now",text:"Pay for it together and it opens on the spot."}]},
   {id:"v83-cartoons",v:"v83.0–84.0",at:"2026-11-23T16:00",title:"The cinema shows cartoons now",changes:[
     "The village cinema has a new one-minute monster cartoon every Monday, starring you, two cave-mates and Eugene, the scariest boss who ever lived. Curry puffs, aircon wars, Reply All, the MRT chope and more.",
