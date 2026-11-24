@@ -1,5 +1,5 @@
 // Clock-out Countdown service worker: receives zaps (push) and keeps the app installable.
-const VERSION = "v84.0";
+const VERSION = "v85.0";
 
 // The app's own files (page, styles, monsters, icons) are fetched from the network and a copy is kept.
 // If the network is down, or the page takes more than 4 seconds, the kept copy is used, so the app still opens.

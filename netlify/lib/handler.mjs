@@ -150,7 +150,7 @@ export function fishmonger(t, allDay = false) {
 
 /* ---------- the village (v50): buildings the cave pays for together ---------- */
 export const BUILDINGS = { weather: 2000, farm: 3000, harbor: 4000, cinema: 5000, planner: 2500 }; // coins to build (v51: the holiday planner)
-export const BUILD_MS = 24 * 3600e3; // building takes a day once it's paid for (a minute on the test site)
+export const BUILD_MS = 0; // v85: a building opens the moment it's paid for (it used to take a day)
 // Farm crops: seed price, hours to grow, coins for a 1-star crop.
 export const CROPS = {
   radish: { seed: 10, hours: 4, coins: 22 }, tomato: { seed: 25, hours: 24, coins: 60 },
@@ -223,7 +223,8 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
   };
   const SPEED = dev ? 60 : 1; // the test site builds and grows 60x faster
   // Village buildings: {kind: openAt} for the ones paid for. Open once openAt has passed.
-  const builtOf = async (cid) => (cid ? Object.fromEntries((await keys(`built/${cid}/`)).map((k) => { const [, , kind, at] = k.split("/"); return [kind, Number(at)]; })) : {});
+  // v85: ones paid for before v85 were still due to open up to a day later; they open now.
+  const builtOf = async (cid) => (cid ? Object.fromEntries((await keys(`built/${cid}/`)).map((k) => { const [, , kind, at] = k.split("/"); return [kind, Math.min(Number(at), now())]; })) : {});
   const isOpen = (built, kind, t) => !!built[kind] && built[kind] <= t;
   const bump = async (cid) => { if (cid) await store.setJSON(`ver/${cid}`, now().toString(36) + randomBytes(2).toString("hex")); };
   // The ring that counts right now. On the test site you can film before the first ring.
@@ -1475,7 +1476,7 @@ export function makeApp({ store, webpush, now = () => Date.now(), adminKey = nul
         if (d) d.amt += give; else b.donors.push({ pid: me.id, amt: give });
         b.donors.sort((x, y) => y.amt - x.amt);
         if (b.raised >= b.price && (await claimKey(`builtlock/${cid}/${kind}`, 0))) {
-          b.openAt = t + (dev ? 60e3 : BUILD_MS); // a day (a minute on the test site)
+          b.openAt = t + BUILD_MS; // open right away (v85)
           await Promise.all([store.setJSON(`built/${cid}/${kind}/${b.openAt}`, 0), bump(cid)]);
         }
         return json({ village: v, gave: give, now: t });

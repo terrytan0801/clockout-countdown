@@ -1,4 +1,4 @@
-# Clock-out Countdown · v84.0
+# Clock-out Countdown · v85.0
 
 A phone app (PWA) where friends live together in a **cave** and count down to clock-out.
 
@@ -263,6 +263,8 @@ All the numbers are in `COINS` and `SHOP` at the top of `netlify/lib/handler.mjs
 **v83.** The village cinema shows a one-minute cartoon instead of the week's clips (those stay in Days). `public/cartoons.js` and `cartoons.css` load the first time the cinema opens: a small stage engine (scenes for the office, pantry, MRT, bedroom and a hawker stall; monsters drawn with `monEl` and moved, re-moodied and given cartoon effects such as shake, shiver, freeze, faint, pyjamas; speech bubbles; captions; emoji props) and eight scripted episodes in English with some Singlish: The Last Curry Puff, 5:59 PM, Aircon Wars, The Chope, Reply All, Eat What?, The Printer and Monday, 45–57 seconds each. The episode changes every Monday (Singapore days, cycling through the eight). The cast is the viewer, two cave-mates picked anew each week (Kopi, Milo and Teh fill in for small caves) and Eugene, the boss: drawn as his own huge horned villain (not one of the app's monsters), about one and a half times everyone's size, who roars and shakes the screen whenever he walks in. Sound effects and a little loop are made with Web Audio, so nothing is downloaded. Checked by running all eight episodes fast-forwarded with no errors.
 
 **v84.** Comments on the cartoon. Under the cinema screen, the cave's comments on this week's cartoon (`GET`/`POST /api/cartoon/comments`, up to 200 characters, stored as `ctc/<cid>/<monday>/<id>` with the episode title), so every week starts a fresh wall; deleting a cave deletes its comments. The admin page lists the latest 300 comments from every cave with name, cave, episode and time (`admin/cartoon-comments`).
+
+**v85.** Village buildings open the moment they're paid for (`BUILD_MS` is 0; it was a day). Buildings paid for before v85 that were still waiting open at once: `builtOf` reads each `built/<cid>/<kind>/<openAt>` key as no later than now, so no stored record changes.
 
 **Fluff's Cloud Shield (v50).** Fluff's power is now Cloud Shield (it keeps the weather too): zaps take 20% less of a Fluff's coins at Lv1, 40% less at Lv2, and at Lv3 the first grab of each day is blocked entirely.
 

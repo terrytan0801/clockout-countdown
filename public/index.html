@@ -1472,7 +1472,7 @@ body.calm .fsprop span{animation:none}
     <span>Staying late? Tap <b>+ OT</b> on your card, then <b>Clock out</b> when you finally leave.</span>
     <span>Tap <b>⚡ Zap</b> on a cave-mate to buzz their phone. Once every 10 minutes per person.</span>
     <span>Twice a day, at random times, everyone's phone rings. Film 2 to 4 seconds of what you're doing; it all lands in <b>Days</b>.</span>
-    <span>v84.0</span>
+    <span>v85.0</span>
   </div>
 </div>
 
@@ -3516,7 +3516,7 @@ function renderVillCard(){
     if(st==="site") card.appendChild(mkEl("p","",`🚧 Building has started! The walls go up as coins come in.`));
     const bar=mkEl("div","vbar"),u=mkEl("u");u.style.width=Math.min(100,b.raised/b.price*100)+"%";bar.appendChild(u);card.appendChild(bar);
     const nums=mkEl("div","vnums");nums.append(mkEl("span","",`${b.raised.toLocaleString()} / ${b.price.toLocaleString()} coins`),mkEl("span","",`${(b.price-b.raised).toLocaleString()} to go`));card.appendChild(nums);
-    card.appendChild(mkEl("p","",`Chip in any amount. Once it's all paid for, there's a last day of finishing touches, then it opens. You have ${Math.max(0,S.me.coins||0).toLocaleString()} coins.`));
+    card.appendChild(mkEl("p","",`Chip in any amount. It opens the moment it's all paid for. You have ${Math.max(0,S.me.coins||0).toLocaleString()} coins.`));
     const give=mkEl("div","vgive");
     // v80: the amount buttons only fill in the amount; Give asks "tap again" first, so nothing goes by accident.
     const inp=mkEl("input");inp.type="number";inp.min="1";inp.inputMode="numeric";inp.placeholder="Amount";inp.setAttribute("aria-label","How many coins to give");
@@ -3583,7 +3583,7 @@ async function donate(k,amount,btn){
     const d=await api("village/donate",{kind:k,amount});village=d.village;
     S.me.coins=(S.me.coins||0)-d.gave;renderCoins();
     const name=VILLAGE.BUILD[k].name.toLowerCase();
-    if(d.village[k].openAt){S.cave.built={...(S.cave.built||{}),[k]:d.village[k].openAt};toast(`That did it! The ${name} is paid for. It'll be built in a day.`,5000);}
+    if(d.village[k].openAt){S.cave.built={...(S.cave.built||{}),[k]:d.village[k].openAt};toast(`That did it! The ${name} is paid for and open now!`,5000);}
     else toast(`You gave ${d.gave} coins to the ${name}. ${(d.village[k].price-d.village[k].raised).toLocaleString()} to go.`,4000);
     renderVillage();refresh();
   }catch(e){if(e.data&&e.data.village){village=e.data.village;renderVillage();}if(e.status!==401) toast(e.message);}
@@ -5258,6 +5258,9 @@ $("shareVid").addEventListener("click",async()=>{
 // Each entry: version, when it went out (Singapore time), what changed, and an optional short comic.
 // Add new updates at the top. Your monster hops in the News button until the newest one has been opened.
 const NEWS=[
+  {id:"v85-build",v:"v85.0",at:"2026-11-24T12:00",title:"Buildings open right away",changes:[
+    "No more waiting a day: a village building opens the moment the last coin goes in. Anything still being built is open now."],panels:[
+    {art:"village",title:"Open now",text:"Pay for it together and it opens on the spot."}]},
   {id:"v83-cartoons",v:"v83.0–84.0",at:"2026-11-23T16:00",title:"The cinema shows cartoons now",changes:[
     "The village cinema has a new one-minute monster cartoon every Monday, starring you, two cave-mates and Eugene, the scariest boss who ever lived. Curry puffs, aircon wars, Reply All, the MRT chope and more.",
     "Turn your sound on: boings, honks and a little tune. Tap the screen to stop.",
@@ -5314,7 +5317,7 @@ const NEWS=[
     {art:"fishing",title:"Gone to the Lake",text:"Take the Water Line to the Lake to fish. Your home is now one room at a time, so everyone looks bigger."}]},
   {id:"v54-village",v:"v49.0–54.0",at:"2026-11-14T18:00",title:"The village, fishing that feels like it, and a faster app",changes:[
     "Everything is faster: the cave's records moved next to the server, so opening the app and every tap answer much sooner.",
-    "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, then a day of finishing touches.",
+    "Tap Village on the Home screen: buildings the whole cave pays for together. The first coin starts the building; the walls rise as coins come in, and it opens the moment it's paid for.",
     "Weather station (2,000): weather and rain alerts for everyone. Farm (3,000): grow crops, water each other's (+2 coins), sell to Mr. Veggie. Harbor (4,000): fish at sea with 5 new fish, and Mr. Fishfish buys all day. Cinema (5,000): the week's clips as one movie. Holiday planner (2,500): pick a month and see where a day or two of leave makes a long break.",
     "Fishing fills the screen: a shadow swims up, the float nibbles, then HOOK IT! When you land it, it leaps out with a splash and its card shows how rare it is.",
     "Fluff's new power is Cloud Shield: zaps grab less of a Fluff's coins.",

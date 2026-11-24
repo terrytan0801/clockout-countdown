@@ -44,16 +44,14 @@ assert.ok((await st(A)).me.coinLog.some((e) => e.why === "build.weather" && e.am
 r = await call("POST", "village/donate", { kind: "weather", amount: 999 }, B.t); // 800 left: only 800 is taken
 assert.equal(r.data.gave, 800); assert.equal(r.data.village.weather.raised, 2000);
 assert.deepEqual(r.data.village.weather.donors.map((d) => [d.pid, d.amt]), [[A.id, 1200], [B.id, 800]], "builders, biggest first");
-assert.equal(r.data.village.weather.openAt, clock + BUILD_MS, "a day to build");
+assert.equal(r.data.village.weather.openAt, clock, "v85: open the moment it's paid for");
 assert.equal((await call("POST", "village/donate", { kind: "weather", amount: 5 }, C.t)).status, 409, "already paid for");
 let s = await st(C);
-assert.ok(s.cave.built.weather > clock, "not open yet");
+assert.ok(s.cave.built.weather <= clock, "open right away");
 
 /* ---------- weather station: weather for everyone once open ---------- */
 { const p = JSON.parse(store._m.get(`person/${C.id}`)); p.monster = 0; store._m.set(`person/${C.id}`, JSON.stringify(p)); } // Cat is not a Fluff (monsters are random)
 await call("POST", "me", { action: "city", name: "Singapore", lat: 1.3, lon: 103.8 }, C.t); // Cat is not a Fluff
-s = await st(C);
-assert.equal(s.cave.weather[C.id], undefined, "no weather before it opens");
 clock += BUILD_MS;
 s = await st(C);
 assert.equal(s.cave.station, true);
@@ -79,11 +77,16 @@ clock += 11 * 60e3;
 z = (await call("POST", "zap", { to: C.id }, A.t)).data;
 assert.ok(z.took > 0 && z.shield === Math.ceil((z.took + z.shield) * 0.4), "then 40% is kept");
 
+/* ---------- v85: a building paid for before v85 (still due to open a day later) opens now ---------- */
+const oldKey = `built/${cave.id}/harbor/${clock + 20 * 3600e3}`; store._m.set(oldKey, "0");
+assert.ok((await st(A)).cave.built.harbor <= clock, "a building still waiting from before v85 is open");
+store._m.delete(oldKey);
+
 /* ---------- farm ---------- */
 assert.equal((await call("GET", "farm", null, A.t)).status, 409, "no farm yet");
 give(A, 5000);
 await call("POST", "village/donate", { kind: "farm", amount: 3000 }, A.t);
-assert.equal((await call("GET", "farm", null, A.t)).status, 409, "still being built");
+assert.equal((await call("GET", "farm", null, A.t)).status, 200, "v85: the farm opens the moment it's paid for");
 clock += BUILD_MS;
 let f = (await call("GET", "farm", null, A.t)).data;
 assert.equal(f.plots.length, FARM.plots); assert.ok(f.plots.every((p) => !p.crop));
